@@ -34,11 +34,14 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Runner: executed inside the child process
 # ---------------------------------------------------------------------------
+FONT_DIR = Path(__file__).parent / "fonts"  # bundled Liberation Sans (SIL OFL, see fonts/LICENSE)
+
 _RUNNER = textwrap.dedent(
     r'''
     import sys, json, traceback, linecache
 
     code_path, stl_path, result_path, mem_mb = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+    font_dir = sys.argv[5] if len(sys.argv) > 5 else None
 
     # Memory cap (POSIX only; silently skipped on Windows).
     # RLIMIT_DATA, not RLIMIT_AS: OpenCascade spawns one worker thread per CPU for booleans, and
@@ -70,6 +73,26 @@ _RUNNER = textwrap.dedent(
 
     try:
         import cadquery as cq
+
+        # Text: CadQuery defaults to font="Arial", which is missing on most Linux systems, and
+        # OpenCascade then renders every glyph as a box. Unless the code gives an explicit
+        # fontPath, use the bundled Liberation Sans (metric-compatible with Arial).
+        if font_dir:
+            import inspect, os
+            _make_text = cq.Compound.makeText
+            _sig = inspect.signature(_make_text)
+            _files = {"regular": "LiberationSans-Regular.ttf", "bold": "LiberationSans-Bold.ttf",
+                      "italic": "LiberationSans-Italic.ttf"}
+
+            def _make_text_with_font(*args, **kwargs):
+                bound = _sig.bind(*args, **kwargs)
+                if bound.arguments.get("fontPath") is None:
+                    kind = bound.arguments.get("kind", "regular")
+                    bound.arguments["fontPath"] = os.path.join(font_dir, _files.get(kind, _files["regular"]))
+                return _make_text(*bound.args, **bound.kwargs)
+
+            cq.Compound.makeText = _make_text_with_font
+
         ns = {"__name__": "__generated__", "show_object": show_object, "cq": cq}
         exec(compile(source, FILENAME, "exec"), ns)
 
@@ -126,7 +149,7 @@ def run_cadquery(
     for p in (result_path, stl_path):
         p.unlink(missing_ok=True)
 
-    cmd = [sys.executable, str(runner_path), str(code_path), str(stl_path), str(result_path), str(mem_mb)]
+    cmd = [sys.executable, str(runner_path), str(code_path), str(stl_path), str(result_path), str(mem_mb), str(FONT_DIR)]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired as e:

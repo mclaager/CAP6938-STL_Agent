@@ -19,6 +19,9 @@ it is gitignored, never commit keys. Optional: `CAD_MODEL`, `CAD_MAX_ATTEMPTS`, 
 (see `agent.py` docstring). Other OpenAI-compatible providers (Groq, OpenRouter, Ollama) can be
 added as one entry in `PROVIDERS` in `agent.py`.
 
+Gemini free tier is about 20 requests/day per model, and each repair attempt is one request.
+If one model's quota runs out, switch with `CAD_MODEL` (e.g. `gemini-3.6-flash`), which has its own quota.
+
 Add dependencies to `pixi.toml` under the `cap6938` feature. `requirements.txt` mirrors the
 pypi deps for non-pixi users, so keep the two in sync.
 
@@ -30,6 +33,8 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `app.py` — Gradio front end; only depends on `run_pipeline`.
 - `make_examples.py` — source of truth for the few-shot example library; generates `examples.json`.
 - `outputs/` — per-run generated files (gitignored).
+- `fonts/` — bundled Liberation Sans (SIL OFL). The sandbox uses it for any `text()` call without
+  an explicit `fontPath`, because CadQuery's default "Arial" is missing on Linux and renders as boxes.
 
 ## Roadmap (from proposal)
 
