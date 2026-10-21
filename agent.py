@@ -232,7 +232,9 @@ class OpenAICompatLLM:
         base_url: str,
         api_key: str,
         model: str,
-        max_tokens: int = 4096,
+        # Gemini 3.x "thinks" before answering and those hidden tokens count against this limit;
+        # at 4096 replies were regularly cut off mid-code. Only tokens actually used are billed.
+        max_tokens: int = 16384,
         temperature: float | None = None,
         timeout: float = 120.0,
         max_retries: int = 4,
@@ -247,6 +249,7 @@ class OpenAICompatLLM:
         self.model, self.max_tokens, self.temperature = model, max_tokens, temperature
         self.max_retries = max_retries
         self.input_tokens = self.output_tokens = 0
+        self.last_truncated = False
 
     def complete(self, system: str, messages: list[dict]) -> str:
         body = {
@@ -262,6 +265,9 @@ class OpenAICompatLLM:
             resp = self.client.post("chat/completions", json=body)
             if resp.status_code not in (429, 500, 502, 503) or attempt == self.max_retries:
                 break
+            if resp.status_code == 429 and "quota" in resp.text.lower():
+                # Daily/plan quota is used up: retrying just burns time (and possibly more quota).
+                raise RuntimeError(f"{self.model}: free-tier quota exhausted. {_quota_hint(resp.text)}")
             retry_after = resp.headers.get("retry-after", "")
             time.sleep(float(retry_after) if retry_after.isdigit() else 2 ** (attempt + 1))
         if resp.status_code >= 400:
@@ -271,7 +277,16 @@ class OpenAICompatLLM:
         usage = data.get("usage") or {}
         self.input_tokens += usage.get("prompt_tokens", 0)
         self.output_tokens += usage.get("completion_tokens", 0)
-        return data["choices"][0]["message"].get("content") or ""
+        choice = data["choices"][0]
+        self.last_truncated = choice.get("finish_reason") == "length"
+        return choice["message"].get("content") or ""
+
+
+def _quota_hint(text: str) -> str:
+    m = re.search(r"Quota exceeded for metric: [^,]*, limit: (\d+)[^\n]*\n?[^\n]*?retry in ([\dhms.]+)", text)
+    if m:
+        return f"Limit is {m.group(1)} requests; retry in {m.group(2).split('.')[0]}s, or set CAD_MODEL to another model."
+    return "Try again later, or set CAD_MODEL to another model."
 
 
 # name -> how to build it. Add more OpenAI-compatible providers here.
@@ -380,7 +395,11 @@ def generate_cad(
         if not parsed.code:
             rec["outcome"] = "no_code_block"
             res.history.append(rec)
-            log("Reply contained no code block; asking again.")
+            if getattr(llm, "last_truncated", False):
+                rec["outcome"] = "truncated"
+                log("Reply was cut off by the output token limit before the code finished; asking again.")
+            else:
+                log("Reply contained no code block; asking again.")
             messages.append({"role": "user", "content": "Your reply had no ```python code block. Reply in the required format."})
             continue
 
