@@ -1,0 +1,110 @@
+[
+ {
+  "id": "prim_001",
+  "cls": "primitives",
+  "request": "Make a 30mm x 20mm x 10mm rectangular block.",
+  "code": "import cadquery as cq\n\nlength, width, height = 30.0, 20.0, 10.0\nresult = cq.Workplane(\"XY\").box(length, width, height)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   30,
+   20,
+   10
+  ],
+  "volume_mm3": 6000.0
+ },
+ {
+  "id": "holes_003",
+  "cls": "holes_fasteners",
+  "request": "Create a 60mm x 40mm rectangular plate, 5mm thick, with four 4mm diameter mounting holes placed 5mm in from each corner.",
+  "code": "import cadquery as cq\n\nplate_length = 60.0\nplate_width = 40.0\nplate_thickness = 5.0\nhole_diameter = 4.0\nhole_inset = 5.0  # distance of hole centre from each edge\n\ndx = plate_length / 2 - hole_inset\ndy = plate_width / 2 - hole_inset\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(plate_length, plate_width, plate_thickness)\n    .faces(\">Z\").workplane()\n    .pushPoints([(dx, dy), (-dx, dy), (dx, -dy), (-dx, -dy)])\n    .hole(hole_diameter)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   60,
+   40,
+   5
+  ],
+  "volume_mm3": 11748.78
+ },
+ {
+  "id": "pattern_001",
+  "cls": "patterns",
+  "request": "Make a round flange 80mm in diameter and 6mm thick with six 5mm holes evenly spaced on a 60mm bolt circle.",
+  "code": "import cadquery as cq\n\nflange_diameter = 80.0\nthickness = 6.0\nbolt_circle_diameter = 60.0\nhole_diameter = 5.0\nnum_holes = 6\n\nresult = (\n    cq.Workplane(\"XY\")\n    .circle(flange_diameter / 2)\n    .extrude(thickness)\n    .faces(\">Z\").workplane()\n    .polarArray(bolt_circle_diameter / 2, 0, 360, num_holes)\n    .hole(hole_diameter)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   80,
+   80,
+   6
+  ],
+  "volume_mm3": 29440.23
+ },
+ {
+  "id": "pattern_002",
+  "cls": "patterns",
+  "request": "A 100mm x 60mm x 3mm perforated panel with a 4 by 3 grid of 6mm holes spaced 20mm apart.",
+  "code": "import cadquery as cq\n\npanel_length, panel_width, panel_thickness = 100.0, 60.0, 3.0\nhole_diameter = 6.0\nspacing_x = spacing_y = 20.0\ncols, rows = 4, 3\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(panel_length, panel_width, panel_thickness)\n    .faces(\">Z\").workplane()\n    .rarray(spacing_x, spacing_y, cols, rows)\n    .hole(hole_diameter)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   100,
+   60,
+   3
+  ],
+  "volume_mm3": 16982.55
+ },
+ {
+  "id": "shell_001",
+  "cls": "parametric",
+  "request": "Make an open-top box 50mm long, 30mm wide and 20mm tall with 2mm thick walls.",
+  "code": "import cadquery as cq\n\nlength, width, height = 50.0, 30.0, 20.0\nwall = 2.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(length, width, height)\n    .faces(\">Z\")\n    .shell(-wall)   # negative = wall grows inward; the selected face is removed\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   50,
+   30,
+   20
+  ],
+  "volume_mm3": 8472.0
+ },
+ {
+  "id": "fillet_001",
+  "cls": "edge_features",
+  "request": "A 40mm x 40mm x 20mm block with its four vertical edges rounded with a 5mm radius.",
+  "code": "import cadquery as cq\n\nsize_x, size_y, size_z = 40.0, 40.0, 20.0\ncorner_radius = 5.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(size_x, size_y, size_z)\n    .edges(\"|Z\")\n    .fillet(corner_radius)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   40,
+   40,
+   20
+  ],
+  "volume_mm3": 31570.17
+ },
+ {
+  "id": "holes_005",
+  "cls": "holes_fasteners",
+  "request": "50mm square plate, 10mm thick, with a centred counterbored hole for an M4 socket head screw: 4.5mm through hole, 8mm counterbore diameter, 4mm deep.",
+  "code": "import cadquery as cq\n\nplate_size, plate_thickness = 50.0, 10.0\nthrough_dia = 4.5\ncbore_dia = 8.0\ncbore_depth = 4.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(plate_size, plate_size, plate_thickness)\n    .faces(\">Z\").workplane()\n    .cboreHole(through_dia, cbore_dia, cbore_depth)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   50,
+   50,
+   10
+  ],
+  "volume_mm3": 24703.64
+ },
+ {
+  "id": "parametric_001",
+  "cls": "parametric",
+  "request": "A flat washer with 20mm outer diameter, 8mm inner diameter and 2mm thickness.",
+  "code": "import cadquery as cq\n\nouter_dia, inner_dia, thickness = 20.0, 8.0, 2.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .circle(outer_dia / 2)\n    .circle(inner_dia / 2)   # second circle inside the first becomes a hole\n    .extrude(thickness)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   20,
+   20,
+   2
+  ],
+  "volume_mm3": 527.57
+ },
+ {
+  "id": "named_001",
+  "cls": "named_parts",
+  "request": "An L-bracket with two 40mm x 30mm legs at 90 degrees, 4mm thick, 30mm wide, with one 5mm hole centred in each leg.",
+  "code": "import cadquery as cq\n\nleg_length = 40.0   # length of each leg, measured from the outer corner\nwidth = 30.0\nthickness = 4.0\nhole_dia = 5.0\n\nbase = cq.Workplane(\"XY\").box(leg_length, width, thickness, centered=(False, True, False))\nwall = cq.Workplane(\"XY\").box(thickness, width, leg_length, centered=(False, True, False))\nbracket = base.union(wall)\n\n# holes are centred in the free part of each leg (past the other leg's thickness)\nbase_hole = (\n    cq.Workplane(\"XY\")\n    .workplane(offset=0)\n    .center((leg_length + thickness) / 2, 0)\n    .circle(hole_dia / 2)\n    .extrude(thickness)\n)\nwall_hole = (\n    cq.Workplane(\"YZ\")\n    .center(0, (leg_length + thickness) / 2)\n    .circle(hole_dia / 2)\n    .extrude(thickness)\n)\nresult = bracket.cut(base_hole).cut(wall_hole)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   40,
+   30,
+   40
+  ],
+  "volume_mm3": 8962.99
+ }
+]

@@ -1,0 +1,30 @@
+[workspace]
+authors = ["mclaager <michael@laager.me>"]
+channels = ["conda-forge"]
+name = "stl_agent"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[dependencies]
+
+[feature.cap6938.system-requirements]
+libc = "2.35"
+
+[feature.cap6938.pypi-dependencies]
+cadquery = ">=2.4"
+trimesh = ">=4.0"
+numpy = "*"
+scikit-learn = "*"
+anthropic = "*"
+gradio = ">=4.0"
+
+[feature.cap6938.tasks]
+app = "python app.py"
+examples = "python make_examples.py"
+sandbox-test = "python sandbox.py"
+
+[feature.cap6938.dependencies]
+python = "3.12.*"
+
+[environments]
+cap6938 = { features = ["cap6938"], no-default-feature = true }

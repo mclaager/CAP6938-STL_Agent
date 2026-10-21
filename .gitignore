@@ -1,0 +1,14 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Secrets
+.env
+
+# Generated output
+outputs/
+*.stl

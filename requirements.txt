@@ -1,0 +1,6 @@
+cadquery>=2.4
+trimesh>=4.0
+numpy
+scikit-learn
+anthropic
+gradio>=4.0
