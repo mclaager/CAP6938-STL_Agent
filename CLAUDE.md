@@ -13,8 +13,11 @@ Managed with pixi. Everything runs in the `cap6938` environment:
 - `pixi run -e cap6938 examples` — rebuild and verify `examples.json` (`make_examples.py`)
 - `pixi run -e cap6938 sandbox-test` — sandbox smoke test (`sandbox.py`)
 
-`ANTHROPIC_API_KEY` must be set in the environment (keep it in `.env`, never commit it).
-Optional: `CAD_MODEL`, `CAD_MAX_ATTEMPTS`, `CAD_TOP_K` (see `agent.py` docstring).
+LLM backend is picked by `CAD_PROVIDER`: `anthropic` (default, needs `ANTHROPIC_API_KEY`) or
+`gemini` (free tier, needs `GEMINI_API_KEY`). `agent.py` reads a `.env` file in the project root;
+it is gitignored, never commit keys. Optional: `CAD_MODEL`, `CAD_MAX_ATTEMPTS`, `CAD_TOP_K`
+(see `agent.py` docstring). Other OpenAI-compatible providers (Groq, OpenRouter, Ollama) can be
+added as one entry in `PROVIDERS` in `agent.py`.
 
 Add dependencies to `pixi.toml` under the `cap6938` feature. `requirements.txt` mirrors the
 pypi deps for non-pixi users, so keep the two in sync.
