@@ -279,7 +279,7 @@ PROVIDERS = {
     "gemini": dict(
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         key_env="GEMINI_API_KEY",
-        default_model="gemini-3.5-flash",
+        default_model="gemini-3.8-flash",
     ),
 }
 
