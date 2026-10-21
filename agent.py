@@ -4,14 +4,16 @@
 Public entry point (matches the Gradio app's contract):
     run_pipeline(request, log) -> (stl_path, final_code, report_dict)
 
-Config via environment variables:
-    ANTHROPIC_API_KEY   required for the real LLM
-    CAD_MODEL           model id (default: claude-sonnet-5-5)
+Config via environment variables (a `.env` file in this folder is also read):
+    CAD_PROVIDER        "anthropic" (default) or "gemini"
+    ANTHROPIC_API_KEY   required when CAD_PROVIDER=anthropic
+    GEMINI_API_KEY      required when CAD_PROVIDER=gemini (free key: aistudio.google.com)
+    CAD_MODEL           model id (default depends on provider, see PROVIDERS)
     CAD_MAX_ATTEMPTS    generation + repair attempts (default 4)
     CAD_TOP_K           RAG examples per prompt (default 3)
 
 Swap the LLM by passing any object with `.complete(system, messages) -> str`
-(see AnthropicLLM / ScriptedLLM below); the eval harness can reuse `generate_cad`.
+(see AnthropicLLM / OpenAICompatLLM / ScriptedLLM below); the eval harness can reuse `generate_cad`.
 """
 
 from __future__ import annotations
@@ -28,9 +30,26 @@ from sandbox import ExecResult, ValidationReport, feedback_for_llm, run_cadquery
 
 HERE = Path(__file__).parent
 EXAMPLES_PATH = HERE / "examples.json"
+
+
+def _load_dotenv(path: Path = HERE / ".env") -> None:
+    """Minimal .env reader (KEY=value lines). Real environment variables win."""
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip().removeprefix("export ").strip()
+        os.environ.setdefault(key, value.strip().strip("'\""))
+
+
+_load_dotenv()
 OUTPUT_DIR = HERE / "outputs"
 
-MODEL = os.environ.get("CAD_MODEL", "claude-sonnet-5-5")
+PROVIDER = os.environ.get("CAD_PROVIDER", "anthropic").lower()
+MODEL = os.environ.get("CAD_MODEL")  # None -> the provider's default below
 MAX_ATTEMPTS = int(os.environ.get("CAD_MAX_ATTEMPTS", "4"))
 TOP_K = int(os.environ.get("CAD_TOP_K", "3"))
 
@@ -185,11 +204,12 @@ def parse_response(text: str) -> Parsed:
 # 4. LLM backends
 # ---------------------------------------------------------------------------
 class AnthropicLLM:
-    def __init__(self, model: str = MODEL, max_tokens: int = 2048, temperature: float | None = None):
+    def __init__(self, model: str | None = MODEL, max_tokens: int = 2048, temperature: float | None = None):
         import anthropic
 
         self.client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
-        self.model, self.max_tokens, self.temperature = model, max_tokens, temperature
+        self.model = model or "claude-sonnet-5-5"
+        self.max_tokens, self.temperature = max_tokens, temperature
         self.input_tokens = self.output_tokens = 0
 
     def complete(self, system: str, messages: list[dict]) -> str:
@@ -201,6 +221,80 @@ class AnthropicLLM:
         self.input_tokens += resp.usage.input_tokens
         self.output_tokens += resp.usage.output_tokens
         return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+
+
+class OpenAICompatLLM:
+    """Any provider with an OpenAI-style /chat/completions endpoint (Gemini, Groq,
+    OpenRouter, Ollama, ...). Uses plain httpx so no extra SDK is needed."""
+
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        model: str,
+        max_tokens: int = 4096,
+        temperature: float | None = None,
+        timeout: float = 120.0,
+        max_retries: int = 4,
+    ):
+        import httpx
+
+        self.client = httpx.Client(
+            base_url=base_url.rstrip("/") + "/",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=timeout,
+        )
+        self.model, self.max_tokens, self.temperature = model, max_tokens, temperature
+        self.max_retries = max_retries
+        self.input_tokens = self.output_tokens = 0
+
+    def complete(self, system: str, messages: list[dict]) -> str:
+        body = {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "messages": [{"role": "system", "content": system}, *messages],
+        }
+        if self.temperature is not None:
+            body["temperature"] = self.temperature
+
+        # Free tiers rate-limit hard (429) and are sometimes overloaded (503); back off and retry.
+        for attempt in range(self.max_retries + 1):
+            resp = self.client.post("chat/completions", json=body)
+            if resp.status_code not in (429, 500, 502, 503) or attempt == self.max_retries:
+                break
+            retry_after = resp.headers.get("retry-after", "")
+            time.sleep(float(retry_after) if retry_after.isdigit() else 2 ** (attempt + 1))
+        if resp.status_code >= 400:
+            raise RuntimeError(f"{self.model} request failed ({resp.status_code}): {resp.text[:500]}")
+
+        data = resp.json()
+        usage = data.get("usage") or {}
+        self.input_tokens += usage.get("prompt_tokens", 0)
+        self.output_tokens += usage.get("completion_tokens", 0)
+        return data["choices"][0]["message"].get("content") or ""
+
+
+# name -> how to build it. Add more OpenAI-compatible providers here.
+PROVIDERS = {
+    "gemini": dict(
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        key_env="GEMINI_API_KEY",
+        default_model="gemini-3.5-flash",
+    ),
+}
+
+
+def make_llm(provider: str = PROVIDER, model: str | None = MODEL):
+    """Build the LLM backend selected by CAD_PROVIDER / CAD_MODEL."""
+    if provider == "anthropic":
+        return AnthropicLLM(model=model)
+    if provider not in PROVIDERS:
+        raise ValueError(f"Unknown CAD_PROVIDER {provider!r}; use 'anthropic' or one of {sorted(PROVIDERS)}")
+    cfg = PROVIDERS[provider]
+    api_key = os.environ.get(cfg["key_env"])
+    if not api_key:
+        raise RuntimeError(f"CAD_PROVIDER={provider} needs {cfg['key_env']} set (env or .env file).")
+    return OpenAICompatLLM(cfg["base_url"], api_key, model or cfg["default_model"])
 
 
 class ScriptedLLM:
@@ -344,7 +438,7 @@ def run_pipeline(request: str, log) -> tuple[str, str, dict]:
     if _retriever is None:
         _retriever = ExampleRetriever.from_file()
     if _llm is None:
-        _llm = AnthropicLLM()
+        _llm = make_llm()
 
     res = generate_cad(request, _llm, _retriever, log=log)
     if res.unsupported or res.stl_path is None:
