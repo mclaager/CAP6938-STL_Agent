@@ -40,11 +40,13 @@ _RUNNER = textwrap.dedent(
 
     code_path, stl_path, result_path, mem_mb = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
 
-    # Memory cap (POSIX only; silently skipped on Windows)
+    # Memory cap (POSIX only; silently skipped on Windows).
+    # RLIMIT_DATA, not RLIMIT_AS: OpenCascade spawns one worker thread per CPU for booleans, and
+    # their reserved (mostly unused) address space blows through an AS cap, hanging hole()/cut().
     try:
         import resource
         limit = mem_mb * 1024 * 1024
-        resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+        resource.setrlimit(resource.RLIMIT_DATA, (limit, limit))
     except Exception:
         pass
 
