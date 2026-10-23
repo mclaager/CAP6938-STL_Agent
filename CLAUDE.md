@@ -65,6 +65,9 @@ Elsewhere:
   calls `generate_cad` directly (no gate), appends one line per (case, config) to
   `eval/results/<model>.jsonl` (committed), skips pairs already done, and stops before exceeding
   `--budget` requests, so a full run can be spread over several days of free-tier quota.
+  `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
+  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1`, `rag-t30` (RAG with a
+  0.3 similarity cutoff, see `CAD_RAG_MIN_SIM`).
 - `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness (all offline).
 - `scripts/` — maintenance scripts (`make_examples.py`).
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
