@@ -1,7 +1,7 @@
 # Retrieval evaluation (issue #20)
 
-Library lib26-cdabac, 19 benchmark requests, `python -m eval.retrieval`. Draft labels in
-`eval/retrieval_labels.json` (not yet reviewed by a human).
+Library lib26-cdabac, 19 benchmark requests, `python -m eval.retrieval`. Labels in
+`eval/retrieval_labels.json` (reviewed).
 
 | method | hit@1 | recall@3 | MRR | AUC | best cutoff (F1) | relevant median / unrelated p90 | load | per query |
 |---|---|---|---|---|---|---|---|---|
@@ -28,3 +28,20 @@ the winner; one request is ~6 points of hit@1.
 | granite-embedding-small-english-r2 (180 MB) | no numbers | 89% | 69% | 0.92 | 0.83 | 6.6 ms |
 
 Embedding request text without the keywords was worse for every model (MRR 0.64-0.70).
+
+## Everyday-language queries (`--queries casual`, drafts not yet reviewed)
+
+Same parts and labels, phrased by purpose without CAD terms (eval/retrieval_queries_casual.json).
+
+| method | hit@1 | recall@3 | MRR | AUC | best cutoff (F1) | relevant median / unrelated p90 | load | per query |
+|---|---|---|---|---|---|---|---|---|
+| tfidf | 22% | 44% | 0.48 | 0.68 | 0.00 (0.30) | 0.06 / 0.08 | 0.70 s | 0.42 ms |
+| tfidf-char | 56% | 44% | 0.70 | 0.75 | 0.13 (0.37) | 0.13 / 0.13 | 0.00 s | 0.48 ms |
+| embed | 33% | 37% | 0.52 | 0.72 | 0.76 (0.34) | 0.77 / 0.79 | 0.46 s | 3.88 ms |
+| hybrid | 50% | 39% | 0.66 | 0.78 | 0.43 (0.31) | 0.44 / 0.45 | 0.24 s | 4.69 ms |
+
+Every method drops sharply. Embeddings help where the everyday meaning is close to the shape
+("traffic cone" -> funnel, "ruler that says ALEX" -> text) but fail where a purpose must become a
+shape ("hang my headphones" -> hook, "prop my phone up" -> angled stand). Some letter-chunk hits
+are coincidences ("prop" ~ "profile"). In the app, retrieval runs on the intake gate's spec, which
+restates the request geometrically, so the realistic test is casual request -> gate spec -> retrieval.

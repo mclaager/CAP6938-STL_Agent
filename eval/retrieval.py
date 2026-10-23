@@ -2,6 +2,7 @@
 
     python -m eval.retrieval                      # all methods
     python -m eval.retrieval --methods tfidf embed
+    python -m eval.retrieval --queries casual      # everyday-language versions of the requests
 
 Scores each retrieval method against hand-labelled relevant examples (eval/retrieval_labels.json)
 for every benchmark request (eval/cases.json):
@@ -31,6 +32,7 @@ from stl_agent.retrieval import RETRIEVERS
 EVAL_DIR = Path(__file__).parent
 LABELS_PATH = EVAL_DIR / "retrieval_labels.json"
 CASES_PATH = EVAL_DIR / "cases.json"
+CASUAL_PATH = EVAL_DIR / "retrieval_queries_casual.json"
 
 
 METHODS = RETRIEVERS
@@ -93,6 +95,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--methods", nargs="+", default=list(METHODS), choices=list(METHODS))
     ap.add_argument("--show-top", action="store_true", help="also list each method's top 3 per request")
+    ap.add_argument("--queries", choices=["benchmark", "casual"], default="benchmark",
+                    help="benchmark: the CAD-worded requests in cases.json; casual: everyday-language versions")
     args = ap.parse_args(argv)
 
     from stl_agent.config import EXAMPLES_PATH
@@ -103,6 +107,11 @@ def main(argv=None):
     labels = labels_doc["labels"]
     if not labels_doc.get("reviewed"):
         print("Note: relevance labels have not been reviewed by a human yet (eval/retrieval_labels.json).\n")
+    if args.queries == "casual":
+        casual = json.loads(CASUAL_PATH.read_text())
+        cases = [{**c, "request": casual["queries"][c["id"]]} for c in cases]
+        if not casual.get("reviewed"):
+            print("Note: casual queries have not been reviewed by a human yet (eval/retrieval_queries_casual.json).\n")
 
     print("| method | hit@1 | recall@3 | MRR | AUC | best cutoff (F1) | relevant median / unrelated p90 | load | per query |")
     print("|---|---|---|---|---|---|---|---|---|")

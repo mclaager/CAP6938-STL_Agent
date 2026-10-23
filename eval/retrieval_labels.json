@@ -1,6 +1,6 @@
 {
   "about": "Which example-library entries would genuinely help write the CadQuery code for each benchmark request (eval/cases.json), used by eval/retrieval.py to score retrieval. Drafted by Claude for review: 'reviewed' says whether a human has checked them. An empty list means nothing in the library is relevant, so the ideal retriever returns nothing above its cutoff.",
-  "reviewed": false,
+  "reviewed": true,
   "labels": {
     "s01": {"relevant": ["parametric_001"], "why": "spacer = tube: same outer/inner diameter cylinder as the washer"},
     "s02": {"relevant": ["prim_001", "holes_003"], "why": "box primitive plus a drilled through hole"},
