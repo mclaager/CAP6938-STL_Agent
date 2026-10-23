@@ -38,3 +38,42 @@ def test_names_are_slugified():
 
 def test_parse_fenced_json():
     assert parse_gate_reply('ok\n```json\n{"scope": "in_scope"}\n```')["scope"] == "in_scope"
+
+
+def test_gate_picks_are_parsed_and_made_up_ids_dropped():
+    from stl_agent.gate.llm_gate import LLMGate
+    from stl_agent.llm import ScriptedLLM
+
+    library = [{"id": "gear_001", "request": "a gear"}, {"id": "text_002", "request": "engraved text"}]
+    reply = ('```json\n{"scope": "in_scope", "spec": "a gear", "unknowns": [], "shape": "spur gear with a bore",'
+             ' "examples": ["gear_001", "made_up_999", "gear_001", "text_002", "x", "y"]}\n```')
+    llm = ScriptedLLM([reply])
+    d = LLMGate(llm, library=library).decide([{"role": "user", "content": "a cog"}])
+    assert d.example_ids == ["gear_001", "text_002"]
+    assert d.shape == "spur gear with a bore"
+
+
+def test_gate_prompt_includes_library_only_when_picking():
+    from stl_agent.gate.llm_gate import GATE_PROMPT, LLMGate
+
+    assert LLMGate(None).prompt == GATE_PROMPT
+    assert "gear_001: a gear" in LLMGate(None, library=[{"id": "gear_001", "request": "a gear"}]).prompt
+
+
+def test_no_examples_field_means_gate_did_not_pick():
+    assert decide_from_report({"spec": "x"}, "x", 0).example_ids is None
+    assert decide_from_report({"spec": "x", "examples": []}, "x", 0).example_ids == []
+
+
+def test_pipeline_prefers_gate_picks(tmp_path):
+    from stl_agent.llm import ScriptedLLM
+    from stl_agent.pipeline import generate_cad
+    from stl_agent.retrieval import TfidfRetriever
+
+    good = "PLAN:\n- x\nBBOX: 1, 1, 1\n```python\nimport cadquery as cq\nshow_object(cq.Workplane().box(1, 1, 1))\n```"
+    r = TfidfRetriever.from_file()
+    res = generate_cad("a hex nut", ScriptedLLM([good]), r, out_dir=tmp_path / "a", example_ids=["gear_001", "nope"])
+    assert res.retrieved_ids == ["gear_001"]
+    res = generate_cad("a hex nut", ScriptedLLM([good]), r, out_dir=tmp_path / "b", example_ids=[],
+                       retrieval_query="hexagonal prism")
+    assert res.retrieved_ids[0] == "polygon_001"  # no picks: retrieval on the shape summary

@@ -16,6 +16,7 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 examples` — rebuild and verify `stl_agent/data/examples.json`
 - `pixi run -e cap6938 bench run [--model M] [--category simple] [--budget 18]` — benchmark (#7);
   `pixi run -e cap6938 bench report` prints markdown tables from `eval/results/`
+- `pixi run -e cap6938 retrieval-eval` — offline retrieval scores (no LLM requests, seconds)
 
 LLM backend is picked by `CAD_PROVIDER`: `anthropic` (default, needs `ANTHROPIC_API_KEY`) or
 `gemini` (free tier, needs `GEMINI_API_KEY`). `stl_agent/config.py` reads a `.env` file in the repo root;
@@ -43,8 +44,10 @@ pypi deps for non-pixi users, so keep the two in sync.
   (`generate_cad`). App entry points `run_gate(conversation, rounds)` and `run_pipeline(request, log, name)`.
 - `config.py` — paths, `.env` loading and `CAD_*` settings.
 - `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`.
-- `retrieval.py` — TF-IDF RAG over `data/examples.json` (each example's request plus its `keywords`:
-  generic shape/operation words, so "hex" can match "hexagonal").
+- `retrieval.py` — RAG over `data/examples.json` (each example's request plus its `keywords`: generic
+  shape/operation words). Retrievers selected by `CAD_RETRIEVER`: `tfidf` (default, words), `tfidf-char`
+  (letter chunks, numbers stripped), `embed` (local fastembed model, ONNX, no PyTorch; model cached in
+  `~/.cache/stl_agent`), `hybrid` (tfidf-char + embed). Keep the app lightweight (#19): no PyTorch.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
@@ -70,7 +73,9 @@ Elsewhere:
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1`, `rag-t30` (RAG with a
   0.2 / 0.3 similarity cutoff; the app's cutoff is `CAD_RAG_MIN_SIM`, default 0). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
-- `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness (all offline).
+- `eval/retrieval.py` + `eval/retrieval_labels.json` — offline retrieval evaluation (#20): hit@1, recall@3,
+  MRR, AUC, best cutoff and latency per retriever, against hand-labelled relevant examples.
+- `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness, retrieval (all offline).
 - `scripts/` — maintenance scripts (`make_examples.py`).
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
   colored `<name>.preview.glb` for the viewer (gitignored).

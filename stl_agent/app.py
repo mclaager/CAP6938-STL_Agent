@@ -69,7 +69,7 @@ def make_preview(stl_path: str) -> str:
 def new_state() -> dict:
     # conversation: turns the gate sees; rounds: clarifying rounds asked;
     # spec / name: ready-to-build spec and its file-name slug
-    return {"conversation": [], "rounds": 0, "spec": None, "name": ""}
+    return {"conversation": [], "rounds": 0, "spec": None, "name": "", "example_ids": None, "shape": ""}
 
 
 def format_decision(d) -> str:
@@ -133,6 +133,7 @@ def on_message(message: str, chat: list, state: dict, use_cache: bool):
         state["rounds"] += 1
     elif d.action != OUT_OF_SCOPE:
         state["spec"], state["name"] = d.spec, d.name
+        state["example_ids"], state["shape"] = d.example_ids, d.shape
     state["conversation"].append({"role": "assistant", "content": reply})
     chat.append({"role": "assistant", "content": reply})
     yield "", chat, state, gr.Button(interactive=state["spec"] is not None)
@@ -161,7 +162,8 @@ def on_build(chat: list, state: dict):
 
     def worker():
         try:
-            outcome["value"] = run_pipeline(spec, messages.put, name=state.get("name"))
+            outcome["value"] = run_pipeline(spec, messages.put, name=state.get("name"),
+                                            example_ids=state.get("example_ids"))
         except Exception as e:  # surface failures in the UI instead of crashing
             outcome["error"] = e
         finally:

@@ -1,0 +1,25 @@
+{
+  "about": "Which example-library entries would genuinely help write the CadQuery code for each benchmark request (eval/cases.json), used by eval/retrieval.py to score retrieval. Drafted by Claude for review: 'reviewed' says whether a human has checked them. An empty list means nothing in the library is relevant, so the ideal retriever returns nothing above its cutoff.",
+  "reviewed": true,
+  "labels": {
+    "s01": {"relevant": ["parametric_001"], "why": "spacer = tube: same outer/inner diameter cylinder as the washer"},
+    "s02": {"relevant": ["prim_001", "holes_003"], "why": "box primitive plus a drilled through hole"},
+    "s03": {"relevant": ["polygon_001", "polygon_002"], "why": "regular polygon extrude; hex nut shows across-flats sizing"},
+    "s04": {"relevant": ["slot_001"], "why": "slot2D cut through a plate"},
+    "s05": {"relevant": ["revolve_001", "revolve_002"], "why": "a cone is a revolved profile (or a loft to a point)"},
+    "m01": {"relevant": ["pattern_002", "holes_003", "fillet_001"], "why": "rectangular hole grid, plate with holes, rounded vertical edges"},
+    "m02": {"relevant": ["shell_001", "compartment_001"], "why": "open-top shelled box, divider walls"},
+    "m03": {"relevant": ["parametric_001", "holes_005"], "why": "round cylindrical body; blind (depth-limited) hole"},
+    "m04": {"relevant": ["pattern_001", "parametric_001"], "why": "bolt-circle holes on a disc; centre hole like a washer"},
+    "m05": {"relevant": ["pattern_002", "slot_001"], "why": "evenly spaced repeated cuts along a bar"},
+    "m06": {"relevant": ["profile_001", "shell_001", "named_001"], "why": "extruded cross-section profile; thin walls; L/U-shaped section"},
+    "m07": {"relevant": ["shell_002", "fillet_001"], "why": "cylindrical shell open at the top; edge fillet"},
+    "m08": {"relevant": ["parametric_001"], "why": "ring with inner/outer diameter"},
+    "h01": {"relevant": ["gear_001"], "why": "spur gear tooth outline"},
+    "h02": {"relevant": ["angled_001", "profile_001"], "why": "plate leaning at an angle on a base; side-profile extrude"},
+    "h03": {"relevant": ["sweep_001", "holes_006"], "why": "curved arm swept along an arc; countersunk screw holes"},
+    "p01": {"relevant": ["text_002", "text_001"], "why": "engraved text (and the raised-text variant)"},
+    "p02": {"relevant": ["prim_001", "fillet_002", "text_002"], "why": "cube body, softened edges, symbols cut into faces"},
+    "p03": {"relevant": [], "why": "organic shapes: nothing in the library helps; should be declined"}
+  }
+}

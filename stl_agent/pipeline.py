@@ -18,9 +18,9 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .config import GATE_MODEL, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, RAG_MIN_SIM, TOP_K
+from .config import EXAMPLES_PATH, GATE_MODEL, GATE_PICKS, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, RAG_MIN_SIM, TOP_K
 from .llm import PROVIDERS, make_llm
-from .retrieval import ExampleRetriever
+from .retrieval import BaseRetriever, make_retriever
 from .sandbox import ExecResult, ValidationReport, feedback_for_llm, run_cadquery, validate_mesh
 
 # ---------------------------------------------------------------------------
@@ -164,13 +164,15 @@ class GenResult:
 def generate_cad(
     request: str,
     llm,
-    retriever: ExampleRetriever,
+    retriever: BaseRetriever,
     log=lambda s: None,
     out_dir: str | Path | None = None,
     max_attempts: int = MAX_ATTEMPTS,
     top_k: int = TOP_K,
     use_rag: bool = True,
     min_sim: float = RAG_MIN_SIM,
+    example_ids: list[str] | None = None,
+    retrieval_query: str | None = None,
     exec_timeout: float = 60.0,
 ) -> GenResult:
     """Run the full generate -> execute -> validate -> repair loop."""
@@ -179,9 +181,19 @@ def generate_cad(
     out_dir.mkdir(parents=True, exist_ok=True)
     res = GenResult(success=False)
 
-    examples = retriever.retrieve(request, top_k, min_sim) if use_rag else []
+    # Examples: the intake gate's picks when it made any (CAD_GATE_PICKS), otherwise the retriever
+    # (on `retrieval_query` if given, else the request/spec itself).
+    by_id = {e["id"]: e for e in retriever.examples}
+    picked = [by_id[i] for i in (example_ids or []) if i in by_id][:top_k]
+    if not use_rag:
+        examples = []
+    elif picked:
+        examples = picked
+    else:
+        examples = retriever.retrieve(retrieval_query or request, top_k, min_sim)
     res.retrieved_ids = [e["id"] for e in examples]
-    log(f"Retrieved {len(examples)} similar example(s): {', '.join(res.retrieved_ids) or 'none'}")
+    source = "chosen by the intake gate" if use_rag and picked else "retrieved"
+    log(f"Using {len(examples)} example(s) {source}: {', '.join(res.retrieved_ids) or 'none'}")
 
     messages = [{"role": "user", "content": build_first_user_message(request, examples)}]
     best: tuple[ExecResult, ValidationReport, str] | None = None  # best-effort fallback
@@ -258,7 +270,7 @@ def generate_cad(
 # ---------------------------------------------------------------------------
 # 4. App entry points
 # ---------------------------------------------------------------------------
-_retriever: ExampleRetriever | None = None
+_retriever: BaseRetriever | None = None
 _llm = None
 _gate = None
 
@@ -277,7 +289,8 @@ def run_gate(conversation: list[dict], rounds_asked: int = 0):
         from .gate import make_gate
 
         gate_model = GATE_MODEL or PROVIDERS.get(PROVIDER, {}).get("default_gate_model")
-        _gate = make_gate(make_llm(model=gate_model) if gate_model else get_llm())
+        library = json.loads(EXAMPLES_PATH.read_text()) if GATE_PICKS else None
+        _gate = make_gate(make_llm(model=gate_model) if gate_model else get_llm(), library=library)
     return _gate.decide(conversation, rounds_asked)
 
 
@@ -289,13 +302,15 @@ def unique_stl_path(name: str, folder: Path = OUTPUT_DIR) -> Path:
     return path
 
 
-def run_pipeline(request: str, log, name: str | None = None) -> tuple[str, str, dict]:
+def run_pipeline(request: str, log, name: str | None = None,
+                 example_ids: list[str] | None = None) -> tuple[str, str, dict]:
     """`name` is a file-name slug (the gate supplies one); otherwise it's made from the request."""
     global _retriever
     if _retriever is None:
-        _retriever = ExampleRetriever.from_file()
+        _retriever = make_retriever()  # CAD_RETRIEVER
 
-    res = generate_cad(request, get_llm(), _retriever, log=log)
+    # Without gate picks, retrieve on the full spec: the gate's one-line shape summary retrieved worse (#20).
+    res = generate_cad(request, get_llm(), _retriever, log=log, example_ids=example_ids)
     if res.unsupported or res.stl_path is None:
         raise RuntimeError(res.error or "Generation failed.")
 

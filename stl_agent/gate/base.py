@@ -23,6 +23,10 @@ class Decision:
     assumptions: list[dict] = field(default_factory=list)  # [{"param", "default", "critical", ...}]
     note: str = ""  # e.g. why the gate fell back to proceeding
     name: str = ""  # short file-name slug for the part, e.g. "flange-80mm-6-holes"
+    # Gate-picked library examples (CAD_GATE_PICKS): None = the gate wasn't asked to pick,
+    # [] = it found nothing relevant. `shape` is a one-line shape summary used for retrieval.
+    example_ids: list[str] | None = None
+    shape: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -49,7 +53,11 @@ def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_
     unknowns = [u for u in report.get("unknowns") or [] if isinstance(u, dict)]
     critical = [u for u in unknowns if u.get("critical") is True]
     d = Decision(action=PROCEED, spec=spec, scope=scope, scope_reason=str(report.get("scope_reason") or ""),
-                 assumptions=unknowns, name=slugify(str(report.get("name") or "")))
+                 assumptions=unknowns, name=slugify(str(report.get("name") or "")),
+                 shape=str(report.get("shape") or "").strip())
+    if "examples" in report:
+        picks = report["examples"] if isinstance(report["examples"], list) else []
+        d.example_ids = list(dict.fromkeys(str(x).strip() for x in picks if str(x).strip()))
 
     if scope == "out_of_scope":
         d.action = OUT_OF_SCOPE

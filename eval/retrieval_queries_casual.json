@@ -1,0 +1,25 @@
+{
+  "about": "Everyday-language versions of the benchmark requests (eval/cases.json): the same parts, phrased the way someone without CAD vocabulary might ask, mostly by purpose. Used with `python -m eval.retrieval --queries casual` and the same relevance labels, to test whether meaning-based retrieval helps when requests don't share the library's words. Drafted by Claude (who also wrote the library and keywords, so some phrasing may still leak); 'reviewed' says whether a human has checked and edited them.",
+  "reviewed": true,
+  "queries": {
+    "s01": "I need a little tube to hold a 6mm bolt about one pinkie finger width off the wall.",
+    "s02": "A 25mm cube I can thread onto a 10mm rod.",
+    "s03": "A six-sided chunk like a fat pencil cross-section, 30mm wide and 8mm thick.",
+    "s04": "A flat bar about 70 by 20 with a long cutout down the middle, so a bolt can slide along it to adjust things.",
+    "s05": "Something shaped like a little traffic cone, 40mm across the bottom and 30mm high, solid.",
+    "m01": "A backing plate to mount a circuit board on, 120 by 80, with six screw holes in two rows and soft corners.",
+    "m02": "A tray for sorting screws, about 100 by 60 and 15 deep, split into two sections.",
+    "m03": "A cap to put on a volume-control shaft, 30mm round; the shaft has one flat side.",
+    "m04": "A round plate 60mm across with a big hole in the middle and eight small screw holes around it.",
+    "m05": "Something to keep six cables lined up neatly along the edge of my desk.",
+    "m06": "A long open trough, 100mm long, 30 wide and 20 tall, open on top and at both ends, for routing wires.",
+    "m07": "A cup about 50mm wide and 60 tall with a smooth rounded edge at the bottom.",
+    "m08": "A ring that clips around a 32mm pipe, with a small gap so it can flex open.",
+    "h01": "A cog with 20 teeth that fits on a 5mm shaft.",
+    "h02": "Something to prop my phone up on the desk at a comfortable angle while I watch videos.",
+    "h03": "A thing I can screw to the wall to hang my headphones on.",
+    "p01": "Make me a 15cm ruler that says ALEX on it.",
+    "p02": "A dice with pictures of snakes and ladders instead of dots.",
+    "p03": "A little kitty sitting up in a tree."
+  }
+}
