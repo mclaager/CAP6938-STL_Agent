@@ -2,8 +2,8 @@
 
 CAP 6938 (AI Knowledge Systems, Fall 2026) course project. A chat agent that turns a
 natural-language request into an STL file: the LLM writes CadQuery code, which is run in a
-sandbox, validated as a mesh, and repaired in a loop. Full scope and timeline:
-`CAP_6938_Project_Proposal-1.pdf`.
+sandbox, validated as a mesh, and repaired in a loop. Planned work is tracked as GitHub issues
+(`gh issue list`), not in a separate document.
 
 ## Environment
 
@@ -47,9 +47,14 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `fonts/` — bundled Liberation Sans (SIL OFL). The sandbox uses it for any `text()` call without
   an explicit `fontPath`, because CadQuery's default "Arial" is missing on Linux and renders as boxes.
 
-## Roadmap (from proposal)
+## Roadmap
 
-1. Weeks 1–4: CadQuery + LLM setup, few-shot library + RAG (done / in progress)
-2. Weeks 5–6: LLM-as-judge benchmark: render the mesh from several angles, score with a multimodal model
-3. Weeks 7–8: Thingiverse API integration, so the agent can fetch existing STLs when generating with code isn't practical
-4. Weeks 9–10: report and final improvements
+Done: CadQuery + LLM pipeline, few-shot library + RAG, intake gate and chat UI.
+Open work is in GitHub issues, with the original course timeline's target dates:
+
+- #7 Evaluation harness: benchmark set + RAG ablation (weeks 3–4, overdue)
+- #8 LLM-as-judge: render the mesh from several angles, score with a multimodal model (weeks 5–6, by 11/1)
+- #9 Thingiverse fallback for requests code can't build (weeks 7–8, by 11/15)
+- #10 Combine downloaded and generated parts into one STL (weeks 7–8)
+- #11 Final report (weeks 9–10)
+- #12 Jev gate backend and gate evaluation (not from the original proposal)
