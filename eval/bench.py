@@ -36,6 +36,10 @@ CONFIGS = {
     "rag-k1": dict(use_rag=True, top_k=1, min_sim=0.0),
     "rag-t20": dict(use_rag=True, top_k=3, min_sim=0.2),
     "rag-t30": dict(use_rag=True, top_k=3, min_sim=0.3),  # only examples with similarity >= 0.3
+    # Other retrievers (issue #20); "retriever" is a stl_agent.retrieval kind, default "tfidf".
+    "rag-char": dict(use_rag=True, top_k=3, min_sim=0.0, retriever="tfidf-char"),
+    "rag-embed": dict(use_rag=True, top_k=3, min_sim=0.0, retriever="embed"),
+    "rag-hybrid": dict(use_rag=True, top_k=3, min_sim=0.0, retriever="hybrid"),
 }
 
 
@@ -129,6 +133,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
     results_path.parent.mkdir(parents=True, exist_ok=True)
     counter = CountingLLM(llm)
     summary = RunSummary()
+    retrievers = {"tfidf": retriever}  # other kinds are built on first use
 
     for case, config, rep in ((c, k, n) for n in range(repeats) for c in cases for k in configs):
         if (case["id"], config, rep, _lib_key(config, library)) in done:
@@ -143,8 +148,14 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
         before = (counter.requests, getattr(llm, "input_tokens", 0), getattr(llm, "output_tokens", 0))
         out_dir = OUTPUT_DIR / "bench" / model / library / config / case["id"] / f"rep{rep}"
         try:
-            res = generate_cad(case["request"], counter, retriever, log=lambda m: None, out_dir=out_dir,
-                               max_attempts=max_attempts, **CONFIGS[config])
+            kw = dict(CONFIGS[config])
+            kind = kw.pop("retriever", "tfidf")
+            if kind not in retrievers:
+                from stl_agent.retrieval import make_retriever
+
+                retrievers[kind] = make_retriever(kind)
+            res = generate_cad(case["request"], counter, retrievers[kind], log=lambda m: None, out_dir=out_dir,
+                               max_attempts=max_attempts, **kw)
         except Exception as e:  # quota exhausted, timeouts, network: stop without recording a result
             summary.stopped = f"error, stopping: {type(e).__name__}: {e}"
             summary.requests = counter.requests

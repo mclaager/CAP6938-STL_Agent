@@ -20,7 +20,7 @@ from pathlib import Path
 
 from .config import GATE_MODEL, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, RAG_MIN_SIM, TOP_K
 from .llm import PROVIDERS, make_llm
-from .retrieval import ExampleRetriever
+from .retrieval import BaseRetriever, make_retriever
 from .sandbox import ExecResult, ValidationReport, feedback_for_llm, run_cadquery, validate_mesh
 
 # ---------------------------------------------------------------------------
@@ -164,7 +164,7 @@ class GenResult:
 def generate_cad(
     request: str,
     llm,
-    retriever: ExampleRetriever,
+    retriever: BaseRetriever,
     log=lambda s: None,
     out_dir: str | Path | None = None,
     max_attempts: int = MAX_ATTEMPTS,
@@ -258,7 +258,7 @@ def generate_cad(
 # ---------------------------------------------------------------------------
 # 4. App entry points
 # ---------------------------------------------------------------------------
-_retriever: ExampleRetriever | None = None
+_retriever: BaseRetriever | None = None
 _llm = None
 _gate = None
 
@@ -293,7 +293,7 @@ def run_pipeline(request: str, log, name: str | None = None) -> tuple[str, str, 
     """`name` is a file-name slug (the gate supplies one); otherwise it's made from the request."""
     global _retriever
     if _retriever is None:
-        _retriever = ExampleRetriever.from_file()
+        _retriever = make_retriever()  # CAD_RETRIEVER
 
     res = generate_cad(request, get_llm(), _retriever, log=log)
     if res.unsupported or res.stl_path is None:
