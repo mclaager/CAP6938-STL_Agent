@@ -9,6 +9,7 @@ Environment variables:
                         A separate model has its own free-tier quota, so gate checks don't use up builds.
     CAD_MAX_ATTEMPTS    generation + repair attempts (default 4)
     CAD_TOP_K           RAG examples per prompt (default 3)
+    CAD_RAG_MIN_SIM     skip examples with TF-IDF similarity below this (default 0 = always use top k)
     CAD_RPM             max LLM requests per minute per model (Gemini default 14; free tier allows 15)
     CAD_GATE, CAD_GATE_MAX_ROUNDS   intake gate settings (see gate/)
 """
@@ -47,3 +48,4 @@ MODEL = os.environ.get("CAD_MODEL")  # None -> the provider's default in llm.PRO
 GATE_MODEL = os.environ.get("CAD_GATE_MODEL")  # None -> the provider's default_gate_model, else MODEL
 MAX_ATTEMPTS = int(os.environ.get("CAD_MAX_ATTEMPTS", "4"))
 TOP_K = int(os.environ.get("CAD_TOP_K", "3"))
+RAG_MIN_SIM = float(os.environ.get("CAD_RAG_MIN_SIM", "0"))

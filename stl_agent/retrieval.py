@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .config import EXAMPLES_PATH, TOP_K
+from .config import EXAMPLES_PATH, RAG_MIN_SIM, TOP_K
 
 
 class ExampleRetriever:
@@ -29,11 +29,14 @@ class ExampleRetriever:
     def from_file(cls, path: Path = EXAMPLES_PATH, **kw) -> "ExampleRetriever":
         return cls(json.loads(Path(path).read_text()), **kw)
 
-    def retrieve(self, query: str, k: int = TOP_K) -> list[dict]:
+    def retrieve(self, query: str, k: int = TOP_K, min_sim: float = RAG_MIN_SIM) -> list[dict]:
+        """Top-k examples by similarity, skipping any below `min_sim` (so it may return fewer, or none)."""
         sims = (self.matrix @ self.vec.transform([query]).T).toarray().ravel()
         order = sims.argsort()[::-1]
         picked, per_class = [], {}
         for i in order:
+            if sims[i] < min_sim:
+                break
             ex = self.examples[i]
             if per_class.get(ex["cls"], 0) >= self.max_per_class:
                 continue

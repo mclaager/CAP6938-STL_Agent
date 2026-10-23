@@ -33,6 +33,7 @@ CONFIGS = {
     "rag": dict(use_rag=True, top_k=3),
     "norag": dict(use_rag=False),
     "rag-k1": dict(use_rag=True, top_k=1),
+    "rag-t30": dict(use_rag=True, top_k=3, min_sim=0.3),  # only examples with similarity >= 0.3
 }
 
 BBOX_REL_TOL, BBOX_ABS_TOL = 0.03, 1.0  # per dimension: within 3% or 1 mm, whichever is larger
@@ -105,43 +106,44 @@ def read_results(path: Path) -> list[dict]:
 
 
 def run(cases: list[dict], configs: list[str], llm, model: str, retriever, results_path: Path,
-        budget: int, max_attempts: int = MAX_ATTEMPTS, log=print) -> RunSummary:
-    done = {(r["case"], r["config"]) for r in read_results(results_path)}
+        budget: int, max_attempts: int = MAX_ATTEMPTS, log=print, repeats: int = 1) -> RunSummary:
+    """Run every (repeat, case, config) not yet in the results file. Repeats go in the outer loop, so a
+    partial run covers all cases evenly; rows from before repeats existed count as repeat 0."""
+    done = {(r["case"], r["config"], r.get("rep", 0)) for r in read_results(results_path)}
     results_path.parent.mkdir(parents=True, exist_ok=True)
     counter = CountingLLM(llm)
     summary = RunSummary()
 
-    for case in cases:
-        for config in configs:
-            if (case["id"], config) in done:
-                summary.skipped += 1
-                continue
-            if counter.requests + max_attempts > budget:
-                summary.stopped = f"budget: {counter.requests}/{budget} requests used; run again to continue"
-                summary.requests = counter.requests
-                return summary
+    for case, config, rep in ((c, k, n) for n in range(repeats) for c in cases for k in configs):
+        if (case["id"], config, rep) in done:
+            summary.skipped += 1
+            continue
+        if counter.requests + max_attempts > budget:
+            summary.stopped = f"budget: {counter.requests}/{budget} requests used; run again to continue"
+            summary.requests = counter.requests
+            return summary
 
-            log(f"[{case['id']} / {config}] {case['request'][:70]}")
-            before = (counter.requests, getattr(llm, "input_tokens", 0), getattr(llm, "output_tokens", 0))
-            out_dir = OUTPUT_DIR / "bench" / model / config / case["id"]
-            try:
-                res = generate_cad(case["request"], counter, retriever, log=lambda m: None, out_dir=out_dir,
-                                   max_attempts=max_attempts, **CONFIGS[config])
-            except Exception as e:  # quota exhausted, timeouts, network: stop without recording a result
-                summary.stopped = f"error, stopping: {type(e).__name__}: {e}"
-                summary.requests = counter.requests
-                return summary
+        log(f"[{case['id']} / {config} / rep {rep}] {case['request'][:60]}")
+        before = (counter.requests, getattr(llm, "input_tokens", 0), getattr(llm, "output_tokens", 0))
+        out_dir = OUTPUT_DIR / "bench" / model / config / case["id"] / f"rep{rep}"
+        try:
+            res = generate_cad(case["request"], counter, retriever, log=lambda m: None, out_dir=out_dir,
+                               max_attempts=max_attempts, **CONFIGS[config])
+        except Exception as e:  # quota exhausted, timeouts, network: stop without recording a result
+            summary.stopped = f"error, stopping: {type(e).__name__}: {e}"
+            summary.requests = counter.requests
+            return summary
 
-            row = dict(case=case["id"], config=config, model=model, category=case["category"], expect=case["expect"],
-                       **score(case, res),
-                       requests=counter.requests - before[0],
-                       input_tokens=getattr(llm, "input_tokens", 0) - before[1],
-                       output_tokens=getattr(llm, "output_tokens", 0) - before[2],
-                       timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
-            with results_path.open("a") as f:
-                f.write(json.dumps(row) + "\n")
-            summary.ran += 1
-            log(f"    -> {row['outcome']}, correct={row['correct']}, attempts={row['attempts']}, bbox_ok={row['bbox_ok']}")
+        row = dict(case=case["id"], config=config, rep=rep, model=model, category=case["category"], expect=case["expect"],
+                   **score(case, res),
+                   requests=counter.requests - before[0],
+                   input_tokens=getattr(llm, "input_tokens", 0) - before[1],
+                   output_tokens=getattr(llm, "output_tokens", 0) - before[2],
+                   timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
+        with results_path.open("a") as f:
+            f.write(json.dumps(row) + "\n")
+        summary.ran += 1
+        log(f"    -> {row['outcome']}, correct={row['correct']}, attempts={row['attempts']}, bbox_ok={row['bbox_ok']}")
 
     summary.requests = counter.requests
     return summary
@@ -175,16 +177,19 @@ def summarize(rows: list[dict]) -> str:
                 if rs:
                     out.append(f"| {config} / {cat} | " + " | ".join(stats(rs)) + " |")
 
-        by = {(r["case"], r["config"]): r for r in mrows}
-        paired = sorted({c for c, k in by if k == "rag" and (c, "norag") in by})
-        if paired:
-            rag_only = [c for c in paired if by[(c, "rag")]["correct"] and not by[(c, "norag")]["correct"]]
-            norag_only = [c for c in paired if by[(c, "norag")]["correct"] and not by[(c, "rag")]["correct"]]
-            fewer = sum(by[(c, "rag")]["attempts"] < by[(c, "norag")]["attempts"] for c in paired)
-            more = sum(by[(c, "rag")]["attempts"] > by[(c, "norag")]["attempts"] for c in paired)
-            out.append(f"\n**RAG vs no-RAG on {len(paired)} paired cases:** correct only with RAG: "
-                       f"{', '.join(rag_only) or 'none'}; correct only without RAG: {', '.join(norag_only) or 'none'}. "
-                       f"RAG needed fewer attempts on {fewer}, more on {more}.")
+        # Per-case success rate (over repeats) of each RAG config against no-RAG.
+        rate = {}
+        for r in mrows:
+            rate.setdefault((r["case"], r["config"]), []).append(bool(r["correct"]))
+        for config in sorted({k for _, k in rate if k != "norag"}):
+            paired = sorted({c for c, k in rate if k == config and (c, "norag") in rate})
+            if not paired:
+                continue
+            frac = lambda c, k: sum(rate[(c, k)]) / len(rate[(c, k)])
+            better = [f"{c} ({frac(c, config):.0%} vs {frac(c, 'norag'):.0%})" for c in paired if frac(c, config) > frac(c, "norag")]
+            worse = [f"{c} ({frac(c, config):.0%} vs {frac(c, 'norag'):.0%})" for c in paired if frac(c, config) < frac(c, "norag")]
+            out.append(f"\n**{config} vs norag, per-case success rate over {len(paired)} cases:** "
+                       f"better on {', '.join(better) or 'none'}; worse on {', '.join(worse) or 'none'}.")
         out.append("")
     return "\n".join(out)
 
@@ -199,6 +204,7 @@ def main(argv=None):
     r.add_argument("--budget", type=int, default=18, help="max LLM requests this run (default 18)")
     r.add_argument("--max-attempts", type=int, default=MAX_ATTEMPTS)
     r.add_argument("--model", help="model id (default: CAD_MODEL / provider default)")
+    r.add_argument("--repeats", type=int, default=1, help="runs per (case, config), to average out randomness")
     rep = sub.add_parser("report", help="summarize results")
     rep.add_argument("files", nargs="*", type=Path, help="results files (default: all in eval/results)")
     args = ap.parse_args(argv)
@@ -219,7 +225,8 @@ def main(argv=None):
     llm = make_llm(model=args.model) if args.model else make_llm()
     model = getattr(llm, "model", "unknown")
     path = RESULTS_DIR / f"{model}.jsonl"
-    s = run(cases, args.config, llm, model, ExampleRetriever.from_file(), path, args.budget, args.max_attempts)
+    s = run(cases, args.config, llm, model, ExampleRetriever.from_file(), path, args.budget, args.max_attempts,
+            repeats=args.repeats)
     print(f"\nRan {s.ran}, skipped {s.skipped} already done, used {s.requests} requests. Results: {path}")
     if s.stopped:
         print("Stopped early: " + s.stopped)

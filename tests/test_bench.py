@@ -81,3 +81,29 @@ def test_rate_limiter_spaces_requests():
     now[0] = 10
     rl.wait()                     # third call within the minute waits until t=60.5
     assert slept == [50.5] and now[0] == 60.5
+
+
+def test_min_sim_drops_unrelated_examples():
+    r = ExampleRetriever.from_file()
+    assert len(r.retrieve("A round flange with six holes on a bolt circle", 3, min_sim=0.3)) >= 1
+    assert r.retrieve("Create a tree that has a cat on it.", 3, min_sim=0.3) == []
+
+
+def test_repeats_run_resume_and_compare(tmp_path, monkeypatch):
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    results = tmp_path / "r.jsonl"
+    retriever = ExampleRetriever.from_file()
+    case = CASES[:1]
+    # rep 0 for both configs, then rep 1: norag fails (no code), rag succeeds.
+    llm = ScriptedLLM([GOOD, GOOD, GOOD, "no code here"])
+    s = bench.run(case, ["rag", "norag"], llm, "m", retriever, results, budget=10, max_attempts=1,
+                  log=lambda m: None, repeats=2)
+    assert s.ran == 4
+    rows = bench.read_results(results)
+    assert [(r["config"], r["rep"], r["correct"]) for r in rows] == [
+        ("rag", 0, True), ("norag", 0, True), ("rag", 1, True), ("norag", 1, False)]
+    # Everything is done: a rerun skips all four.
+    s = bench.run(case, ["rag", "norag"], ScriptedLLM([]), "m", retriever, results, budget=10, max_attempts=1,
+                  log=lambda m: None, repeats=2)
+    assert (s.ran, s.skipped) == (0, 4)
+    assert "better on a (100% vs 50%)" in bench.summarize(rows)

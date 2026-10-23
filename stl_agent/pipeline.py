@@ -18,7 +18,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .config import GATE_MODEL, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, TOP_K
+from .config import GATE_MODEL, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, RAG_MIN_SIM, TOP_K
 from .llm import PROVIDERS, make_llm
 from .retrieval import ExampleRetriever
 from .sandbox import ExecResult, ValidationReport, feedback_for_llm, run_cadquery, validate_mesh
@@ -170,6 +170,7 @@ def generate_cad(
     max_attempts: int = MAX_ATTEMPTS,
     top_k: int = TOP_K,
     use_rag: bool = True,
+    min_sim: float = RAG_MIN_SIM,
     exec_timeout: float = 60.0,
 ) -> GenResult:
     """Run the full generate -> execute -> validate -> repair loop."""
@@ -178,7 +179,7 @@ def generate_cad(
     out_dir.mkdir(parents=True, exist_ok=True)
     res = GenResult(success=False)
 
-    examples = retriever.retrieve(request, top_k) if use_rag else []
+    examples = retriever.retrieve(request, top_k, min_sim) if use_rag else []
     res.retrieved_ids = [e["id"] for e in examples]
     log(f"Retrieved {len(examples)} similar example(s): {', '.join(res.retrieved_ids) or 'none'}")
 
