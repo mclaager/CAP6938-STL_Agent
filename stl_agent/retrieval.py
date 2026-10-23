@@ -9,7 +9,10 @@ from .config import EXAMPLES_PATH, RAG_MIN_SIM, TOP_K
 
 
 class ExampleRetriever:
-    """TF-IDF similarity over example *request text only* (not code).
+    """TF-IDF similarity over each example's request text plus its `keywords` (not the code).
+
+    Keywords are generic shape and operation words ("hexagon hex nut polygon") so a request can
+    match an example that uses different words for the same kind of part.
 
     TF-IDF needs no model download and works offline, which is plenty for a
     ~30-example library. To try dense embeddings later, replace `_vectorize`
@@ -23,7 +26,7 @@ class ExampleRetriever:
         self.examples = examples
         self.max_per_class = max_per_class
         self.vec = TfidfVectorizer(ngram_range=(1, 2), stop_words="english", sublinear_tf=True)
-        self.matrix = self.vec.fit_transform([e["request"] for e in examples])
+        self.matrix = self.vec.fit_transform([f"{e['request']} {e.get('keywords', '')}" for e in examples])
 
     @classmethod
     def from_file(cls, path: Path = EXAMPLES_PATH, **kw) -> "ExampleRetriever":

@@ -2,6 +2,7 @@
  {
   "id": "prim_001",
   "cls": "primitives",
+  "keywords": "box block cube cuboid rectangular solid",
   "request": "Make a 30mm x 20mm x 10mm rectangular block.",
   "code": "import cadquery as cq\n\nlength, width, height = 30.0, 20.0, 10.0\nresult = cq.Workplane(\"XY\").box(length, width, height)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -14,6 +15,7 @@
  {
   "id": "holes_003",
   "cls": "holes_fasteners",
+  "keywords": "plate mounting holes corner holes drilled through hole",
   "request": "Create a 60mm x 40mm rectangular plate, 5mm thick, with four 4mm diameter mounting holes placed 5mm in from each corner.",
   "code": "import cadquery as cq\n\nplate_length = 60.0\nplate_width = 40.0\nplate_thickness = 5.0\nhole_diameter = 4.0\nhole_inset = 5.0  # distance of hole centre from each edge\n\ndx = plate_length / 2 - hole_inset\ndy = plate_width / 2 - hole_inset\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(plate_length, plate_width, plate_thickness)\n    .faces(\">Z\").workplane()\n    .pushPoints([(dx, dy), (-dx, dy), (dx, -dy), (-dx, -dy)])\n    .hole(hole_diameter)\n)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -26,6 +28,7 @@
  {
   "id": "pattern_001",
   "cls": "patterns",
+  "keywords": "flange disc round bolt circle polar array holes evenly spaced",
   "request": "Make a round flange 80mm in diameter and 6mm thick with six 5mm holes evenly spaced on a 60mm bolt circle.",
   "code": "import cadquery as cq\n\nflange_diameter = 80.0\nthickness = 6.0\nbolt_circle_diameter = 60.0\nhole_diameter = 5.0\nnum_holes = 6\n\nresult = (\n    cq.Workplane(\"XY\")\n    .circle(flange_diameter / 2)\n    .extrude(thickness)\n    .faces(\">Z\").workplane()\n    .polarArray(bolt_circle_diameter / 2, 0, 360, num_holes)\n    .hole(hole_diameter)\n)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -38,6 +41,7 @@
  {
   "id": "pattern_002",
   "cls": "patterns",
+  "keywords": "panel grid array holes perforated rectangular pattern",
   "request": "A 100mm x 60mm x 3mm perforated panel with a 4 by 3 grid of 6mm holes spaced 20mm apart.",
   "code": "import cadquery as cq\n\npanel_length, panel_width, panel_thickness = 100.0, 60.0, 3.0\nhole_diameter = 6.0\nspacing_x = spacing_y = 20.0\ncols, rows = 4, 3\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(panel_length, panel_width, panel_thickness)\n    .faces(\">Z\").workplane()\n    .rarray(spacing_x, spacing_y, cols, rows)\n    .hole(hole_diameter)\n)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -50,6 +54,7 @@
  {
   "id": "shell_001",
   "cls": "parametric",
+  "keywords": "box container tray hollow open top walls shell",
   "request": "Make an open-top box 50mm long, 30mm wide and 20mm tall with 2mm thick walls.",
   "code": "import cadquery as cq\n\nlength, width, height = 50.0, 30.0, 20.0\nwall = 2.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(length, width, height)\n    .faces(\">Z\")\n    .shell(-wall)   # negative = wall grows inward; the selected face is removed\n)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -62,6 +67,7 @@
  {
   "id": "fillet_001",
   "cls": "edge_features",
+  "keywords": "rounded edges fillet radius block",
   "request": "A 40mm x 40mm x 20mm block with its four vertical edges rounded with a 5mm radius.",
   "code": "import cadquery as cq\n\nsize_x, size_y, size_z = 40.0, 40.0, 20.0\ncorner_radius = 5.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(size_x, size_y, size_z)\n    .edges(\"|Z\")\n    .fillet(corner_radius)\n)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -74,6 +80,7 @@
  {
   "id": "holes_005",
   "cls": "holes_fasteners",
+  "keywords": "counterbore counterbored hole screw socket head bolt",
   "request": "50mm square plate, 10mm thick, with a centred counterbored hole for an M4 socket head screw: 4.5mm through hole, 8mm counterbore diameter, 4mm deep.",
   "code": "import cadquery as cq\n\nplate_size, plate_thickness = 50.0, 10.0\nthrough_dia = 4.5\ncbore_dia = 8.0\ncbore_depth = 4.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(plate_size, plate_size, plate_thickness)\n    .faces(\">Z\").workplane()\n    .cboreHole(through_dia, cbore_dia, cbore_depth)\n)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -86,6 +93,7 @@
  {
   "id": "parametric_001",
   "cls": "parametric",
+  "keywords": "washer ring spacer tube cylinder hollow inner outer diameter annulus",
   "request": "A flat washer with 20mm outer diameter, 8mm inner diameter and 2mm thickness.",
   "code": "import cadquery as cq\n\nouter_dia, inner_dia, thickness = 20.0, 8.0, 2.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .circle(outer_dia / 2)\n    .circle(inner_dia / 2)   # second circle inside the first becomes a hole\n    .extrude(thickness)\n)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -98,6 +106,7 @@
  {
   "id": "named_001",
   "cls": "named_parts",
+  "keywords": "bracket l-bracket angle leg perpendicular mount",
   "request": "An L-bracket with two 40mm x 30mm legs at 90 degrees, 4mm thick, 30mm wide, with one 5mm hole centred in each leg.",
   "code": "import cadquery as cq\n\nleg_length = 40.0   # length of each leg, measured from the outer corner\nwidth = 30.0\nthickness = 4.0\nhole_dia = 5.0\n\nbase = cq.Workplane(\"XY\").box(leg_length, width, thickness, centered=(False, True, False))\nwall = cq.Workplane(\"XY\").box(thickness, width, leg_length, centered=(False, True, False))\nbracket = base.union(wall)\n\n# holes are centred in the free part of each leg (past the other leg's thickness)\nbase_hole = (\n    cq.Workplane(\"XY\")\n    .workplane(offset=0)\n    .center((leg_length + thickness) / 2, 0)\n    .circle(hole_dia / 2)\n    .extrude(thickness)\n)\nwall_hole = (\n    cq.Workplane(\"YZ\")\n    .center(0, (leg_length + thickness) / 2)\n    .circle(hole_dia / 2)\n    .extrude(thickness)\n)\nresult = bracket.cut(base_hole).cut(wall_hole)\nshow_object(result)\n",
   "expected_bbox_mm": [
@@ -106,5 +115,226 @@
    40
   ],
   "volume_mm3": 8962.99
+ },
+ {
+  "id": "revolve_001",
+  "cls": "revolve",
+  "keywords": "funnel cone conical taper tapered revolve round hollow",
+  "request": "A funnel 60mm wide at the top narrowing to 10mm at the bottom over a height of 40mm, with a 1.5mm wall, open at both ends.",
+  "code": "import cadquery as cq\n\ntop_d, bottom_d, height, wall = 60.0, 10.0, 40.0, 1.5\n\n# Half cross-section drawn on the XZ plane, then revolved around the vertical axis.\n# On an \"XZ\" workplane, local x is global X and local y is global Z, so the revolve axis\n# from (0, 0) to (0, 1) in local coordinates is the global Z axis.\nprofile = [\n    (bottom_d / 2, 0),\n    (top_d / 2, height),\n    (top_d / 2 - wall, height),\n    (bottom_d / 2 - wall, 0),\n]\nresult = cq.Workplane(\"XZ\").polyline(profile).close().revolve(360, (0, 0, 0), (0, 1, 0))\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   60,
+   60,
+   40
+  ],
+  "volume_mm3": 6305.63
+ },
+ {
+  "id": "revolve_002",
+  "cls": "revolve",
+  "keywords": "stopper plug cone conical taper tapered revolve cap knob round",
+  "request": "A bottle stopper: a tapered plug 20mm long going from 18mm diameter at the top to 14mm at the bottom, with a 25mm diameter, 5mm thick cap on top.",
+  "code": "import cadquery as cq\n\nplug_len, plug_top_d, plug_bottom_d = 20.0, 18.0, 14.0\ncap_d, cap_t = 25.0, 5.0\n\n# Outline of one half (x = radius, y = height), revolved 360 degrees around the Z axis.\nprofile = [\n    (0, 0),\n    (plug_bottom_d / 2, 0),\n    (plug_top_d / 2, plug_len),\n    (cap_d / 2, plug_len),\n    (cap_d / 2, plug_len + cap_t),\n    (0, plug_len + cap_t),\n]\nresult = cq.Workplane(\"XZ\").polyline(profile).close().revolve(360, (0, 0, 0), (0, 1, 0))\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   25,
+   25,
+   25
+  ],
+  "volume_mm3": 6489.51
+ },
+ {
+  "id": "loft_001",
+  "cls": "loft",
+  "keywords": "loft transition adapter square round blend taper",
+  "request": "A solid square-to-round adapter: a 40mm square at the bottom blending into a 30mm diameter circle at the top over a height of 50mm.",
+  "code": "import cadquery as cq\n\nsquare, top_d, height = 40.0, 30.0, 50.0\n\n# loft() joins the pending sketches: the square on the base, the circle on a workplane above it.\nresult = (\n    cq.Workplane(\"XY\")\n    .rect(square, square)\n    .workplane(offset=height)\n    .circle(top_d / 2)\n    .loft(combine=True)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   40,
+   40,
+   50
+  ],
+  "volume_mm3": 56323.56
+ },
+ {
+  "id": "polygon_001",
+  "cls": "polygon",
+  "keywords": "hexagon hexagonal hex nut prism polygon across flats",
+  "request": "A hex nut blank 13mm across the flats and 5mm thick, with a 6.5mm hole through the centre.",
+  "code": "import cadquery as cq\nimport math\n\nacross_flats, thickness, hole_d = 13.0, 5.0, 6.5\n\n# polygon(nSides, diameter) takes the circumscribed diameter (across the corners),\n# so convert from across-flats: corners = flats / cos(30 deg) for a hexagon.\nacross_corners = across_flats / math.cos(math.radians(30))\n\nresult = (\n    cq.Workplane(\"XY\")\n    .polygon(6, across_corners)\n    .extrude(thickness)\n    .faces(\">Z\").workplane()\n    .hole(hole_d)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   15.01,
+   13,
+   5
+  ],
+  "volume_mm3": 565.94
+ },
+ {
+  "id": "polygon_002",
+  "cls": "polygon",
+  "keywords": "triangle triangular prism polygon equilateral",
+  "request": "A triangular prism: an equilateral triangle with 30mm sides, extruded 10mm.",
+  "code": "import cadquery as cq\nimport math\n\nside, thickness = 30.0, 10.0\n\n# For an equilateral triangle the circumscribed diameter is 2 * side / sqrt(3).\ndiameter = 2 * side / math.sqrt(3)\nresult = cq.Workplane(\"XY\").polygon(3, diameter).extrude(thickness)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   25.98,
+   30,
+   10
+  ],
+  "volume_mm3": 3897.11
+ },
+ {
+  "id": "slot_001",
+  "cls": "slots",
+  "keywords": "slot slotted elongated hole stadium oblong cut through",
+  "request": "A 50mm x 30mm x 5mm plate with two 20mm long, 5mm wide slots running along its length, centred 8mm either side of the middle.",
+  "code": "import cadquery as cq\n\nlength, width, thickness = 50.0, 30.0, 5.0\nslot_len, slot_w, offset = 20.0, 5.0, 8.0\n\n# slot2D(length, diameter) is a stadium shape; length is the overall length including the round ends.\nresult = (\n    cq.Workplane(\"XY\")\n    .box(length, width, thickness)\n    .faces(\">Z\").workplane()\n    .pushPoints([(0, offset), (0, -offset)])\n    .slot2D(slot_len, slot_w)\n    .cutThruAll()\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   50,
+   30,
+   5
+  ],
+  "volume_mm3": 6553.73
+ },
+ {
+  "id": "text_001",
+  "cls": "text",
+  "keywords": "text label letters name tag emboss embossed raised",
+  "request": "A 60mm x 20mm x 3mm name tag with the word BOB raised 1mm on top.",
+  "code": "import cadquery as cq\n\nlength, width, thickness = 60.0, 20.0, 3.0\nlabel, font_size, raise_by = \"BOB\", 10.0, 1.0\n\n# text() defaults to combine=\"cut\" (engraving). For raised (embossed) letters use a positive\n# distance AND combine=True, otherwise the letters are \"cut\" into empty air and vanish.\nresult = (\n    cq.Workplane(\"XY\")\n    .box(length, width, thickness)\n    .faces(\">Z\").workplane()\n    .text(label, font_size, raise_by, combine=True)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   60,
+   20,
+   4
+  ],
+  "volume_mm3": 3654.22
+ },
+ {
+  "id": "text_002",
+  "cls": "text",
+  "keywords": "text engrave engraved letters number name inscription",
+  "request": "A round coaster 40mm in diameter and 4mm thick with the number 42 engraved 1mm deep in the centre of the top face.",
+  "code": "import cadquery as cq\n\ndiameter, thickness = 40.0, 4.0\nlabel, font_size, depth = \"42\", 14.0, 1.0\n\n# Engraving: a negative distance (into the part) with combine=\"cut\", which is text()'s default.\nresult = (\n    cq.Workplane(\"XY\")\n    .circle(diameter / 2)\n    .extrude(thickness)\n    .faces(\">Z\").workplane()\n    .text(label, font_size, -depth, combine=\"cut\")\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   40,
+   40,
+   4
+  ],
+  "volume_mm3": 4977.2
+ },
+ {
+  "id": "gear_001",
+  "cls": "gears",
+  "keywords": "gear spur teeth cog sprocket bore",
+  "request": "A simple spur gear with 12 trapezoid-shaped teeth, 30mm outside diameter, 24mm root diameter, 6mm thick, with an 8mm bore.",
+  "code": "import cadquery as cq\nimport math\n\nteeth, tip_d, root_d, thickness, bore_d = 12, 30.0, 24.0, 6.0, 8.0\ntip_half_angle, root_half_angle = 4.0, 7.0  # degrees either side of each tooth's centre line\n\n# Build the outline point by point: for each tooth, root -> tip -> tip -> root.\npts = []\nfor i in range(teeth):\n    centre = 360.0 * i / teeth\n    for angle, r in [(-root_half_angle, root_d / 2), (-tip_half_angle, tip_d / 2),\n                     (tip_half_angle, tip_d / 2), (root_half_angle, root_d / 2)]:\n        a = math.radians(centre + angle)\n        pts.append((r * math.cos(a), r * math.sin(a)))\n\nresult = (\n    cq.Workplane(\"XY\")\n    .polyline(pts).close()\n    .extrude(thickness)\n    .faces(\">Z\").workplane()\n    .hole(bore_d)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   29.93,
+   29.93,
+   6
+  ],
+  "volume_mm3": 2933.01
+ },
+ {
+  "id": "sweep_001",
+  "cls": "sweep",
+  "keywords": "handle sweep bent rod bar pipe arc curved path u-shape hook",
+  "request": "A U-shaped handle made from 10mm diameter round bar: two 20mm straight legs 80mm apart (centre to centre) joined by a half-circle arc at the top.",
+  "code": "import cadquery as cq\n\nbar_d, spacing, leg = 10.0, 80.0, 20.0\nr = spacing / 2\n\n# Path in the XZ plane (local y = global Z): up one leg, arc over the top, down the other leg.\npath = (\n    cq.Workplane(\"XZ\")\n    .moveTo(-r, 0)\n    .lineTo(-r, leg)\n    .threePointArc((0, leg + r), (r, leg))\n    .lineTo(r, 0)\n)\n# The profile circle sits at the start of the path, perpendicular to it.\nresult = cq.Workplane(\"XY\").center(-r, 0).circle(bar_d / 2).sweep(path, transition=\"round\")\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   90,
+   10,
+   65
+  ],
+  "volume_mm3": 13001.72
+ },
+ {
+  "id": "shell_002",
+  "cls": "shell",
+  "keywords": "cup holder container cylinder hollow open top walls shell pot",
+  "request": "A cylindrical pen holder 70mm in diameter and 100mm tall with 3mm walls and base, open at the top.",
+  "code": "import cadquery as cq\n\ndiameter, height, wall = 70.0, 100.0, 3.0\n\n# shell() with a negative thickness hollows inward; the selected top face is removed (left open).\nresult = (\n    cq.Workplane(\"XY\")\n    .circle(diameter / 2)\n    .extrude(height)\n    .faces(\">Z\")\n    .shell(-wall)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   70,
+   70,
+   100
+  ],
+  "volume_mm3": 72766.82
+ },
+ {
+  "id": "compartment_001",
+  "cls": "compartments",
+  "keywords": "box tray organizer compartments dividers divider walls",
+  "request": "An open-top storage box 80mm x 80mm x 30mm with 2mm walls and floor, split into four equal compartments by two 2mm walls that cross in the middle.",
+  "code": "import cadquery as cq\n\nsize, height, wall = 80.0, 30.0, 2.0\n\nbox = (\n    cq.Workplane(\"XY\")\n    .box(size, size, height, centered=(True, True, False))\n    .faces(\">Z\")\n    .shell(-wall)\n)\n# Divider walls run the full inner length and stand on the floor.\ninner = size - 2 * wall\ndivider_x = cq.Workplane(\"XY\").box(inner, wall, height, centered=(True, True, False))\ndivider_y = cq.Workplane(\"XY\").box(wall, inner, height, centered=(True, True, False))\nresult = box.union(divider_x).union(divider_y)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   80,
+   80,
+   30
+  ],
+  "volume_mm3": 38672.0
+ },
+ {
+  "id": "holes_006",
+  "cls": "holes_fasteners",
+  "keywords": "countersunk countersink screw holes mounting strip",
+  "request": "An 80mm x 20mm x 5mm mounting strip with three countersunk holes for M4 screws (4.5mm hole, 9mm countersink, 90 degrees), 30mm apart along the centre line.",
+  "code": "import cadquery as cq\n\nlength, width, thickness = 80.0, 20.0, 5.0\nhole_d, csk_d, csk_angle, pitch = 4.5, 9.0, 90.0, 30.0\n\nresult = (\n    cq.Workplane(\"XY\")\n    .box(length, width, thickness)\n    .faces(\">Z\").workplane()\n    .pushPoints([(-pitch, 0), (0, 0), (pitch, 0)])\n    .cskHole(hole_d, csk_d, csk_angle)\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   80,
+   20,
+   5
+  ],
+  "volume_mm3": 7618.66
+ },
+ {
+  "id": "profile_001",
+  "cls": "profiles",
+  "keywords": "wedge doorstop ramp slope sloped tapered profile extrude",
+  "request": "A wedge doorstop 120mm long and 35mm wide that rises from 5mm tall at the thin end to 30mm tall at the thick end.",
+  "code": "import cadquery as cq\n\nlength, width, thin, thick = 120.0, 35.0, 5.0, 30.0\n\n# Draw the side profile on the XZ plane and extrude it across the width.\n# extrude(d, both=True) extrudes d in each direction, so half the width each way gives the full\n# width centred on Y = 0.\nprofile = [(0, 0), (length, 0), (length, thick), (0, thin)]\nresult = cq.Workplane(\"XZ\").polyline(profile).close().extrude(width / 2, both=True)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   120,
+   35,
+   30
+  ],
+  "volume_mm3": 73500.0
+ },
+ {
+  "id": "angled_001",
+  "cls": "angled",
+  "keywords": "stand angled tilted leaning plate support base back rotate",
+  "request": "A plate stand: a 60mm x 40mm x 4mm base with a 60mm x 50mm x 4mm back plate standing on its rear edge and leaning back 20 degrees from vertical.",
+  "code": "import cadquery as cq\n\nbase_w, base_d, t = 60.0, 40.0, 4.0\nback_h, lean_deg = 50.0, 20.0\n\nbase = cq.Workplane(\"XY\").box(base_w, base_d, t, centered=(True, True, False))\n\n# Build the back plate upright with its bottom-front edge on the X axis, rotate it about\n# that edge (rotating about +X by a negative angle tips the top towards +Y, i.e. backwards),\n# then move the edge to the rear of the base.\nback = (\n    cq.Workplane(\"XY\")\n    .box(base_w, t, back_h, centered=(True, False, False))\n    .rotate((0, 0, 0), (1, 0, 0), -lean_deg)\n    .translate((0, base_d / 2 - t, 0))\n)\nresult = base.union(back)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   60,
+   56.86,
+   48.35
+  ],
+  "volume_mm3": 20814.71
+ },
+ {
+  "id": "fillet_002",
+  "cls": "fillet_chamfer",
+  "keywords": "chamfer chamfered bevel edges cube",
+  "request": "A 50mm cube with every edge chamfered by 3mm.",
+  "code": "import cadquery as cq\n\nsize, chamfer = 50.0, 3.0\n\nresult = cq.Workplane(\"XY\").box(size, size, size).edges().chamfer(chamfer)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   50,
+   50,
+   50
+  ],
+  "volume_mm3": 122444.0
+ },
+ {
+  "id": "pattern_003",
+  "cls": "patterns",
+  "keywords": "vent radial slots polar array cover disc",
+  "request": "A round vent cover 70mm in diameter and 5mm thick with six 15mm x 4mm slots arranged radially, their centres 20mm from the middle.",
+  "code": "import cadquery as cq\n\ndiameter, thickness = 70.0, 5.0\nslot_len, slot_w, slot_radius, count = 15.0, 4.0, 20.0, 6\n\n# polarArray rotates each copy's local axes by default, so a slot drawn along local x\n# points outward from the centre at every position.\nresult = (\n    cq.Workplane(\"XY\")\n    .circle(diameter / 2)\n    .extrude(thickness)\n    .faces(\">Z\").workplane()\n    .polarArray(slot_radius, 0, 360, count)\n    .slot2D(slot_len, slot_w)\n    .cutThruAll()\n)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   70,
+   70,
+   5
+  ],
+  "volume_mm3": 17537.45
  }
 ]

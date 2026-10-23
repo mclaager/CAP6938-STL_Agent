@@ -150,7 +150,9 @@ PROVIDERS = {
         key_env="GEMINI_API_KEY",
         default_model="gemini-3.8-flash",
         default_gate_model="gemini-3.6-flash",  # separate daily quota from the build model
-        default_rpm=14,  # free tier allows 15 requests/minute per model (e.g. 3.5 Flash Lite)
+        # Free tier allows 15 requests/minute per model. Google counts requests at a different moment
+        # than when we send them, so 14 still showed up as 17 in one minute; keep a wide margin.
+        default_rpm=10,
     ),
 }
 
