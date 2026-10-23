@@ -1,8 +1,8 @@
 {
   "about": "Everyday-language versions of the benchmark requests (eval/cases.json): the same parts, phrased the way someone without CAD vocabulary might ask, mostly by purpose. Used with `python -m eval.retrieval --queries casual` and the same relevance labels, to test whether meaning-based retrieval helps when requests don't share the library's words. Drafted by Claude (who also wrote the library and keywords, so some phrasing may still leak); 'reviewed' says whether a human has checked and edited them.",
-  "reviewed": false,
+  "reviewed": true,
   "queries": {
-    "s01": "I need a little tube to hold a 6mm bolt about 15mm off the wall.",
+    "s01": "I need a little tube to hold a 6mm bolt about one pinkie finger width off the wall.",
     "s02": "A 25mm cube I can thread onto a 10mm rod.",
     "s03": "A six-sided chunk like a fat pencil cross-section, 30mm wide and 8mm thick.",
     "s04": "A flat bar about 70 by 20 with a long cutout down the middle, so a bolt can slide along it to adjust things.",
@@ -17,7 +17,7 @@
     "m08": "A ring that clips around a 32mm pipe, with a small gap so it can flex open.",
     "h01": "A cog with 20 teeth that fits on a 5mm shaft.",
     "h02": "Something to prop my phone up on the desk at a comfortable angle while I watch videos.",
-    "h03": "Something I can screw to the wall to hang my headphones on.",
+    "h03": "A thing I can screw to the wall to hang my headphones on.",
     "p01": "Make me a 15cm ruler that says ALEX on it.",
     "p02": "A dice with pictures of snakes and ladders instead of dots.",
     "p03": "A little kitty sitting up in a tree."

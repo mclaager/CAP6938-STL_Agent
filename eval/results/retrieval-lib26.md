@@ -29,7 +29,7 @@ the winner; one request is ~6 points of hit@1.
 
 Embedding request text without the keywords was worse for every model (MRR 0.64-0.70).
 
-## Everyday-language queries (`--queries casual`, drafts not yet reviewed)
+## Everyday-language queries (`--queries casual`, reviewed)
 
 Same parts and labels, phrased by purpose without CAD terms (eval/retrieval_queries_casual.json).
 
@@ -45,3 +45,23 @@ Every method drops sharply. Embeddings help where the everyday meaning is close 
 shape ("hang my headphones" -> hook, "prop my phone up" -> angled stand). Some letter-chunk hits
 are coincidences ("prop" ~ "profile"). In the app, retrieval runs on the intake gate's spec, which
 restates the request geometrically, so the realistic test is casual request -> gate spec -> retrieval.
+
+## Gate specs for the everyday queries (`--queries gate`)
+
+What the app actually retrieves on: each casual query sent through the intake gate once
+(gemini-3.6-flash, `python -m eval.gate_specs`, saved in eval/retrieval_queries_gate.json).
+
+| method | hit@1 | recall@3 | MRR | AUC | best cutoff (F1) | relevant median / unrelated p90 | load | per query |
+|---|---|---|---|---|---|---|---|---|
+| tfidf | 44% | 63% | 0.65 | 0.88 | 0.11 (0.52) | 0.13 / 0.10 | 0.70 s | 0.46 ms |
+| tfidf-char | 56% | 58% | 0.71 | 0.83 | 0.17 (0.45) | 0.25 / 0.22 | 0.00 s | 0.67 ms |
+| embed | 44% | 41% | 0.57 | 0.77 | 0.80 (0.35) | 0.77 / 0.78 | 0.50 s | 10.80 ms |
+| hybrid | 56% | 66% | 0.72 | 0.85 | 0.46 (0.51) | 0.50 / 0.48 | 0.27 s | 10.18 ms |
+
+The gate's restatement recovers much of what casual wording lost (word TF-IDF recall@3 50% -> 63%,
+AUC 0.68 -> 0.88), but top-match accuracy stays well below the CAD-worded requests. Two reasons:
+specs are long (median 88 words) and full of extra detail that dilutes matching, embeddings most of
+all; and the gate sometimes designs a different part than the labels assume (the spacer became a
+wall bracket with countersunk holes), so some "misses" are label mismatches. No method clearly wins:
+differences are 1-2 of 18 queries. A short shape summary from the gate (e.g. "curved hook arm on a
+wall plate") would likely retrieve better than the full spec, at no extra request.

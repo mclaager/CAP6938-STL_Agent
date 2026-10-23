@@ -3,6 +3,7 @@
     python -m eval.retrieval                      # all methods
     python -m eval.retrieval --methods tfidf embed
     python -m eval.retrieval --queries casual      # everyday-language versions of the requests
+    python -m eval.retrieval --queries gate        # what the app retrieves on: the gate's spec for them
 
 Scores each retrieval method against hand-labelled relevant examples (eval/retrieval_labels.json)
 for every benchmark request (eval/cases.json):
@@ -33,6 +34,7 @@ EVAL_DIR = Path(__file__).parent
 LABELS_PATH = EVAL_DIR / "retrieval_labels.json"
 CASES_PATH = EVAL_DIR / "cases.json"
 CASUAL_PATH = EVAL_DIR / "retrieval_queries_casual.json"
+GATE_PATH = EVAL_DIR / "retrieval_queries_gate.json"
 
 
 METHODS = RETRIEVERS
@@ -95,8 +97,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--methods", nargs="+", default=list(METHODS), choices=list(METHODS))
     ap.add_argument("--show-top", action="store_true", help="also list each method's top 3 per request")
-    ap.add_argument("--queries", choices=["benchmark", "casual"], default="benchmark",
-                    help="benchmark: the CAD-worded requests in cases.json; casual: everyday-language versions")
+    ap.add_argument("--queries", choices=["benchmark", "casual", "gate"], default="benchmark",
+                    help="benchmark: the CAD-worded requests in cases.json; casual: everyday-language versions; "
+                         "gate: the intake gate's specs for the casual versions (eval/gate_specs.py)")
     args = ap.parse_args(argv)
 
     from stl_agent.config import EXAMPLES_PATH
@@ -112,6 +115,9 @@ def main(argv=None):
         cases = [{**c, "request": casual["queries"][c["id"]]} for c in cases]
         if not casual.get("reviewed"):
             print("Note: casual queries have not been reviewed by a human yet (eval/retrieval_queries_casual.json).\n")
+    elif args.queries == "gate":
+        specs = json.loads(GATE_PATH.read_text())["specs"]
+        cases = [{**c, "request": specs[c["id"]]["spec"]} for c in cases]
 
     print("| method | hit@1 | recall@3 | MRR | AUC | best cutoff (F1) | relevant median / unrelated p90 | load | per query |")
     print("|---|---|---|---|---|---|---|---|---|")
