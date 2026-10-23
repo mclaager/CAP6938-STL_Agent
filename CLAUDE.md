@@ -29,7 +29,7 @@ added as one entry in `PROVIDERS` in `stl_agent/llm.py`.
 Gemini free tier is about 20 requests/day per model, and each repair attempt is one request.
 If one model's quota runs out, switch with `CAD_MODEL` (e.g. `gemini-3.6-flash`), which has its own quota.
 The free tier also caps each model at 15 requests/minute; the client paces itself to `CAD_RPM`
-(default 14 for Gemini) and waits out short rate-limit replies instead of failing.
+(default 10 for Gemini; at 14, Google still counted up to 17 in a minute) and waits out short rate-limit replies instead of failing.
 `gemini-3.5-flash-lite` has a much larger daily quota (about 500) but is a weaker coder; see `bench report`.
 
 Add dependencies to `pixi.toml` under the `cap6938` feature. `requirements.txt` mirrors the
@@ -43,7 +43,8 @@ pypi deps for non-pixi users, so keep the two in sync.
   (`generate_cad`). App entry points `run_gate(conversation, rounds)` and `run_pipeline(request, log, name)`.
 - `config.py` — paths, `.env` loading and `CAD_*` settings.
 - `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`.
-- `retrieval.py` — TF-IDF RAG over `data/examples.json`.
+- `retrieval.py` — TF-IDF RAG over `data/examples.json` (each example's request plus its `keywords`:
+  generic shape/operation words, so "hex" can match "hexagonal").
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
@@ -67,7 +68,8 @@ Elsewhere:
   `--budget` requests, so a full run can be spread over several days of free-tier quota.
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1`, `rag-t30` (RAG with a
-  0.3 similarity cutoff, see `CAD_RAG_MIN_SIM`).
+  0.2 / 0.3 similarity cutoff; the app's cutoff is `CAD_RAG_MIN_SIM`, default 0). Each result row records
+  the example-library version (`library`); no-RAG rows are shared across library versions.
 - `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness (all offline).
 - `scripts/` — maintenance scripts (`make_examples.py`).
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a

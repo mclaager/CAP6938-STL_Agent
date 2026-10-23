@@ -15,13 +15,14 @@ The harness calls `generate_cad` directly (no intake gate); gate evaluation is i
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from stl_agent.config import MAX_ATTEMPTS, OUTPUT_DIR
+from stl_agent.config import EXAMPLES_PATH, MAX_ATTEMPTS, OUTPUT_DIR
 from stl_agent.pipeline import generate_cad
 
 EVAL_DIR = Path(__file__).parent
@@ -30,11 +31,23 @@ RESULTS_DIR = EVAL_DIR / "results"
 
 # name -> generate_cad keyword arguments
 CONFIGS = {
-    "rag": dict(use_rag=True, top_k=3),
+    "rag": dict(use_rag=True, top_k=3, min_sim=0.0),  # pinned, whatever the app default is
     "norag": dict(use_rag=False),
-    "rag-k1": dict(use_rag=True, top_k=1),
+    "rag-k1": dict(use_rag=True, top_k=1, min_sim=0.0),
+    "rag-t20": dict(use_rag=True, top_k=3, min_sim=0.2),
     "rag-t30": dict(use_rag=True, top_k=3, min_sim=0.3),  # only examples with similarity >= 0.3
 }
+
+
+def library_id(path: Path = EXAMPLES_PATH) -> str:
+    """Names the example library version, e.g. "lib26-3f2a1c", so results from different
+    libraries are kept apart. Rows recorded before this existed are "lib9"."""
+    data = Path(path).read_bytes()
+    return f"lib{len(json.loads(data))}-{hashlib.sha1(data).hexdigest()[:6]}"
+
+
+def _lib_key(config: str, library: str) -> str:
+    return "any" if not CONFIGS.get(config, {}).get("use_rag", True) else library  # no-RAG ignores the library
 
 BBOX_REL_TOL, BBOX_ABS_TOL = 0.03, 1.0  # per dimension: within 3% or 1 mm, whichever is larger
 
@@ -106,16 +119,19 @@ def read_results(path: Path) -> list[dict]:
 
 
 def run(cases: list[dict], configs: list[str], llm, model: str, retriever, results_path: Path,
-        budget: int, max_attempts: int = MAX_ATTEMPTS, log=print, repeats: int = 1) -> RunSummary:
+        budget: int, max_attempts: int = MAX_ATTEMPTS, log=print, repeats: int = 1,
+        library: str | None = None) -> RunSummary:
     """Run every (repeat, case, config) not yet in the results file. Repeats go in the outer loop, so a
     partial run covers all cases evenly; rows from before repeats existed count as repeat 0."""
-    done = {(r["case"], r["config"], r.get("rep", 0)) for r in read_results(results_path)}
+    library = library or library_id()
+    done = {(r["case"], r["config"], r.get("rep", 0), _lib_key(r["config"], r.get("library", "lib9")))
+            for r in read_results(results_path)}
     results_path.parent.mkdir(parents=True, exist_ok=True)
     counter = CountingLLM(llm)
     summary = RunSummary()
 
     for case, config, rep in ((c, k, n) for n in range(repeats) for c in cases for k in configs):
-        if (case["id"], config, rep) in done:
+        if (case["id"], config, rep, _lib_key(config, library)) in done:
             summary.skipped += 1
             continue
         if counter.requests + max_attempts > budget:
@@ -125,7 +141,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
 
         log(f"[{case['id']} / {config} / rep {rep}] {case['request'][:60]}")
         before = (counter.requests, getattr(llm, "input_tokens", 0), getattr(llm, "output_tokens", 0))
-        out_dir = OUTPUT_DIR / "bench" / model / config / case["id"] / f"rep{rep}"
+        out_dir = OUTPUT_DIR / "bench" / model / library / config / case["id"] / f"rep{rep}"
         try:
             res = generate_cad(case["request"], counter, retriever, log=lambda m: None, out_dir=out_dir,
                                max_attempts=max_attempts, **CONFIGS[config])
@@ -134,7 +150,8 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
             summary.requests = counter.requests
             return summary
 
-        row = dict(case=case["id"], config=config, rep=rep, model=model, category=case["category"], expect=case["expect"],
+        row = dict(case=case["id"], config=config, rep=rep, model=model, library=library,
+                   category=case["category"], expect=case["expect"],
                    **score(case, res),
                    requests=counter.requests - before[0],
                    input_tokens=getattr(llm, "input_tokens", 0) - before[1],
@@ -165,9 +182,14 @@ def summarize(rows: list[dict]) -> str:
 
     head = "| {} | n | correct | built | first try | avg attempts | bbox ok | requests |\n|---|---|---|---|---|---|---|---|"
     out = []
+    groups = []
     for model in sorted({r["model"] for r in rows}):
-        mrows = [r for r in rows if r["model"] == model]
-        out.append(f"## {model}\n\n" + head.format("config"))
+        libs = sorted({r.get("library", "lib9") for r in rows if r["model"] == model and _lib_key(r["config"], "x") != "any"})
+        for lib in libs or ["any"]:
+            groups.append((model, lib, [r for r in rows if r["model"] == model and
+                                        (_lib_key(r["config"], "x") == "any" or r.get("library", "lib9") == lib)]))
+    for model, lib, mrows in groups:
+        out.append(f"## {model} — {lib} (no-RAG rows are shared across libraries)\n\n" + head.format("config"))
         for config in sorted({r["config"] for r in mrows}):
             out.append(f"| {config} | " + " | ".join(stats([r for r in mrows if r["config"] == config])) + " |")
         out.append("\n" + head.format("config / category"))
