@@ -141,9 +141,15 @@ def on_message(message: str, chat: list, state: dict, use_cache: bool):
     yield "", chat, state, gr.Button(interactive=state["spec"] is not None)
 
 
+def download_button(stl: str | None = None):
+    if stl:
+        return gr.DownloadButton(label=f"Download {Path(stl).name}", value=stl, interactive=True)
+    return gr.DownloadButton(label="Download STL", value=None, interactive=False)
+
+
 def clear_result():
     """Empty the result panels when a new build starts. Returns (viewer, download, code, report)."""
-    return None, None, "", None
+    return None, download_button(), "", None
 
 
 def on_build(chat: list, state: dict):
@@ -197,41 +203,72 @@ def show_result(state: dict):
         preview = make_preview(stl)
     except Exception:  # the viewer can show the raw STL if conversion fails
         preview = stl
-    return state, preview, stl, result["code"], result["report"]
+    return state, preview, download_button(stl), result["code"], result["report"]
+
+
+def on_example(evt: gr.SelectData):
+    """Clicking an example in the empty chat puts its text in the message box."""
+    return evt.value["text"]
 
 
 def on_reset():
-    return [], new_state(), gr.Button(interactive=False), "", None, None, "", None
+    return [], new_state(), gr.Button(interactive=False), "", None, download_button(), "", None
 
 
 # ---------------------------------------------------------------------------
 # Layout
 # ---------------------------------------------------------------------------
+RESULT_HEIGHT = 280  # px; code and report scroll inside this instead of stretching the page
+
+# The two main columns are equal height; the agent log takes whatever height is left in the
+# left column, so its bottom lines up with the code/report box on the right.
+CSS = f"""
+#code-box .cm-editor {{ height: {RESULT_HEIGHT}px; }}
+#code-box {{ min-height: {RESULT_HEIGHT + 27}px; }}  /* same size while empty; 27px is the label */
+#left-col {{ display: flex; flex-direction: column; }}
+#log-box {{ flex-grow: 1; display: flex; flex-direction: column; }}
+#log-box > label, #log-box .input-container {{ flex-grow: 1; display: flex; flex-direction: column; }}
+#log-box textarea {{ flex-grow: 1; height: 100% !important; min-height: 80px; resize: none; }}
+"""
+
+# Gradio's own autoscroll doesn't fire once the log's height is set by CSS, so keep it
+# scrolled to the newest line whenever its text changes.
+HEAD = """
+<script>
+setInterval(() => {
+  const t = document.querySelector('#log-box textarea');
+  if (t && t.dataset.len !== String(t.value.length)) {
+    t.dataset.len = t.value.length;
+    t.scrollTop = t.scrollHeight;
+  }
+}, 250);
+</script>
+"""
+LAUNCH_KW = dict(css=CSS, head=HEAD)
+
 with gr.Blocks(title="Text-to-STL Agent") as demo:
     gr.Markdown("# Text-to-STL CAD Agent\nDescribe a part. The agent asks about missing details, then generates CadQuery code and an STL.")
     state = gr.State(new_state())
 
-    with gr.Row():
-        with gr.Column(scale=1):
-            chat = gr.Chatbot(label="Chat", height=420)
+    with gr.Row(equal_height=True):
+        with gr.Column(scale=1, elem_id="left-col"):
+            chat = gr.Chatbot(label="Chat", height=340, examples=[{"text": e} for e in EXAMPLES])
             msg = gr.Textbox(show_label=False, placeholder="e.g. A 60x40x5mm plate with four 4mm holes...", lines=2)
             with gr.Row():
                 send = gr.Button("Send")
                 build = gr.Button("Build it", variant="primary", interactive=False)
                 reset = gr.Button("New part")
             use_cache = gr.Checkbox(label="Use cached demo results if available (offline fallback)", value=False)
-            gr.Examples(EXAMPLES, inputs=msg)
-            with gr.Accordion("Agent log", open=False):
-                log_box = gr.Textbox(show_label=False, lines=12, interactive=False)
+            log_box = gr.Textbox(label="Agent log", lines=4, max_lines=4, interactive=False, elem_id="log-box")
 
         with gr.Column(scale=1):
-            viewer = gr.Model3D(label="Preview", clear_color=(0.95, 0.95, 0.95, 1.0))
-            download = gr.File(label="Download STL")
+            viewer = gr.Model3D(label="Preview", clear_color=(0.95, 0.95, 0.95, 1.0), height=280)
+            download = download_button()
             with gr.Tabs():
                 with gr.Tab("Generated code"):
-                    code_box = gr.Code(language="python", label="CadQuery")
+                    code_box = gr.Code(language="python", label="CadQuery", elem_id="code-box")
                 with gr.Tab("Validation report"):
-                    report_box = gr.JSON()
+                    report_box = gr.JSON(height=RESULT_HEIGHT, max_height=RESULT_HEIGHT)
 
     results = [viewer, download, code_box, report_box]
     for trigger in (send.click, msg.submit):
@@ -241,7 +278,8 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
     build.click(clear_result, outputs=results).then(
         on_build, inputs=[chat, state], outputs=[chat, state, build, log_box]
     ).then(show_result, inputs=state, outputs=[state, *results])
+    chat.example_select(on_example, outputs=msg)
     reset.click(on_reset, outputs=[chat, state, build, log_box, viewer, download, code_box, report_box])
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(**LAUNCH_KW)

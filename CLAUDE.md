@@ -39,6 +39,8 @@ pypi deps for non-pixi users, so keep the two in sync.
   the confirmed spec when the user clicks "Build it".
   Gradio's `Model3D` goes blank when updated from a streaming handler, so result panels are
   filled by a separate non-streaming `show_result` step.
+  Layout CSS (fixed-height code/report, log stretched to line up with them) is passed via
+  `demo.launch(**LAUNCH_KW)`; launching without it loses that layout.
 - `make_examples.py` — source of truth for the few-shot example library; generates `examples.json`.
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
   colored `<name>.preview.glb` for the viewer (gitignored).
