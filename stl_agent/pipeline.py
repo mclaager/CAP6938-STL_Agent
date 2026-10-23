@@ -77,6 +77,8 @@ def format_examples(examples: list[dict]) -> str:
 
 
 def build_first_user_message(request: str, examples: list[dict]) -> str:
+    if not examples:  # RAG off (e.g. the benchmark's no-RAG baseline)
+        return f"Handle this request. Reply in the required format.\n\nRequest: {request}"
     return (
         "Here are solved examples of similar requests:\n\n"
         f"{format_examples(examples)}\n\n"

@@ -23,6 +23,7 @@ pytest = ">=9.1.1, <10"
 app = "python -m stl_agent.app"
 examples = "python -m scripts.make_examples"
 test = "python -m pytest -q"
+bench = "python -m eval.bench"
 
 [feature.cap6938.dependencies]
 python = "3.12.*"

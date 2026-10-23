@@ -42,7 +42,8 @@ class OpenAICompatLLM:
         # at 4096 replies were regularly cut off mid-code. Only tokens actually used are billed.
         max_tokens: int = 16384,
         temperature: float | None = None,
-        timeout: float = 120.0,
+        # Long thinking replies can take minutes; at 120 s some benchmark requests timed out.
+        timeout: float = 300.0,
         max_retries: int = 4,
     ):
         import httpx
@@ -66,9 +67,19 @@ class OpenAICompatLLM:
         if self.temperature is not None:
             body["temperature"] = self.temperature
 
+        import httpx
+
         # Free tiers rate-limit hard (429) and are sometimes overloaded (503); back off and retry.
+        # A timed-out request is retried once only: the provider may still count it against the quota.
+        timed_out, resp = False, None
         for attempt in range(self.max_retries + 1):
-            resp = self.client.post("chat/completions", json=body)
+            try:
+                resp = self.client.post("chat/completions", json=body)
+            except httpx.TimeoutException:
+                if timed_out:
+                    raise RuntimeError(f"{self.model}: request timed out twice") from None
+                timed_out = True
+                continue
             if resp.status_code not in (429, 500, 502, 503) or attempt == self.max_retries:
                 break
             if resp.status_code == 429 and "quota" in resp.text.lower():
@@ -76,6 +87,8 @@ class OpenAICompatLLM:
                 raise RuntimeError(f"{self.model}: free-tier quota exhausted. {_quota_hint(resp.text)}")
             retry_after = resp.headers.get("retry-after", "")
             time.sleep(float(retry_after) if retry_after.isdigit() else 2 ** (attempt + 1))
+        if resp is None:
+            raise RuntimeError(f"{self.model}: request timed out")
         if resp.status_code >= 400:
             raise RuntimeError(f"{self.model} request failed ({resp.status_code}): {resp.text[:500]}")
 
