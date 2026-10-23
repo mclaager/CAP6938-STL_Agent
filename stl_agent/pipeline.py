@@ -1,105 +1,30 @@
-"""Text-to-STL agent: RAG retrieval -> LLM code generation -> sandboxed execution
+"""Text-to-STL pipeline: RAG retrieval -> LLM code generation -> sandboxed execution
 -> mesh validation -> self-repair loop.
 
 Public entry points (used by the Gradio app):
     run_gate(conversation, rounds_asked) -> gate.Decision   (proceed / clarify / out_of_scope)
     run_pipeline(request, log, name=None) -> (stl_path, final_code, report_dict)
 
-Config via environment variables (a `.env` file in this folder is also read):
-    CAD_PROVIDER        "anthropic" (default) or "gemini"
-    ANTHROPIC_API_KEY   required when CAD_PROVIDER=anthropic
-    GEMINI_API_KEY      required when CAD_PROVIDER=gemini (free key: aistudio.google.com)
-    CAD_MODEL           model id (default depends on provider, see PROVIDERS)
-    CAD_MAX_ATTEMPTS    generation + repair attempts (default 4)
-    CAD_TOP_K           RAG examples per prompt (default 3)
-    CAD_GATE_MODEL      model for the intake gate (default: the provider's gate model, else CAD_MODEL).
-                        A separate model has its own free-tier quota, so gate checks don't use up builds.
-    CAD_GATE, CAD_GATE_MAX_ROUNDS   intake gate settings (see gate.py)
-
-Swap the LLM by passing any object with `.complete(system, messages) -> str`
-(see AnthropicLLM / OpenAICompatLLM / ScriptedLLM below); the eval harness can reuse `generate_cad`.
+Settings come from environment variables / `.env` (see config.py). Swap the LLM by passing any
+object with `.complete(system, messages) -> str` (see llm.py); the eval harness can reuse `generate_cad`.
 """
 
 from __future__ import annotations
 
 import json
-import os
 import re
 import shutil
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from sandbox import ExecResult, ValidationReport, feedback_for_llm, run_cadquery, validate_mesh
-
-HERE = Path(__file__).parent
-EXAMPLES_PATH = HERE / "examples.json"
-
-
-def _load_dotenv(path: Path = HERE / ".env") -> None:
-    """Minimal .env reader (KEY=value lines). Real environment variables win."""
-    if not path.exists():
-        return
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        key = key.strip().removeprefix("export ").strip()
-        os.environ.setdefault(key, value.strip().strip("'\""))
-
-
-_load_dotenv()
-OUTPUT_DIR = HERE / "outputs"
-
-PROVIDER = os.environ.get("CAD_PROVIDER", "anthropic").lower()
-MODEL = os.environ.get("CAD_MODEL")  # None -> the provider's default below
-GATE_MODEL = os.environ.get("CAD_GATE_MODEL")  # None -> the provider's default_gate_model, else MODEL
-MAX_ATTEMPTS = int(os.environ.get("CAD_MAX_ATTEMPTS", "4"))
-TOP_K = int(os.environ.get("CAD_TOP_K", "3"))
-
+from .config import GATE_MODEL, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, TOP_K
+from .llm import PROVIDERS, make_llm
+from .retrieval import ExampleRetriever
+from .sandbox import ExecResult, ValidationReport, feedback_for_llm, run_cadquery, validate_mesh
 
 # ---------------------------------------------------------------------------
-# 1. Retrieval (RAG over the example library)
-# ---------------------------------------------------------------------------
-class ExampleRetriever:
-    """TF-IDF similarity over example *request text only* (not code).
-
-    TF-IDF needs no model download and works offline, which is plenty for a
-    ~30-example library. To try dense embeddings later, replace `_vectorize`
-    and `retrieve` with sentence-transformers; the interface stays the same.
-    A per-class cap keeps the top-k diverse instead of three near-duplicates.
-    """
-
-    def __init__(self, examples: list[dict], max_per_class: int = 2):
-        from sklearn.feature_extraction.text import TfidfVectorizer
-
-        self.examples = examples
-        self.max_per_class = max_per_class
-        self.vec = TfidfVectorizer(ngram_range=(1, 2), stop_words="english", sublinear_tf=True)
-        self.matrix = self.vec.fit_transform([e["request"] for e in examples])
-
-    @classmethod
-    def from_file(cls, path: Path = EXAMPLES_PATH, **kw) -> "ExampleRetriever":
-        return cls(json.loads(Path(path).read_text()), **kw)
-
-    def retrieve(self, query: str, k: int = TOP_K) -> list[dict]:
-        sims = (self.matrix @ self.vec.transform([query]).T).toarray().ravel()
-        order = sims.argsort()[::-1]
-        picked, per_class = [], {}
-        for i in order:
-            ex = self.examples[i]
-            if per_class.get(ex["cls"], 0) >= self.max_per_class:
-                continue
-            picked.append(ex)
-            per_class[ex["cls"]] = per_class.get(ex["cls"], 0) + 1
-            if len(picked) == k:
-                break
-        return picked
-
-
-# ---------------------------------------------------------------------------
-# 2. Prompts
+# 1. Prompts
 # ---------------------------------------------------------------------------
 SYSTEM_PROMPT = """\
 You are a CAD engineer that turns a plain-English part description into a CadQuery (Python) script.
@@ -168,7 +93,7 @@ def build_repair_message(feedback: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 3. Response parsing
+# 2. Response parsing
 # ---------------------------------------------------------------------------
 @dataclass
 class Parsed:
@@ -206,131 +131,7 @@ def parse_response(text: str) -> Parsed:
 
 
 # ---------------------------------------------------------------------------
-# 4. LLM backends
-# ---------------------------------------------------------------------------
-class AnthropicLLM:
-    def __init__(self, model: str | None = MODEL, max_tokens: int = 2048, temperature: float | None = None):
-        import anthropic
-
-        self.client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
-        self.model = model or "claude-sonnet-5-5"
-        self.max_tokens, self.temperature = max_tokens, temperature
-        self.input_tokens = self.output_tokens = 0
-
-    def complete(self, system: str, messages: list[dict]) -> str:
-        kwargs = dict(model=self.model, max_tokens=self.max_tokens, system=system, messages=messages)
-        # Newer SDK/model versions don't accept sampling params; only send if explicitly requested.
-        if self.temperature is not None:
-            kwargs["temperature"] = self.temperature
-        resp = self.client.messages.create(**kwargs)
-        self.input_tokens += resp.usage.input_tokens
-        self.output_tokens += resp.usage.output_tokens
-        return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-
-
-class OpenAICompatLLM:
-    """Any provider with an OpenAI-style /chat/completions endpoint (Gemini, Groq,
-    OpenRouter, Ollama, ...). Uses plain httpx so no extra SDK is needed."""
-
-    def __init__(
-        self,
-        base_url: str,
-        api_key: str,
-        model: str,
-        # Gemini 3.x "thinks" before answering and those hidden tokens count against this limit;
-        # at 4096 replies were regularly cut off mid-code. Only tokens actually used are billed.
-        max_tokens: int = 16384,
-        temperature: float | None = None,
-        timeout: float = 120.0,
-        max_retries: int = 4,
-    ):
-        import httpx
-
-        self.client = httpx.Client(
-            base_url=base_url.rstrip("/") + "/",
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=timeout,
-        )
-        self.model, self.max_tokens, self.temperature = model, max_tokens, temperature
-        self.max_retries = max_retries
-        self.input_tokens = self.output_tokens = 0
-        self.last_truncated = False
-
-    def complete(self, system: str, messages: list[dict]) -> str:
-        body = {
-            "model": self.model,
-            "max_tokens": self.max_tokens,
-            "messages": [{"role": "system", "content": system}, *messages],
-        }
-        if self.temperature is not None:
-            body["temperature"] = self.temperature
-
-        # Free tiers rate-limit hard (429) and are sometimes overloaded (503); back off and retry.
-        for attempt in range(self.max_retries + 1):
-            resp = self.client.post("chat/completions", json=body)
-            if resp.status_code not in (429, 500, 502, 503) or attempt == self.max_retries:
-                break
-            if resp.status_code == 429 and "quota" in resp.text.lower():
-                # Daily/plan quota is used up: retrying just burns time (and possibly more quota).
-                raise RuntimeError(f"{self.model}: free-tier quota exhausted. {_quota_hint(resp.text)}")
-            retry_after = resp.headers.get("retry-after", "")
-            time.sleep(float(retry_after) if retry_after.isdigit() else 2 ** (attempt + 1))
-        if resp.status_code >= 400:
-            raise RuntimeError(f"{self.model} request failed ({resp.status_code}): {resp.text[:500]}")
-
-        data = resp.json()
-        usage = data.get("usage") or {}
-        self.input_tokens += usage.get("prompt_tokens", 0)
-        self.output_tokens += usage.get("completion_tokens", 0)
-        choice = data["choices"][0]
-        self.last_truncated = choice.get("finish_reason") == "length"
-        return choice["message"].get("content") or ""
-
-
-def _quota_hint(text: str) -> str:
-    m = re.search(r"Quota exceeded for metric: [^,]*, limit: (\d+)[^\n]*\n?[^\n]*?retry in ([\dhms.]+)", text)
-    if m:
-        return f"Limit is {m.group(1)} requests; retry in {m.group(2).split('.')[0]}s, or set CAD_MODEL to another model."
-    return "Try again later, or set CAD_MODEL to another model."
-
-
-# name -> how to build it. Add more OpenAI-compatible providers here.
-PROVIDERS = {
-    "gemini": dict(
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-        key_env="GEMINI_API_KEY",
-        default_model="gemini-3.8-flash",
-        default_gate_model="gemini-3.6-flash",  # separate daily quota from the build model
-    ),
-}
-
-
-def make_llm(provider: str = PROVIDER, model: str | None = MODEL):
-    """Build the LLM backend selected by CAD_PROVIDER / CAD_MODEL."""
-    if provider == "anthropic":
-        return AnthropicLLM(model=model)
-    if provider not in PROVIDERS:
-        raise ValueError(f"Unknown CAD_PROVIDER {provider!r}; use 'anthropic' or one of {sorted(PROVIDERS)}")
-    cfg = PROVIDERS[provider]
-    api_key = os.environ.get(cfg["key_env"])
-    if not api_key:
-        raise RuntimeError(f"CAD_PROVIDER={provider} needs {cfg['key_env']} set (env or .env file).")
-    return OpenAICompatLLM(cfg["base_url"], api_key, model or cfg["default_model"])
-
-
-class ScriptedLLM:
-    """Returns canned replies in order. For tests and offline demos."""
-
-    def __init__(self, replies: list[str]):
-        self.replies, self.calls = list(replies), []
-
-    def complete(self, system: str, messages: list[dict]) -> str:
-        self.calls.append([dict(m) for m in messages])
-        return self.replies.pop(0)
-
-
-# ---------------------------------------------------------------------------
-# 5. Core loop
+# 3. Core loop
 # ---------------------------------------------------------------------------
 @dataclass
 class GenResult:
@@ -452,7 +253,7 @@ def generate_cad(
 
 
 # ---------------------------------------------------------------------------
-# 6. Gradio contract
+# 4. App entry points
 # ---------------------------------------------------------------------------
 _retriever: ExampleRetriever | None = None
 _llm = None
@@ -470,7 +271,7 @@ def run_gate(conversation: list[dict], rounds_asked: int = 0):
     """Intake check before generation (see gate.py). Returns a gate.Decision."""
     global _gate
     if _gate is None:
-        from gate import make_gate
+        from .gate import make_gate
 
         gate_model = GATE_MODEL or PROVIDERS.get(PROVIDER, {}).get("default_gate_model")
         _gate = make_gate(make_llm(model=gate_model) if gate_model else get_llm())
@@ -495,7 +296,7 @@ def run_pipeline(request: str, log, name: str | None = None) -> tuple[str, str, 
     if res.unsupported or res.stl_path is None:
         raise RuntimeError(res.error or "Generation failed.")
 
-    from gate import slugify
+    from .gate import slugify
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     final_stl = unique_stl_path(slugify(name or "") or slugify(request) or "part")
