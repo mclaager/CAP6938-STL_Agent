@@ -4,3 +4,4 @@ numpy
 scikit-learn
 anthropic
 gradio>=4.0
+pytest

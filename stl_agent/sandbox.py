@@ -34,7 +34,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Runner: executed inside the child process
 # ---------------------------------------------------------------------------
-FONT_DIR = Path(__file__).parent / "fonts"  # bundled Liberation Sans (SIL OFL, see fonts/LICENSE)
+from .config import FONT_DIR  # bundled Liberation Sans, used when text() has no fontPath
 
 _RUNNER = textwrap.dedent(
     r'''
@@ -278,18 +278,3 @@ def feedback_for_llm(res: ExecResult, report: ValidationReport | None = None) ->
     if report is not None and not report.valid:
         return "The code ran, but the resulting mesh failed validation:\n- " + "\n- ".join(report.issues)
     return ""
-
-
-if __name__ == "__main__":
-    # Smoke test: one good snippet, one with a bug, one that hangs.
-    good = "import cadquery as cq\nresult = cq.Workplane('XY').box(60, 40, 5).faces('>Z').workplane().hole(4)\nshow_object(result)\n"
-    bad = "import cadquery as cq\nresult = cq.Workplane('XY').box(10, 10, 10).fillet_all(1)\n"
-    hang = "while True:\n    pass\n"
-
-    for name, snippet, kw in [("good", good, {"expected_bbox": (60, 40, 5)}), ("bad", bad, {}), ("hang", hang, {})]:
-        r = run_cadquery(snippet, timeout=10)
-        print(f"--- {name}: success={r.success}")
-        if r.success:
-            print(validate_mesh(r.stl_path, **kw).to_dict())
-        else:
-            print(feedback_for_llm(r))

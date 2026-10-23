@@ -1,6 +1,11 @@
-"""Builds examples.json and verifies every example runs and matches its bbox."""
+"""Builds stl_agent/data/examples.json and verifies every example runs and matches its bbox.
+
+Run from the repo root:  pixi run -e cap6938 examples   (or: python -m scripts.make_examples)
+"""
 import json
-from sandbox import run_cadquery, validate_mesh
+
+from stl_agent.config import EXAMPLES_PATH
+from stl_agent.sandbox import run_cadquery, validate_mesh
 
 EX = [
  dict(id="prim_001", cls="primitives",
@@ -183,5 +188,5 @@ for e in EX:
     print(e["id"], "valid" if v.valid else "INVALID", v.bbox_mm, v.issues)
     ok &= v.valid
     out.append(dict(id=e["id"], cls=e["cls"], request=e["request"], code=e["code"], expected_bbox_mm=e["bbox"], volume_mm3=round(v.volume_mm3,2)))
-json.dump(out, open("examples.json","w"), indent=1)
+json.dump(out, open(EXAMPLES_PATH, "w"), indent=1)
 print("ALL OK" if ok else "SOME FAILED")

@@ -1,0 +1,82 @@
+"""Gate backed by a general LLM: it reports scope, a filled-in spec and unknowns as JSON."""
+
+from __future__ import annotations
+
+import json
+import re
+
+from .base import MAX_ROUNDS, PROCEED, Decision, decide_from_report
+
+GATE_PROMPT = """\
+You are the intake step of a text-to-CAD agent. A later step writes CadQuery (Python parametric CAD)
+code for the part, so it can build anything made from extrude, revolve, loft, sweep, boolean
+union/cut, holes, fillets, chamfers, shells, patterns and simple text. Units are millimetres.
+
+Read the conversation and reply with ONE JSON object in a ```json block, nothing else:
+{
+  "scope": "in_scope" | "simplified" | "out_of_scope",
+  "scope_reason": "one short sentence; empty when in_scope",
+  "spec": "complete, self-contained description of the part to build, with every dimension in mm, including everything the user said in later messages",
+  "name": "short file name for the part: 2-5 lowercase words joined by hyphens, e.g. flange-80mm-6-holes",
+  "unknowns": [
+    {"param": "name", "default": "value you would use", "critical": true | false,
+     "question": "short question to ask the user about it"}
+  ]
+}
+
+SCOPE
+- in_scope: mechanical or geometric parts: plates, brackets, enclosures, flanges, spacers, gears,
+  knobs, hooks, mounts, containers, organizers, simple text plaques.
+- simplified: only buildable as a stylized geometric approximation (a low-poly vase, a simple
+  rocket, a chess pawn). The spec must describe that simplified version.
+- out_of_scope: organic or sculpted shapes (people, animals, faces, characters, realistic plants),
+  copies of images or logos, or anything that is not a single physical part.
+
+UNKNOWNS
+List every detail the user did not give that you had to decide. Mark critical=true ONLY when a
+wrong guess would likely make the part useless:
+- it must fit or attach to a specific real object whose dimensions are not given and not standard
+  (e.g. "a case for my phone", "a cap for this bottle");
+- the guess changes the basic shape (how many compartments, open vs closed, which way it mounts).
+NOT critical: overall size of a generic part, wall thickness, fillet radii, hole spacing, text font.
+Known standards are not unknowns: use their real dimensions (M3/M4 screws, NEMA 17 motors, 608
+bearings, AA batteries, GoPro mounts, 2020 extrusion).
+If the user already answered something, or said "you choose" / "anything", it is not critical.
+"""
+
+
+def _transcript(conversation: list[dict]) -> str:
+    lines = []
+    for turn in conversation:
+        who = "User" if turn["role"] == "user" else "Agent"
+        lines.append(f"{who}: {turn['content'].strip()}")
+    return "Conversation so far:\n\n" + "\n\n".join(lines)
+
+
+_JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*\n(.*?)```", re.S | re.I)
+
+
+def parse_gate_reply(text: str) -> dict:
+    """Pull the JSON object out of the reply (fenced block preferred, else the outermost braces)."""
+    m = _JSON_BLOCK_RE.search(text)
+    candidate = m.group(1) if m else text[text.find("{") : text.rfind("}") + 1]
+    data = json.loads(candidate)
+    if not isinstance(data, dict):
+        raise ValueError("gate reply is not a JSON object")
+    return data
+
+
+
+class LLMGate:
+    def __init__(self, llm, max_rounds: int = MAX_ROUNDS):
+        self.llm, self.max_rounds = llm, max_rounds
+
+    def decide(self, conversation: list[dict], rounds_asked: int = 0) -> Decision:
+        fallback_spec = "\n".join(t["content"] for t in conversation if t["role"] == "user")
+        reply = self.llm.complete(GATE_PROMPT, [{"role": "user", "content": _transcript(conversation)}])
+        try:
+            report = parse_gate_reply(reply)
+        except (ValueError, json.JSONDecodeError):
+            # Fail open: a broken gate reply should not block generation.
+            return Decision(action=PROCEED, spec=fallback_spec, note="Gate reply was not valid JSON; using the raw request.")
+        return decide_from_report(report, fallback_spec, rounds_asked, self.max_rounds)

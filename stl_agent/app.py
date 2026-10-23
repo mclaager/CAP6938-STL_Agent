@@ -1,6 +1,6 @@
 """Gradio front end for the text-to-STL CadQuery agent.
 
-Run:  pixi run -e cap6938 app
+Run:  pixi run -e cap6938 app   (or: python -m stl_agent.app)
 Then open http://127.0.0.1:7860 in the browser.
 
 Flow: the user chats with the intake gate (`run_gate`), which asks clarifying questions
@@ -18,15 +18,11 @@ import gradio as gr
 import numpy as np
 import trimesh
 
-from agent import run_gate, run_pipeline
-from gate import CLARIFY, OUT_OF_SCOPE
+from .config import CACHE_DIR, OUTPUT_DIR
+from .gate import CLARIFY, OUT_OF_SCOPE
+from .pipeline import run_gate, run_pipeline
 
-OUTPUT_DIR = Path("outputs")
 OUTPUT_DIR.mkdir(exist_ok=True)
-
-# Cached demo results: request text -> folder in demo_cache/ containing
-# model.stl, code.py and report.json. Used as an offline fallback.
-CACHE_DIR = Path("demo_cache")
 
 EXAMPLES = [
     "A 60mm x 40mm plate, 5mm thick, with four 4mm holes 5mm in from each corner",
@@ -43,6 +39,7 @@ def cache_key(request: str) -> str:
 
 
 def load_cached(request: str):
+    """Offline fallback: demo_cache/<cache_key>/ holding model.stl, code.py and report.json."""
     folder = CACHE_DIR / cache_key(request)
     if (folder / "model.stl").exists():
         return (
