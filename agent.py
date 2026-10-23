@@ -1,7 +1,8 @@
 """Text-to-STL agent: RAG retrieval -> LLM code generation -> sandboxed execution
 -> mesh validation -> self-repair loop.
 
-Public entry point (matches the Gradio app's contract):
+Public entry points (used by the Gradio app):
+    run_gate(conversation, rounds_asked) -> gate.Decision   (proceed / clarify / out_of_scope)
     run_pipeline(request, log) -> (stl_path, final_code, report_dict)
 
 Config via environment variables (a `.env` file in this folder is also read):
@@ -11,6 +12,9 @@ Config via environment variables (a `.env` file in this folder is also read):
     CAD_MODEL           model id (default depends on provider, see PROVIDERS)
     CAD_MAX_ATTEMPTS    generation + repair attempts (default 4)
     CAD_TOP_K           RAG examples per prompt (default 3)
+    CAD_GATE_MODEL      model for the intake gate (default: the provider's gate model, else CAD_MODEL).
+                        A separate model has its own free-tier quota, so gate checks don't use up builds.
+    CAD_GATE, CAD_GATE_MAX_ROUNDS   intake gate settings (see gate.py)
 
 Swap the LLM by passing any object with `.complete(system, messages) -> str`
 (see AnthropicLLM / OpenAICompatLLM / ScriptedLLM below); the eval harness can reuse `generate_cad`.
@@ -50,6 +54,7 @@ OUTPUT_DIR = HERE / "outputs"
 
 PROVIDER = os.environ.get("CAD_PROVIDER", "anthropic").lower()
 MODEL = os.environ.get("CAD_MODEL")  # None -> the provider's default below
+GATE_MODEL = os.environ.get("CAD_GATE_MODEL")  # None -> the provider's default_gate_model, else MODEL
 MAX_ATTEMPTS = int(os.environ.get("CAD_MAX_ATTEMPTS", "4"))
 TOP_K = int(os.environ.get("CAD_TOP_K", "3"))
 
@@ -295,6 +300,7 @@ PROVIDERS = {
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         key_env="GEMINI_API_KEY",
         default_model="gemini-3.8-flash",
+        default_gate_model="gemini-3.6-flash",  # separate daily quota from the build model
     ),
 }
 
@@ -450,16 +456,33 @@ def generate_cad(
 # ---------------------------------------------------------------------------
 _retriever: ExampleRetriever | None = None
 _llm = None
+_gate = None
+
+
+def get_llm():
+    global _llm
+    if _llm is None:
+        _llm = make_llm()
+    return _llm
+
+
+def run_gate(conversation: list[dict], rounds_asked: int = 0):
+    """Intake check before generation (see gate.py). Returns a gate.Decision."""
+    global _gate
+    if _gate is None:
+        from gate import make_gate
+
+        gate_model = GATE_MODEL or PROVIDERS.get(PROVIDER, {}).get("default_gate_model")
+        _gate = make_gate(make_llm(model=gate_model) if gate_model else get_llm())
+    return _gate.decide(conversation, rounds_asked)
 
 
 def run_pipeline(request: str, log) -> tuple[str, str, dict]:
-    global _retriever, _llm
+    global _retriever
     if _retriever is None:
         _retriever = ExampleRetriever.from_file()
-    if _llm is None:
-        _llm = make_llm()
 
-    res = generate_cad(request, _llm, _retriever, log=log)
+    res = generate_cad(request, get_llm(), _retriever, log=log)
     if res.unsupported or res.stl_path is None:
         raise RuntimeError(res.error or "Generation failed.")
 

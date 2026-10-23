@@ -16,7 +16,9 @@ Managed with pixi. Everything runs in the `cap6938` environment:
 LLM backend is picked by `CAD_PROVIDER`: `anthropic` (default, needs `ANTHROPIC_API_KEY`) or
 `gemini` (free tier, needs `GEMINI_API_KEY`). `agent.py` reads a `.env` file in the project root;
 it is gitignored, never commit keys. Optional: `CAD_MODEL`, `CAD_MAX_ATTEMPTS`, `CAD_TOP_K`
-(see `agent.py` docstring). Other OpenAI-compatible providers (Groq, OpenRouter, Ollama) can be
+(see `agent.py` docstring), and `CAD_GATE` (`llm` default, `off`, `jev` stub) /
+`CAD_GATE_MAX_ROUNDS` for the intake gate. With Gemini, the gate runs on `gemini-3.6-flash` by
+default (override with `CAD_GATE_MODEL`) so its checks use a different daily quota than builds. Other OpenAI-compatible providers (Groq, OpenRouter, Ollama) can be
 added as one entry in `PROVIDERS` in `agent.py`.
 
 Gemini free tier is about 20 requests/day per model, and each repair attempt is one request.
@@ -30,7 +32,11 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `agent.py` — pipeline: TF-IDF RAG over `examples.json` → LLM code generation → sandboxed
   execution → mesh validation → self-repair. Entry point `run_pipeline(request, log)`.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
-- `app.py` — Gradio front end; only depends on `run_pipeline`.
+- `gate.py` — intake gate run before generation: the LLM reports scope, a filled-in spec and
+  unknown parameters (critical or not); fixed rules in `decide_from_report` choose proceed /
+  clarify / out_of_scope. Each gate check is one LLM request. `python gate.py` checks the rules offline.
+- `app.py` — Gradio chat front end; uses `run_gate` (agent.py) for intake, then `run_pipeline` on
+  the confirmed spec when the user clicks "Build it".
 - `make_examples.py` — source of truth for the few-shot example library; generates `examples.json`.
 - `outputs/` — per-run generated files (gitignored).
 - `fonts/` — bundled Liberation Sans (SIL OFL). The sandbox uses it for any `text()` call without
