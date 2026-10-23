@@ -37,8 +37,11 @@ pypi deps for non-pixi users, so keep the two in sync.
   clarify / out_of_scope. Each gate check is one LLM request. `python gate.py` checks the rules offline.
 - `app.py` — Gradio chat front end; uses `run_gate` (agent.py) for intake, then `run_pipeline` on
   the confirmed spec when the user clicks "Build it".
+  Gradio's `Model3D` goes blank when updated from a streaming handler, so result panels are
+  filled by a separate non-streaming `show_result` step.
 - `make_examples.py` — source of truth for the few-shot example library; generates `examples.json`.
-- `outputs/` — per-run generated files (gitignored).
+- `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
+  colored `<name>.preview.glb` for the viewer (gitignored).
 - `fonts/` — bundled Liberation Sans (SIL OFL). The sandbox uses it for any `text()` call without
   an explicit `fontPath`, because CadQuery's default "Arial" is missing on Linux and renders as boxes.
 

@@ -3,7 +3,7 @@
 
 Public entry points (used by the Gradio app):
     run_gate(conversation, rounds_asked) -> gate.Decision   (proceed / clarify / out_of_scope)
-    run_pipeline(request, log) -> (stl_path, final_code, report_dict)
+    run_pipeline(request, log, name=None) -> (stl_path, final_code, report_dict)
 
 Config via environment variables (a `.env` file in this folder is also read):
     CAD_PROVIDER        "anthropic" (default) or "gemini"
@@ -477,7 +477,16 @@ def run_gate(conversation: list[dict], rounds_asked: int = 0):
     return _gate.decide(conversation, rounds_asked)
 
 
-def run_pipeline(request: str, log) -> tuple[str, str, dict]:
+def unique_stl_path(name: str, folder: Path = OUTPUT_DIR) -> Path:
+    """outputs/<name>.stl, or <name>-2.stl, -3, ... so earlier builds are kept."""
+    path, n = folder / f"{name}.stl", 2
+    while path.exists():
+        path, n = folder / f"{name}-{n}.stl", n + 1
+    return path
+
+
+def run_pipeline(request: str, log, name: str | None = None) -> tuple[str, str, dict]:
+    """`name` is a file-name slug (the gate supplies one); otherwise it's made from the request."""
     global _retriever
     if _retriever is None:
         _retriever = ExampleRetriever.from_file()
@@ -486,8 +495,11 @@ def run_pipeline(request: str, log) -> tuple[str, str, dict]:
     if res.unsupported or res.stl_path is None:
         raise RuntimeError(res.error or "Generation failed.")
 
+    from gate import slugify
+
     OUTPUT_DIR.mkdir(exist_ok=True)
-    final_stl = OUTPUT_DIR / "latest.stl"
+    final_stl = unique_stl_path(slugify(name or "") or slugify(request) or "part")
     shutil.copy(res.stl_path, final_stl)
+    log(f"Saved {final_stl.name}")
     log("Done." if res.success else "Done (with warnings; see report).")
     return str(final_stl), res.code or "", res.report()

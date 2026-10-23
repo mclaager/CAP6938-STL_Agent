@@ -15,6 +15,8 @@ import threading
 from pathlib import Path
 
 import gradio as gr
+import numpy as np
+import trimesh
 
 from agent import run_gate, run_pipeline
 from gate import CLARIFY, OUT_OF_SCOPE
@@ -51,9 +53,26 @@ def load_cached(request: str):
     return None
 
 
+PREVIEW_COLOR = (70, 130, 200, 255)  # RGBA; STL has no color of its own
+
+
+def make_preview(stl_path: str) -> str:
+    """Colored GLB copy of the STL for the 3D viewer (the STL stays the download).
+
+    CadQuery is Z-up and glTF is Y-up, so rotate the part to stand upright in the viewer.
+    """
+    mesh = trimesh.load(stl_path, force="mesh")
+    mesh.visual.face_colors = PREVIEW_COLOR
+    mesh.apply_transform(trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0]))
+    glb = Path(stl_path).with_suffix(".preview.glb")
+    mesh.export(glb)
+    return str(glb)
+
+
 def new_state() -> dict:
-    # conversation: turns the gate sees; rounds: clarifying rounds asked; spec: ready-to-build spec
-    return {"conversation": [], "rounds": 0, "spec": None}
+    # conversation: turns the gate sees; rounds: clarifying rounds asked;
+    # spec / name: ready-to-build spec and its file-name slug
+    return {"conversation": [], "rounds": 0, "spec": None, "name": ""}
 
 
 def format_decision(d) -> str:
@@ -79,50 +98,59 @@ def format_decision(d) -> str:
 
 # ---------------------------------------------------------------------------
 # Event handlers
+#
+# Gradio's 3D viewer stays blank if it is updated from a streaming (generator) handler,
+# so the streaming handlers only update the chat and log, put any finished result in
+# state["result"], and `show_result` fills the result panels in a separate, plain step.
 # ---------------------------------------------------------------------------
 def on_message(message: str, chat: list, state: dict, use_cache: bool):
-    """Returns (textbox, chat, state, build_button, viewer, download, code, report)."""
+    """Returns (textbox, chat, state, build_button)."""
     message = (message or "").strip()
-    keep = gr.skip()
     if not message:
-        yield "", chat, state, gr.Button(interactive=state["spec"] is not None), keep, keep, keep, keep
+        yield "", chat, state, gr.Button(interactive=state["spec"] is not None)
         return
 
     chat = chat + [{"role": "user", "content": message}]
 
     if use_cache and not state["conversation"] and (cached := load_cached(message)):
         stl, code, report = cached
+        state["result"] = {"stl": stl, "code": code, "report": report}
         chat.append({"role": "assistant", "content": "Loaded a cached result (preview on the right)."})
-        yield "", chat, state, gr.Button(interactive=False), stl, stl, code, report
+        yield "", chat, state, gr.Button(interactive=False)
         return
 
     state["conversation"].append({"role": "user", "content": message})
     state["spec"] = None
-    yield "", chat + [{"role": "assistant", "content": "_Checking your request..._"}], state, gr.Button(interactive=False), keep, keep, keep, keep
+    yield "", chat + [{"role": "assistant", "content": "_Checking your request..._"}], state, gr.Button(interactive=False)
 
     try:
         d = run_gate(state["conversation"], state["rounds"])
     except Exception as e:  # e.g. quota exhausted: show it in the chat instead of crashing
         state["conversation"].pop()
         chat.append({"role": "assistant", "content": f"Intake check failed: {e}"})
-        yield "", chat, state, gr.Button(interactive=False), keep, keep, keep, keep
+        yield "", chat, state, gr.Button(interactive=False)
         return
 
     reply = format_decision(d)
     if d.action == CLARIFY:
         state["rounds"] += 1
     elif d.action != OUT_OF_SCOPE:
-        state["spec"] = d.spec
+        state["spec"], state["name"] = d.spec, d.name
     state["conversation"].append({"role": "assistant", "content": reply})
     chat.append({"role": "assistant", "content": reply})
-    yield "", chat, state, gr.Button(interactive=state["spec"] is not None), keep, keep, keep, keep
+    yield "", chat, state, gr.Button(interactive=state["spec"] is not None)
+
+
+def clear_result():
+    """Empty the result panels when a new build starts. Returns (viewer, download, code, report)."""
+    return None, None, "", None
 
 
 def on_build(chat: list, state: dict):
-    """Returns (chat, state, build_button, log, viewer, download, code, report)."""
+    """Returns (chat, state, build_button, log)."""
     spec = state.get("spec")
     if not spec:
-        yield chat, state, gr.Button(interactive=False), "Nothing to build yet.", None, None, "", None
+        yield chat, state, gr.Button(interactive=False), "Nothing to build yet."
         return
 
     messages: queue.Queue = queue.Queue()
@@ -130,7 +158,7 @@ def on_build(chat: list, state: dict):
 
     def worker():
         try:
-            outcome["value"] = run_pipeline(spec, messages.put)
+            outcome["value"] = run_pipeline(spec, messages.put, name=state.get("name"))
         except Exception as e:  # surface failures in the UI instead of crashing
             outcome["error"] = e
         finally:
@@ -142,20 +170,34 @@ def on_build(chat: list, state: dict):
     log_text = ""
     while (msg := messages.get()) is not None:
         log_text += msg + "\n"
-        yield chat, state, gr.Button(interactive=False), log_text, None, None, "", None
+        yield chat, state, gr.Button(interactive=False), log_text
 
     state["rounds"] = 0  # later edits get a fresh clarification budget
     if "error" in outcome:
         chat[-1] = {"role": "assistant", "content": f"Build failed: {outcome['error']}\n\nReply with changes to try again."}
-        yield chat, state, gr.Button(interactive=True), log_text + f"\nFAILED: {outcome['error']}", None, None, "", None
+        yield chat, state, gr.Button(interactive=True), log_text + f"\nFAILED: {outcome['error']}"
         return
 
     stl, code, report = outcome["value"]
     done = "Done, the preview is on the right." if report.get("success") else "Done with warnings (see the validation report)."
-    chat[-1] = {"role": "assistant", "content": done + " Reply with changes to adjust it."}
+    chat[-1] = {"role": "assistant", "content": f"{done} Saved as `{Path(stl).name}`. Reply with changes to adjust it."}
     state["conversation"].append({"role": "assistant", "content": f"Built the part from this spec: {spec}"})
     state["spec"] = None
-    yield chat, state, gr.Button(interactive=False), log_text, stl, stl, code, report
+    state["result"] = {"stl": stl, "code": code, "report": report}
+    yield chat, state, gr.Button(interactive=False), log_text
+
+
+def show_result(state: dict):
+    """Fill the result panels from a finished build. Returns (state, viewer, download, code, report)."""
+    result = state.pop("result", None)
+    if not result:
+        return state, gr.skip(), gr.skip(), gr.skip(), gr.skip()
+    stl = result["stl"]
+    try:
+        preview = make_preview(stl)
+    except Exception:  # the viewer can show the raw STL if conversion fails
+        preview = stl
+    return state, preview, stl, result["code"], result["report"]
 
 
 def on_reset():
@@ -191,18 +233,14 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
                 with gr.Tab("Validation report"):
                     report_box = gr.JSON()
 
-    msg_io = dict(
-        fn=on_message,
-        inputs=[msg, chat, state, use_cache],
-        outputs=[msg, chat, state, build, viewer, download, code_box, report_box],
-    )
-    send.click(**msg_io)
-    msg.submit(**msg_io)
-    build.click(
-        on_build,
-        inputs=[chat, state],
-        outputs=[chat, state, build, log_box, viewer, download, code_box, report_box],
-    )
+    results = [viewer, download, code_box, report_box]
+    for trigger in (send.click, msg.submit):
+        trigger(on_message, inputs=[msg, chat, state, use_cache], outputs=[msg, chat, state, build]).then(
+            show_result, inputs=state, outputs=[state, *results]
+        )
+    build.click(clear_result, outputs=results).then(
+        on_build, inputs=[chat, state], outputs=[chat, state, build, log_box]
+    ).then(show_result, inputs=state, outputs=[state, *results])
     reset.click(on_reset, outputs=[chat, state, build, log_box, viewer, download, code_box, report_box])
 
 if __name__ == "__main__":
