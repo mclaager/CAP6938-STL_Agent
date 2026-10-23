@@ -54,3 +54,30 @@ def test_norag_prompt_has_no_empty_examples_header(tmp_path, monkeypatch):
               log=lambda m: None)
     first = llm.calls[0][0]["content"]
     assert "solved examples" not in first and first.endswith("Request: block a")
+
+
+def test_retry_delay_parsing():
+    from stl_agent.llm import MAX_QUOTA_WAIT, _retry_delay
+
+    assert _retry_delay("Quota exceeded ... limit: 15 ... Please retry in 47.5s.") == 47.5
+    assert _retry_delay('{"retryDelay": "30s"}') == 30
+    assert _retry_delay("Please retry in 1h2m3s.") is None  # daily-style wait: not a short retry
+    assert _retry_delay('{"retryDelay": "40000s"}') > MAX_QUOTA_WAIT
+
+
+def test_rate_limiter_spaces_requests():
+    from stl_agent.llm import RateLimiter
+
+    now = [0.0]
+    slept = []
+
+    def sleep(s):
+        slept.append(s)
+        now[0] += s
+
+    rl = RateLimiter(2, clock=lambda: now[0], sleep=sleep)
+    rl.wait(); rl.wait()          # two calls at t=0 go through
+    assert slept == []
+    now[0] = 10
+    rl.wait()                     # third call within the minute waits until t=60.5
+    assert slept == [50.5] and now[0] == 60.5

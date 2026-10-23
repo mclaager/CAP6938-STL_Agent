@@ -9,6 +9,7 @@ Environment variables:
                         A separate model has its own free-tier quota, so gate checks don't use up builds.
     CAD_MAX_ATTEMPTS    generation + repair attempts (default 4)
     CAD_TOP_K           RAG examples per prompt (default 3)
+    CAD_RPM             max LLM requests per minute per model (Gemini default 14; free tier allows 15)
     CAD_GATE, CAD_GATE_MAX_ROUNDS   intake gate settings (see gate/)
 """
 

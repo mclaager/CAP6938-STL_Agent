@@ -128,7 +128,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
                 res = generate_cad(case["request"], counter, retriever, log=lambda m: None, out_dir=out_dir,
                                    max_attempts=max_attempts, **CONFIGS[config])
             except Exception as e:  # quota exhausted, timeouts, network: stop without recording a result
-                summary.stopped = f"LLM error, stopping: {e}"
+                summary.stopped = f"error, stopping: {type(e).__name__}: {e}"
                 summary.requests = counter.requests
                 return summary
 
@@ -223,7 +223,7 @@ def main(argv=None):
     print(f"\nRan {s.ran}, skipped {s.skipped} already done, used {s.requests} requests. Results: {path}")
     if s.stopped:
         print("Stopped early: " + s.stopped)
-        sys.exit(2 if s.stopped.startswith("LLM error") else 0)
+        sys.exit(2 if s.stopped.startswith("error") else 0)
 
 
 if __name__ == "__main__":

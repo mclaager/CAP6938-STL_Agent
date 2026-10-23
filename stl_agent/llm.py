@@ -45,6 +45,7 @@ class OpenAICompatLLM:
         # Long thinking replies can take minutes; at 120 s some benchmark requests timed out.
         timeout: float = 300.0,
         max_retries: int = 4,
+        rpm: int | None = None,
     ):
         import httpx
 
@@ -55,6 +56,7 @@ class OpenAICompatLLM:
         )
         self.model, self.max_tokens, self.temperature = model, max_tokens, temperature
         self.max_retries = max_retries
+        self.pacer = RateLimiter(rpm) if rpm else None
         self.input_tokens = self.output_tokens = 0
         self.last_truncated = False
 
@@ -73,6 +75,8 @@ class OpenAICompatLLM:
         # A timed-out request is retried once only: the provider may still count it against the quota.
         timed_out, resp = False, None
         for attempt in range(self.max_retries + 1):
+            if self.pacer:
+                self.pacer.wait()
             try:
                 resp = self.client.post("chat/completions", json=body)
             except httpx.TimeoutException:
@@ -83,8 +87,13 @@ class OpenAICompatLLM:
             if resp.status_code not in (429, 500, 502, 503) or attempt == self.max_retries:
                 break
             if resp.status_code == 429 and "quota" in resp.text.lower():
-                # Daily/plan quota is used up: retrying just burns time (and possibly more quota).
-                raise RuntimeError(f"{self.model}: free-tier quota exhausted. {_quota_hint(resp.text)}")
+                # Per-minute limits ask for a short wait: wait and retry. Daily limits ask for hours:
+                # retrying just burns time, so stop.
+                wait = _retry_delay(resp.text)
+                if wait is None or wait > MAX_QUOTA_WAIT:
+                    raise RuntimeError(f"{self.model}: free-tier quota exhausted. {_quota_hint(resp.text)}")
+                time.sleep(wait + 1)
+                continue
             retry_after = resp.headers.get("retry-after", "")
             time.sleep(float(retry_after) if retry_after.isdigit() else 2 ** (attempt + 1))
         if resp is None:
@@ -101,6 +110,32 @@ class OpenAICompatLLM:
         return choice["message"].get("content") or ""
 
 
+class RateLimiter:
+    """Allows at most `rpm` calls in any 60-second window by sleeping before a call when needed."""
+
+    def __init__(self, rpm: int, clock=time.monotonic, sleep=time.sleep):
+        self.rpm, self.clock, self.sleep = rpm, clock, sleep
+        self.sent: list[float] = []
+
+    def wait(self) -> None:
+        now = self.clock()
+        self.sent = [t for t in self.sent if now - t < 60]
+        if len(self.sent) >= self.rpm:
+            self.sleep(60 - (now - self.sent[0]) + 0.5)
+            now = self.clock()
+            self.sent = [t for t in self.sent if now - t < 60]
+        self.sent.append(now)
+
+
+MAX_QUOTA_WAIT = 90  # seconds; longer suggested waits mean a daily quota is used up
+
+
+def _retry_delay(text: str) -> float | None:
+    """Seconds the provider asks us to wait, from "retry in 47.2s" or "retryDelay": "47s"."""
+    m = re.search(r"retry in ([\d.]+)s\b", text) or re.search(r'"retryDelay":\s*"([\d.]+)s"', text)
+    return float(m.group(1)) if m else None
+
+
 def _quota_hint(text: str) -> str:
     m = re.search(r"Quota exceeded for metric: [^,]*, limit: (\d+)[^\n]*\n?[^\n]*?retry in ([\dhms.]+)", text)
     if m:
@@ -115,6 +150,7 @@ PROVIDERS = {
         key_env="GEMINI_API_KEY",
         default_model="gemini-3.8-flash",
         default_gate_model="gemini-3.6-flash",  # separate daily quota from the build model
+        default_rpm=14,  # free tier allows 15 requests/minute per model (e.g. 3.5 Flash Lite)
     ),
 }
 
@@ -129,7 +165,8 @@ def make_llm(provider: str = PROVIDER, model: str | None = MODEL):
     api_key = os.environ.get(cfg["key_env"])
     if not api_key:
         raise RuntimeError(f"CAD_PROVIDER={provider} needs {cfg['key_env']} set (env or .env file).")
-    return OpenAICompatLLM(cfg["base_url"], api_key, model or cfg["default_model"])
+    rpm = int(os.environ.get("CAD_RPM") or cfg.get("default_rpm") or 0) or None
+    return OpenAICompatLLM(cfg["base_url"], api_key, model or cfg["default_model"], rpm=rpm)
 
 
 class ScriptedLLM:
