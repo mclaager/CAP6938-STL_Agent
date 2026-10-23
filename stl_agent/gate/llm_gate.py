@@ -45,6 +45,24 @@ If the user already answered something, or said "you choose" / "anything", it is
 """
 
 
+LIBRARY_PROMPT = """
+EXAMPLE LIBRARY
+The code-writing step can be shown up to 3 solved examples from this library. Add two fields to
+the JSON object:
+  "shape": "one short line naming the basic shape and its main features, no dimensions",
+  "examples": ["id", ...]
+For "examples", pick up to 3 ids whose geometry or CadQuery operations (revolve, loft, shell,
+hole patterns, slots, text, sweep, angled plates, ...) are closest to the part in your spec, most
+useful first. Judge by how the part is built, not by its purpose. Use [] if none is close.
+
+{index}
+"""
+
+
+def library_index(examples: list[dict]) -> str:
+    return "\n".join(f"{e['id']}: {e['request']}" for e in examples)
+
+
 def _transcript(conversation: list[dict]) -> str:
     lines = []
     for turn in conversation:
@@ -68,15 +86,22 @@ def parse_gate_reply(text: str) -> dict:
 
 
 class LLMGate:
-    def __init__(self, llm, max_rounds: int = MAX_ROUNDS):
+    def __init__(self, llm, max_rounds: int = MAX_ROUNDS, library: list[dict] | None = None):
+        """With `library`, the gate also picks relevant examples and writes a shape summary."""
         self.llm, self.max_rounds = llm, max_rounds
+        self.known_ids = {e["id"] for e in library} if library else set()
+        self.prompt = GATE_PROMPT + (LIBRARY_PROMPT.format(index=library_index(library)) if library else "")
 
     def decide(self, conversation: list[dict], rounds_asked: int = 0) -> Decision:
         fallback_spec = "\n".join(t["content"] for t in conversation if t["role"] == "user")
-        reply = self.llm.complete(GATE_PROMPT, [{"role": "user", "content": _transcript(conversation)}])
+        reply = self.llm.complete(self.prompt, [{"role": "user", "content": _transcript(conversation)}])
         try:
             report = parse_gate_reply(reply)
         except (ValueError, json.JSONDecodeError):
             # Fail open: a broken gate reply should not block generation.
             return Decision(action=PROCEED, spec=fallback_spec, note="Gate reply was not valid JSON; using the raw request.")
-        return decide_from_report(report, fallback_spec, rounds_asked, self.max_rounds)
+        d = decide_from_report(report, fallback_spec, rounds_asked, self.max_rounds)
+        if d.example_ids is not None:
+            # Drop ids the model made up; keep the order it gave.
+            d.example_ids = [i for i in d.example_ids if i in self.known_ids][:3] if self.known_ids else None
+        return d

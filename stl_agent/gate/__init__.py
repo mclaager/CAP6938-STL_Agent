@@ -24,10 +24,11 @@ from .base import (CLARIFY, MAX_QUESTIONS, MAX_ROUNDS, OUT_OF_SCOPE, PROCEED, De
 from .jev import JevGate
 from .llm_gate import GATE_PROMPT, LLMGate, parse_gate_reply
 
-def make_gate(llm, kind: str | None = None) -> Gate:
+def make_gate(llm, kind: str | None = None, library: list[dict] | None = None) -> Gate:
+    """`library`: example dicts the LLM gate may pick from (CAD_GATE_PICKS); None to not pick."""
     kind = (kind or os.environ.get("CAD_GATE", "llm")).lower()
     if kind == "llm":
-        return LLMGate(llm)
+        return LLMGate(llm, library=library)
     if kind == "off":
         return PassthroughGate()
     if kind == "jev":

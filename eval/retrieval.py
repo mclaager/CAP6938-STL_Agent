@@ -93,13 +93,32 @@ def evaluate(make, examples: list[dict], cases: list[dict], labels: dict, k: int
                 rel_median=float(np.median(rel_a)), irr_p90=float(np.percentile(irr_a, 90)), top=per_case)
 
 
+def score_picks(cases: list[dict], labels: dict, specs: dict, fallback) -> str:
+    ids = [e["id"] for e in fallback.examples]
+    hits, recalls, rrs, with_picks = [], [], [], 0
+    for c in cases:
+        picks = specs[c["id"]].get("examples") or []
+        with_picks += bool(picks)
+        order = picks or [ids[i] for i in np.argsort(fallback.scores(c["request"]))[::-1]]
+        rel = set(labels[c["id"]]["relevant"])
+        if not rel:
+            continue
+        hits.append(bool(order) and order[0] in rel)
+        recalls.append(len(rel & set(order[:3])) / len(rel))
+        ranks = [order.index(x) for x in rel if x in order]
+        rrs.append(1 / (1 + min(ranks)) if ranks else 0.0)
+    return f"{np.mean(hits):.0%} | {np.mean(recalls):.0%} | {np.mean(rrs):.2f} | {with_picks}/{len(cases)}"
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--methods", nargs="+", default=list(METHODS), choices=list(METHODS))
     ap.add_argument("--show-top", action="store_true", help="also list each method's top 3 per request")
-    ap.add_argument("--queries", choices=["benchmark", "casual", "gate"], default="benchmark",
+    ap.add_argument("--queries", choices=["benchmark", "casual", "gate", "gate-shape"], default="benchmark",
                     help="benchmark: the CAD-worded requests in cases.json; casual: everyday-language versions; "
-                         "gate: the intake gate's specs for the casual versions (eval/gate_specs.py)")
+                         "gate: the intake gate's specs for the casual versions (eval/gate_specs.py); "
+                         "gate-shape: the gate's one-line shape summaries")
+    ap.add_argument("--gate-file", type=Path, default=GATE_PATH, help="gate specs file for --queries gate/gate-shape")
     args = ap.parse_args(argv)
 
     from stl_agent.config import EXAMPLES_PATH
@@ -115,9 +134,14 @@ def main(argv=None):
         cases = [{**c, "request": casual["queries"][c["id"]]} for c in cases]
         if not casual.get("reviewed"):
             print("Note: casual queries have not been reviewed by a human yet (eval/retrieval_queries_casual.json).\n")
-    elif args.queries == "gate":
-        specs = json.loads(GATE_PATH.read_text())["specs"]
-        cases = [{**c, "request": specs[c["id"]]["spec"]} for c in cases]
+    specs = None
+    if args.queries in ("gate", "gate-shape"):
+        specs = json.loads(args.gate_file.read_text())["specs"]
+        field = "spec" if args.queries == "gate" else "shape"
+        missing = [c["id"] for c in cases if c["id"] not in specs]
+        if missing:
+            print(f"Note: no gate spec yet for {', '.join(missing)}; scoring the other {len(cases) - len(missing)} requests.\n")
+        cases = [{**c, "request": specs[c["id"]].get(field) or specs[c["id"]]["spec"]} for c in cases if c["id"] in specs]
 
     print("| method | hit@1 | recall@3 | MRR | AUC | best cutoff (F1) | relevant median / unrelated p90 | load | per query |")
     print("|---|---|---|---|---|---|---|---|---|")
@@ -127,6 +151,14 @@ def main(argv=None):
         print(f"| {name} | {m['hit1']:.0%} | {m['recall3']:.0%} | {m['mrr']:.2f} | {m['auc']:.2f} | "
               f"{m['cutoff']:.2f} ({m['f1']:.2f}) | {m['rel_median']:.2f} / {m['irr_p90']:.2f} | "
               f"{m['load_s']:.2f} s | {m['query_ms']:.2f} ms |")
+    if specs and any("examples" in v for v in specs.values()):
+        print("\nGate picks (CAD_GATE_PICKS): the examples the gate chose, in its order; when it chose none,"
+              " the retriever's ranking on these queries")
+        print("| method | hit@1 | recall@3 | MRR | requests with picks |\n|---|---|---|---|---|")
+        for name in args.methods:
+            r = METHODS[name](examples)
+            print(f"| gate picks, else {name} | " + score_picks(cases, labels, specs, r) + " |")
+
     if args.show_top:
         for c in cases:
             rel = set(labels[c["id"]]["relevant"])

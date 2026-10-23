@@ -21,7 +21,7 @@ def test_clarify_then_build(monkeypatch, tmp_path):
         calls.append(rounds)
         return decide_from_report(CRITICAL if rounds == 0 else READY, "x", rounds)
 
-    def fake_pipeline(spec, log, name=None):
+    def fake_pipeline(spec, log, name=None, **kw):
         log("working on " + spec)
         return str(tmp_path / f"{name}.stl"), "code", {"success": True}
 

@@ -65,3 +65,24 @@ all; and the gate sometimes designs a different part than the labels assume (the
 wall bracket with countersunk holes), so some "misses" are label mismatches. No method clearly wins:
 differences are 1-2 of 18 queries. A short shape summary from the gate (e.g. "curved hook arm on a
 wall plate") would likely retrieve better than the full spec, at no extra request.
+
+## Gate picks (`CAD_GATE_PICKS=1`), first test
+
+The gate is shown a one-line index of the library and returns up to 3 example ids plus a one-line
+shape summary. Run on gemini-3.8-flash (`eval/retrieval_queries_gate_picks.json`); its daily quota
+ran out after 10 of 19 queries (s01-m05: the simple and medium half). Same 10 requests:
+
+| what retrieval sees | hit@1 | recall@3 |
+|---|---|---|
+| everyday wording, word TF-IDF | 10% | 43% |
+| gemini-3.6 gate spec, hybrid | 60% | 65% |
+| gemini-3.8 gate spec, word TF-IDF | 70% | 80% |
+| 3.8 one-line shape summary, word TF-IDF | 50% | 65% |
+| **3.8 gate picks** | **80%** | **75%** |
+| reference: CAD-worded benchmark request, hybrid | 80% | 70% |
+
+Gate picks on everyday requests match the best retriever on CAD-worded requests, with no extra
+request and no extra dependency. The one-line shape summary retrieves worse than the full spec
+(too few words), so the fallback when the gate picks nothing is retrieval on the spec. Caveats:
+10 requests, the easier half, on the stronger 3.8 model; hard/proposal requests and the default
+gate models (3.6, Flash Lite) are untested.
