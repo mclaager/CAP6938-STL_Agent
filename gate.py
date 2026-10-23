@@ -36,6 +36,7 @@ class Decision:
     questions: list[str] = field(default_factory=list)
     assumptions: list[dict] = field(default_factory=list)  # [{"param", "default", "critical", ...}]
     note: str = ""  # e.g. why the gate fell back to proceeding
+    name: str = ""  # short file-name slug for the part, e.g. "flange-80mm-6-holes"
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -55,6 +56,7 @@ Read the conversation and reply with ONE JSON object in a ```json block, nothing
   "scope": "in_scope" | "simplified" | "out_of_scope",
   "scope_reason": "one short sentence; empty when in_scope",
   "spec": "complete, self-contained description of the part to build, with every dimension in mm, including everything the user said in later messages",
+  "name": "short file name for the part: 2-5 lowercase words joined by hyphens, e.g. flange-80mm-6-holes",
   "unknowns": [
     {"param": "name", "default": "value you would use", "critical": true | false,
      "question": "short question to ask the user about it"}
@@ -90,6 +92,12 @@ def _transcript(conversation: list[dict]) -> str:
     return "Conversation so far:\n\n" + "\n\n".join(lines)
 
 
+def slugify(text: str, max_words: int = 6, max_len: int = 48) -> str:
+    """'An 80mm Flange, 6 holes!' -> 'an-80mm-flange-6-holes'. Safe as a file name; may be empty."""
+    words = re.findall(r"[a-z0-9]+", text.lower())[:max_words]
+    return "-".join(words)[:max_len].strip("-")
+
+
 _JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*\n(.*?)```", re.S | re.I)
 
 
@@ -112,7 +120,7 @@ def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_
     unknowns = [u for u in report.get("unknowns") or [] if isinstance(u, dict)]
     critical = [u for u in unknowns if u.get("critical") is True]
     d = Decision(action=PROCEED, spec=spec, scope=scope, scope_reason=str(report.get("scope_reason") or ""),
-                 assumptions=unknowns)
+                 assumptions=unknowns, name=slugify(str(report.get("name") or "")))
 
     if scope == "out_of_scope":
         d.action = OUT_OF_SCOPE
@@ -181,5 +189,7 @@ if __name__ == "__main__":
     assert decide_from_report({**base, "unknowns": base["unknowns"][1:]}, "x", 0).action == PROCEED
     assert decide_from_report({"scope": "out_of_scope"}, "x", 0).action == OUT_OF_SCOPE
     assert decide_from_report({}, "raw", 0).spec == "raw"
+    assert decide_from_report({**base, "name": "Phone Stand/../x"}, "x", 0).name == "phone-stand-x"
+    assert slugify("An 80mm Flange, 6 holes!") == "an-80mm-flange-6-holes"
     assert parse_gate_reply('ok\n```json\n{"scope": "in_scope"}\n```')["scope"] == "in_scope"
     print("gate rule checks passed")
