@@ -14,6 +14,8 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 app` — Gradio UI (`stl_agent/app.py`) at http://127.0.0.1:7860
 - `pixi run -e cap6938 test` — pytest suite in `tests/` (no LLM calls)
 - `pixi run -e cap6938 examples` — rebuild and verify `stl_agent/data/examples.json`
+- `pixi run -e cap6938 bench run [--model M] [--category simple] [--budget 18]` — benchmark (#7);
+  `pixi run -e cap6938 bench report` prints markdown tables from `eval/results/`
 
 LLM backend is picked by `CAD_PROVIDER`: `anthropic` (default, needs `ANTHROPIC_API_KEY`) or
 `gemini` (free tier, needs `GEMINI_API_KEY`). `stl_agent/config.py` reads a `.env` file in the repo root;
@@ -55,14 +57,19 @@ pypi deps for non-pixi users, so keep the two in sync.
 
 Elsewhere:
 
-- `tests/` — gate rules, sandbox smoke tests, app chat flow with stubbed gate/pipeline.
+- `eval/` — benchmark harness (#7). `cases.json` holds the requests (none copied from the example
+  library; each has `expect` build/decline/either and an optional expected bounding box). `bench.py run`
+  calls `generate_cad` directly (no gate), appends one line per (case, config) to
+  `eval/results/<model>.jsonl` (committed), skips pairs already done, and stops before exceeding
+  `--budget` requests, so a full run can be spread over several days of free-tier quota.
+- `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness (all offline).
 - `scripts/` — maintenance scripts (`make_examples.py`).
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
   colored `<name>.preview.glb` for the viewer (gitignored).
 
 Where planned work goes: LLM-as-judge in `stl_agent/judge/` (#8), Thingiverse and part combining in
-`stl_agent/sources/` (#9, #10), Jev in `stl_agent/gate/jev.py` (#12), benchmark sets and runners in
-`eval/` (#7, #8, #12).
+`stl_agent/sources/` (#9, #10), Jev in `stl_agent/gate/jev.py` (#12); judge scores and the gate
+evaluation set also go in `eval/`.
 
 ## Roadmap
 

@@ -24,6 +24,8 @@ Other commands:
 ```bash
 pixi run -e cap6938 test       # tests (no API calls)
 pixi run -e cap6938 examples   # rebuild the few-shot example library
+pixi run -e cap6938 bench run --budget 18   # benchmark; resumes where it stopped
+pixi run -e cap6938 bench report             # results tables
 ```
 
 ## How it works

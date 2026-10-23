@@ -1,0 +1,46 @@
+{
+  "about": "Benchmark requests for issue #7. None are copies of stl_agent/data/examples.json requests. expect: build (should produce a valid part), decline (should answer UNSUPPORTED), either (both are acceptable). expected_bbox_mm is the overall size in any axis order, or null when the request doesn't pin it down.",
+  "cases": [
+    {"id": "s01", "category": "simple", "expect": "build", "expected_bbox_mm": [12, 12, 15],
+     "request": "A cylindrical spacer with 12mm outer diameter, 6.5mm inner diameter, 15mm long."},
+    {"id": "s02", "category": "simple", "expect": "build", "expected_bbox_mm": [25, 25, 25],
+     "request": "A 25mm cube with a 10mm diameter hole drilled through the centre from top to bottom."},
+    {"id": "s03", "category": "simple", "expect": "build", "expected_bbox_mm": [34.64, 30, 8],
+     "request": "A hexagonal prism 30mm across the flats and 8mm tall."},
+    {"id": "s04", "category": "simple", "expect": "build", "expected_bbox_mm": [70, 20, 4],
+     "request": "A 70mm x 20mm x 4mm bar with a 40mm long, 6mm wide slot through it, centred along its length."},
+    {"id": "s05", "category": "simple", "expect": "build", "expected_bbox_mm": [40, 40, 30],
+     "request": "A solid cone 40mm in base diameter and 30mm tall."},
+
+    {"id": "m01", "category": "medium", "expect": "build", "expected_bbox_mm": [120, 80, 4],
+     "request": "A 120mm x 80mm x 4mm mounting plate with a 3 by 2 grid of 5mm holes spaced 30mm apart, centred on the plate, and all four corners rounded with an 8mm radius."},
+    {"id": "m02", "category": "medium", "expect": "build", "expected_bbox_mm": [100, 60, 15],
+     "request": "An open-top rectangular tray 100mm x 60mm x 15mm with 2mm walls and a 2mm floor, with one 2mm divider wall splitting it into two equal compartments along its length."},
+    {"id": "m03", "category": "medium", "expect": "build", "expected_bbox_mm": [30, 30, 15],
+     "request": "A round knob 30mm in diameter and 15mm tall, with a 6mm D-shaped shaft hole 10mm deep in the bottom; the flat of the D is 1mm in from the circle."},
+    {"id": "m04", "category": "medium", "expect": "build", "expected_bbox_mm": [60, 60, 5],
+     "request": "A 60mm diameter disc, 5mm thick, with a 20mm centre hole and eight 4mm holes evenly spaced on a 45mm bolt circle."},
+    {"id": "m05", "category": "medium", "expect": "build", "expected_bbox_mm": [80, 20, 5],
+     "request": "A cable comb: an 80mm x 20mm x 5mm bar with six 4mm wide, 12mm deep slots cut into one long edge, evenly spaced along it."},
+    {"id": "m06", "category": "medium", "expect": "build", "expected_bbox_mm": [100, 30, 20],
+     "request": "A U-channel 100mm long, 30mm wide and 20mm tall, with 3mm thick walls and base, open at the top and both ends."},
+    {"id": "m07", "category": "medium", "expect": "build", "expected_bbox_mm": [50, 50, 60],
+     "request": "A cylindrical cup 50mm outer diameter and 60mm tall with 2mm walls and a 2mm base, open at the top, with the outer bottom edge filleted with a 3mm radius."},
+    {"id": "m08", "category": "medium", "expect": "build", "expected_bbox_mm": [40, 40, 10],
+     "request": "A pipe clamp ring: 10mm tall, 32mm inner diameter, 4mm wall, with a 2mm wide gap cut through one side of the ring."},
+
+    {"id": "h01", "category": "hard", "expect": "build", "expected_bbox_mm": [44, 44, 8],
+     "request": "A spur gear with 20 teeth, module 2, 8mm thick, with a 5mm centre bore."},
+    {"id": "h02", "category": "hard", "expect": "build", "expected_bbox_mm": null,
+     "request": "A phone stand: a 70mm wide, 80mm deep, 5mm thick base plate; a 5mm thick, 90mm long back support leaning back at 65 degrees from the base; and a 10mm tall lip along the front edge to stop the phone sliding."},
+    {"id": "h03", "category": "hard", "expect": "build", "expected_bbox_mm": null,
+     "request": "A wall hook: a 40mm x 60mm x 5mm back plate with two 4mm countersunk screw holes, and a curved hook arm that sticks out 35mm from the lower part of the plate and curves upward at the end."},
+
+    {"id": "p01", "category": "proposal", "expect": "build", "expected_bbox_mm": [150, 25, 3],
+     "request": "Make me a ruler with my name engraved on it. The ruler is 150mm long, 25mm wide and 3mm thick, with the name ALEX engraved 0.5mm deep and a tick mark every 10mm along one long edge."},
+    {"id": "p02", "category": "proposal", "expect": "either", "expected_bbox_mm": null,
+     "request": "Make a die that has 2 snakes and 4 ladders instead of numbers."},
+    {"id": "p03", "category": "proposal", "expect": "decline", "expected_bbox_mm": null,
+     "request": "Create a tree that has a cat on it."}
+  ]
+}
