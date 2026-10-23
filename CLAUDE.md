@@ -28,6 +28,9 @@ added as one entry in `PROVIDERS` in `stl_agent/llm.py`.
 
 Gemini free tier is about 20 requests/day per model, and each repair attempt is one request.
 If one model's quota runs out, switch with `CAD_MODEL` (e.g. `gemini-3.6-flash`), which has its own quota.
+The free tier also caps each model at 15 requests/minute; the client paces itself to `CAD_RPM`
+(default 14 for Gemini) and waits out short rate-limit replies instead of failing.
+`gemini-3.5-flash-lite` has a much larger daily quota (about 500) but is a weaker coder; see `bench report`.
 
 Add dependencies to `pixi.toml` under the `cap6938` feature. `requirements.txt` mirrors the
 pypi deps for non-pixi users, so keep the two in sync.
