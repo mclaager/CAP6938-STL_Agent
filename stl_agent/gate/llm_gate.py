@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-import re
 
+from ..llm import parse_json_object
 from .base import MAX_ROUNDS, PROCEED, Decision, decide_from_report
 
 GATE_PROMPT = """\
@@ -70,17 +70,9 @@ def _transcript(conversation: list[dict]) -> str:
     return "Conversation so far:\n\n" + "\n\n".join(lines)
 
 
-_JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*\n(.*?)```", re.S | re.I)
-
-
 def parse_gate_reply(text: str) -> dict:
     """Pull the JSON object out of the reply (fenced block preferred, else the outermost braces)."""
-    m = _JSON_BLOCK_RE.search(text)
-    candidate = m.group(1) if m else text[text.find("{") : text.rfind("}") + 1]
-    data = json.loads(candidate)
-    if not isinstance(data, dict):
-        raise ValueError("gate reply is not a JSON object")
-    return data
+    return parse_json_object(text)
 
 
 

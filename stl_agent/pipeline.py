@@ -159,6 +159,7 @@ class GenResult:
             "attempt_log": self.history,
             "seconds": round(self.seconds, 1),
             "error": self.error,
+            "stl_path": self.stl_path,  # final (or best-effort) part
         }
 
 
