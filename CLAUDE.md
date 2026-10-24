@@ -70,8 +70,8 @@ Elsewhere:
   `eval/results/<model>.jsonl` (committed), skips pairs already done, and stops before exceeding
   `--budget` requests, so a full run can be spread over several days of free-tier quota.
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
-  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-char` (letter-chunk
-  retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs). Each result row records
+  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1` / `rag-k5` (1 or 5
+  examples instead of 3), `rag-char` (letter-chunk retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size
   (`python -m eval.references`; also run by the tests). Add one for every new case with an expected bbox,
