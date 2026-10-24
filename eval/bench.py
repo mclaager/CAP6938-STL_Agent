@@ -31,15 +31,11 @@ RESULTS_DIR = EVAL_DIR / "results"
 
 # name -> generate_cad keyword arguments
 CONFIGS = {
-    "rag": dict(use_rag=True, top_k=3, min_sim=0.0),  # pinned, whatever the app default is
+    "rag": dict(use_rag=True, top_k=3),  # pinned, whatever the app default is
     "norag": dict(use_rag=False),
-    "rag-k1": dict(use_rag=True, top_k=1, min_sim=0.0),
-    "rag-t20": dict(use_rag=True, top_k=3, min_sim=0.2),
-    "rag-t30": dict(use_rag=True, top_k=3, min_sim=0.3),  # only examples with similarity >= 0.3
-    # Other retrievers (issue #20); "retriever" is a stl_agent.retrieval kind, default "tfidf".
-    "rag-char": dict(use_rag=True, top_k=3, min_sim=0.0, retriever="tfidf-char"),
-    "rag-embed": dict(use_rag=True, top_k=3, min_sim=0.0, retriever="embed"),
-    "rag-hybrid": dict(use_rag=True, top_k=3, min_sim=0.0, retriever="hybrid"),
+    # "retriever" is a stl_agent.retrieval kind, default "tfidf". Older results also contain
+    # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag).
+    "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char"),
 }
 
 

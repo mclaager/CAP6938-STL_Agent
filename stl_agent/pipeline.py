@@ -18,7 +18,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .config import EXAMPLES_PATH, GATE_MODEL, GATE_PICKS, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, RAG_MIN_SIM, TOP_K
+from .config import EXAMPLES_PATH, GATE_MODEL, GATE_PICKS, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, TOP_K
 from .llm import PROVIDERS, make_llm
 from .retrieval import BaseRetriever, make_retriever
 from .sandbox import ExecResult, ValidationReport, feedback_for_llm, run_cadquery, validate_mesh
@@ -171,9 +171,7 @@ def generate_cad(
     max_attempts: int = MAX_ATTEMPTS,
     top_k: int = TOP_K,
     use_rag: bool = True,
-    min_sim: float = RAG_MIN_SIM,
     example_ids: list[str] | None = None,
-    retrieval_query: str | None = None,
     exec_timeout: float = 60.0,
 ) -> GenResult:
     """Run the full generate -> execute -> validate -> repair loop."""
@@ -183,7 +181,7 @@ def generate_cad(
     res = GenResult(success=False)
 
     # Examples: the intake gate's picks when it made any (CAD_GATE_PICKS), otherwise the retriever
-    # (on `retrieval_query` if given, else the request/spec itself).
+    # run on the request (in the app, the gate's confirmed spec).
     by_id = {e["id"]: e for e in retriever.examples}
     picked = [by_id[i] for i in (example_ids or []) if i in by_id][:top_k]
     if not use_rag:
@@ -191,7 +189,7 @@ def generate_cad(
     elif picked:
         examples = picked
     else:
-        examples = retriever.retrieve(retrieval_query or request, top_k, min_sim)
+        examples = retriever.retrieve(request, top_k)
     res.retrieved_ids = [e["id"] for e in examples]
     source = "chosen by the intake gate" if use_rag and picked else "retrieved"
     log(f"Using {len(examples)} example(s) {source}: {', '.join(res.retrieved_ids) or 'none'}")
@@ -310,7 +308,6 @@ def run_pipeline(request: str, log, name: str | None = None,
     if _retriever is None:
         _retriever = make_retriever()  # CAD_RETRIEVER
 
-    # Without gate picks, retrieve on the full spec: the gate's one-line shape summary retrieved worse (#20).
     res = generate_cad(request, get_llm(), _retriever, log=log, example_ids=example_ids)
     if res.unsupported or res.stl_path is None:
         raise RuntimeError(res.error or "Generation failed.")

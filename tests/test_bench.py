@@ -83,12 +83,6 @@ def test_rate_limiter_spaces_requests():
     assert slept == [50.5] and now[0] == 60.5
 
 
-def test_min_sim_drops_unrelated_examples():
-    r = ExampleRetriever.from_file()
-    assert len(r.retrieve("A round flange with six holes on a bolt circle", 3, min_sim=0.3)) >= 1
-    assert r.retrieve("Create a tree that has a cat on it.", 3, min_sim=0.3) == []
-
-
 def test_repeats_run_resume_and_compare(tmp_path, monkeypatch):
     monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
     results = tmp_path / "r.jsonl"

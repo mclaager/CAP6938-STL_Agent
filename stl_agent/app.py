@@ -69,7 +69,7 @@ def make_preview(stl_path: str) -> str:
 def new_state() -> dict:
     # conversation: turns the gate sees; rounds: clarifying rounds asked;
     # spec / name: ready-to-build spec and its file-name slug
-    return {"conversation": [], "rounds": 0, "spec": None, "name": "", "example_ids": None, "shape": ""}
+    return {"conversation": [], "rounds": 0, "spec": None, "name": "", "example_ids": None}
 
 
 def format_decision(d) -> str:
@@ -133,7 +133,7 @@ def on_message(message: str, chat: list, state: dict, use_cache: bool):
         state["rounds"] += 1
     elif d.action != OUT_OF_SCOPE:
         state["spec"], state["name"] = d.spec, d.name
-        state["example_ids"], state["shape"] = d.example_ids, d.shape
+        state["example_ids"] = d.example_ids
     state["conversation"].append({"role": "assistant", "content": reply})
     chat.append({"role": "assistant", "content": reply})
     yield "", chat, state, gr.Button(interactive=state["spec"] is not None)

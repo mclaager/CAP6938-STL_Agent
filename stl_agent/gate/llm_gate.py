@@ -49,7 +49,6 @@ LIBRARY_PROMPT = """
 EXAMPLE LIBRARY
 The code-writing step can be shown up to 3 solved examples from this library. Add two fields to
 the JSON object:
-  "shape": "one short line naming the basic shape and its main features, no dimensions",
   "examples": ["id", ...]
 For "examples", pick up to 3 ids whose geometry or CadQuery operations (revolve, loft, shell,
 hole patterns, slots, text, sweep, angled plates, ...) are closest to the part in your spec, most
@@ -87,7 +86,7 @@ def parse_gate_reply(text: str) -> dict:
 
 class LLMGate:
     def __init__(self, llm, max_rounds: int = MAX_ROUNDS, library: list[dict] | None = None):
-        """With `library`, the gate also picks relevant examples and writes a shape summary."""
+        """With `library`, the gate also picks relevant examples."""
         self.llm, self.max_rounds = llm, max_rounds
         self.known_ids = {e["id"] for e in library} if library else set()
         self.prompt = GATE_PROMPT + (LIBRARY_PROMPT.format(index=library_index(library)) if library else "")

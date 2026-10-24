@@ -45,12 +45,11 @@ def test_gate_picks_are_parsed_and_made_up_ids_dropped():
     from stl_agent.llm import ScriptedLLM
 
     library = [{"id": "gear_001", "request": "a gear"}, {"id": "text_002", "request": "engraved text"}]
-    reply = ('```json\n{"scope": "in_scope", "spec": "a gear", "unknowns": [], "shape": "spur gear with a bore",'
+    reply = ('```json\n{"scope": "in_scope", "spec": "a gear", "unknowns": [],'
              ' "examples": ["gear_001", "made_up_999", "gear_001", "text_002", "x", "y"]}\n```')
     llm = ScriptedLLM([reply])
     d = LLMGate(llm, library=library).decide([{"role": "user", "content": "a cog"}])
     assert d.example_ids == ["gear_001", "text_002"]
-    assert d.shape == "spur gear with a bore"
 
 
 def test_gate_prompt_includes_library_only_when_picking():
@@ -74,6 +73,5 @@ def test_pipeline_prefers_gate_picks(tmp_path):
     r = TfidfRetriever.from_file()
     res = generate_cad("a hex nut", ScriptedLLM([good]), r, out_dir=tmp_path / "a", example_ids=["gear_001", "nope"])
     assert res.retrieved_ids == ["gear_001"]
-    res = generate_cad("a hex nut", ScriptedLLM([good]), r, out_dir=tmp_path / "b", example_ids=[],
-                       retrieval_query="hexagonal prism")
-    assert res.retrieved_ids[0] == "polygon_001"  # no picks: retrieval on the shape summary
+    res = generate_cad("a hex nut", ScriptedLLM([good]), r, out_dir=tmp_path / "b", example_ids=[])
+    assert res.retrieved_ids[0] == "polygon_001"  # no picks: retrieval on the request
