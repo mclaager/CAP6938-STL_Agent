@@ -85,7 +85,7 @@ Elsewhere:
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,
   prompt, render settings), so changing `--judge-model`, `--prompt` or `--px` adds a study beside the old
-  one. Renders are committed under `eval/renders/` (~25 KB each), with a review/labelling page
+  one. Renders are committed under `eval/renders/` (~35 KB each), with a review/labelling page
   (`judge sheet`). `calibrate` judges each reference solution against its own request (should pass) and
   another case's request (should fail), plus hand labels in `eval/judge_labels.json`.
 - `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size

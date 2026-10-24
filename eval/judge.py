@@ -8,7 +8,7 @@
 Each judged part is one request. Results are appended to eval/results/judge/<judge-model>.jsonl, one row
 per (part, judge, prompt, render settings); a run skips rows already there, so changing the judge model
 (--judge-model / CAD_JUDGE_MODEL), prompt (--prompt) or resolution (--px) adds a new study next to the
-old one. Renders are saved once under eval/renders/ (committed, ~25 KB each) and reused.
+old one. Renders are saved once under eval/renders/ (committed, ~35 KB each) and reused.
 
 Parts come from benchmark runs (eval/bench.py), whose STLs are under outputs/bench/ (gitignored, local).
 """
