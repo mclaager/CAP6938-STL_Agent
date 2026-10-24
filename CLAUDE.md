@@ -73,6 +73,9 @@ Elsewhere:
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1`, `rag-t30` (RAG with a
   0.2 / 0.3 similarity cutoff; the app's cutoff is `CAD_RAG_MIN_SIM`, default 0). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
+- `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size
+  (`python -m eval.references`; also run by the tests). Add one for every new case with an expected bbox,
+  so the case is known to be buildable and its bbox is right. Never shown to the model.
 - `eval/retrieval.py` + `eval/retrieval_labels.json` — offline retrieval evaluation (#20): hit@1, recall@3,
   MRR, AUC, best cutoff and latency per retriever, against hand-labelled relevant examples.
 - `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness, retrieval (all offline).

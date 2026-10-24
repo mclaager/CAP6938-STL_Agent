@@ -93,7 +93,9 @@ _RUNNER = textwrap.dedent(
 
             cq.Compound.makeText = _make_text_with_font
 
-        ns = {"__name__": "__generated__", "show_object": show_object, "cq": cq}
+        # math is allowed by the prompt; pre-load it so a forgotten import doesn't waste an attempt.
+        import math
+        ns = {"__name__": "__generated__", "show_object": show_object, "cq": cq, "math": math}
         exec(compile(source, FILENAME, "exec"), ns)
 
         obj = shown[-1] if shown else ns.get("result")
@@ -236,6 +238,12 @@ def validate_mesh(
     if mesh.is_empty or len(mesh.faces) == 0:
         rep.issues.append("Mesh is empty.")
         return rep
+
+    # STL export leaves zero-area triangles at points like a sphere's poles or a cone's tip.
+    # Each one would count as a separate piece and a hole, so drop them before checking.
+    mesh.update_faces(mesh.nondegenerate_faces())
+    mesh.remove_unreferenced_vertices()
+    mesh.merge_vertices()
 
     rep.n_faces = int(len(mesh.faces))
     rep.watertight = bool(mesh.is_watertight)
