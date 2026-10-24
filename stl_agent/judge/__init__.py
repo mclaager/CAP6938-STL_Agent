@@ -29,7 +29,10 @@ def judge_model(provider: str = JUDGE_PROVIDER, model: str | None = JUDGE_MODEL)
     return model or cfg.get("default_judge_model") or cfg.get("default_model") or "claude-sonnet-5-5"
 
 
-def make_judge(kind: str = JUDGE_KIND, llm=None, model: str | None = JUDGE_MODEL, prompt: str = "v1",
+DEFAULT_PROMPT = "v2"  # matches render v2; v1 was written for render v1's angled underside view
+
+
+def make_judge(kind: str = JUDGE_KIND, llm=None, model: str | None = JUDGE_MODEL, prompt: str = DEFAULT_PROMPT,
                provider: str = JUDGE_PROVIDER) -> Judge:
     """`llm`: an LLM to use directly (tests); otherwise one is built for `provider` / `model`."""
     if kind != "llm":
@@ -44,4 +47,5 @@ def make_judge(kind: str = JUDGE_KIND, llm=None, model: str | None = JUDGE_MODEL
     return LLMJudge(llm, prompt=prompt, model_name=name)
 
 
-__all__ = ["Judge", "Judgement", "LLMJudge", "PROMPTS", "judge_model", "make_judge", "parse_judge_reply"]
+__all__ = ["DEFAULT_PROMPT", "Judge", "Judgement", "LLMJudge", "PROMPTS", "judge_model", "make_judge",
+           "parse_judge_reply"]

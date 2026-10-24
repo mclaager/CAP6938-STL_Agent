@@ -14,20 +14,24 @@ import warnings
 
 import numpy as np
 
-RENDER_VERSION = "v1"  # bump when views, colors or framing change; judged rows record it
+# Bump when views, colors or framing change; judged rows record it.
+# v1: front/right/top + iso front/iso back/from below (angled). The angled underside view made through-holes
+#     look blind and solid bottoms look hollow, so v2 shows the bottom flat, like the top.
+RENDER_VERSION = "v2"
 PART_COLOR = (70, 130, 200)  # same blue as the app's 3D preview
 EDGE_COLOR = (40, 40, 40)
 
 # name -> (camera direction from the part, view-up). CadQuery is Z-up; "front" looks along +Y.
-# Three orthographic views for profiles, three angled ones so the back and the bottom are seen too
-# (a radial hole on the far side or a hole in the bottom face is invisible from front/right/top).
+# Four flat (orthographic, straight-on) views, where a through-hole shows the background, and two angled
+# views so the back is seen too (a radial hole on the far side is invisible from front/right/top).
+# Labels say which views are angled: in those, every hole looks closed because you look in at a slant.
 VIEWS = {
     "front": ((0, -1, 0), (0, 0, 1)),
     "right": ((1, 0, 0), (0, 0, 1)),
     "top": ((0, 0, 1), (0, 1, 0)),
-    "iso front": ((1, -1, 0.8), (0, 0, 1)),
-    "iso back": ((-1, 1, 0.8), (0, 0, 1)),
-    "from below": ((1, -1, -0.8), (0, 0, 1)),
+    "bottom": ((0, 0, -1), (0, 1, 0)),
+    "iso front (angled)": ((1, -1, 0.8), (0, 0, 1)),
+    "iso back (angled)": ((-1, 1, 0.8), (0, 0, 1)),
 }
 COLS = 3
 

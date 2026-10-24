@@ -62,7 +62,7 @@ def test_run_judges_once_resumes_and_respects_budget(tmp_path, monkeypatch):
 
     def session(replies, budget):
         judge = make_judge(llm=ScriptedLLM(replies), model="judge-m")
-        return ej.Session(judge, "judge-m", "v1", 64, budget, log=lambda m: None)
+        return ej.Session(judge, "judge-m", "v2", 64, budget, log=lambda m: None)
 
     class Args:
         gen_model, config, cases, library, reps = "gen", None, None, "lib1", None

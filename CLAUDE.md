@@ -56,8 +56,13 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
   out_of_scope. `llm_gate.py` is the LLM backend, `jev.py` a stub (#12). Each gate check is one LLM request.
-- `render.py` — STL to one 768x512 PNG of six labelled views (front/right/top + iso front/back/below), offscreen VTK
-  (works headless via EGL). `RENDER_VERSION` is recorded with judged rows; bump it when views change.
+- `render.py` — STL to one 768x512 PNG (3x2 grid) of six labelled views, offscreen VTK (works headless via EGL):
+  - flat, straight-on: front, right, top, bottom (a through-hole shows the white background)
+  - angled 3D: iso front, iso back (overall shape, and the back side)
+
+  `RENDER_VERSION` is recorded with judged rows; bump it when views change, and add a judge prompt version that
+  describes the new views. v2 differs from v1 in one view only: v1's angled "from below" view became the flat
+  "bottom" view, because the judge read through-holes as blind pockets in the angled underside view.
 - `judge/` — visual judge (#8), evaluation only (not run by the app). Same shape as `gate/`: `base.py`
   (`Judgement`, 0-1 score), `llm_judge.py` (versioned `PROMPTS`; one request with the request text, the
   measured size and the render). A Jev backend (#12) would be `judge/jev.py`. Images go to LLMs as message
@@ -85,7 +90,7 @@ Elsewhere:
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,
   prompt, render settings), so changing `--judge-model`, `--prompt` or `--px` adds a study beside the old
-  one. Renders are committed under `eval/renders/` (~35 KB each), with a review/labelling page
+  one. Renders are committed under `eval/renders/<render version>-<px>px/` (~35 KB each), with a review/labelling page
   (`judge sheet`). `calibrate` judges each reference solution against its own request (should pass) and
   another case's request (should fail), plus hand labels in `eval/judge_labels.json`.
 - `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size

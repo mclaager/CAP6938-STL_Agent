@@ -31,6 +31,23 @@ Reply with only a JSON object, problems before the score:
 {"matches": ["requested features you can see"], "problems": ["missing, wrong or extra features"], "score": 1-10}""",
 }
 
+# v2: for render v2 (flat bottom view instead of an angled one) and explains flat vs angled views, after
+# v1 judged through-holes as blind pockets from the angled underside view.
+PROMPTS["v2"] = PROMPTS["v1"].replace(
+    """You see one image with six views of the same part, labelled in each corner: front, right and top
+(flat views), then iso front, iso back and from below (angled 3D views; the last two show the back and
+the underside). Each view is zoomed to fit, so sizes can't be compared between views, and there is no
+scale; the measured overall size is given in the message.""",
+    """You see one image with six views of the same part, labelled in each corner:
+- front, right, top and bottom are FLAT views, looking straight at the part. A hole that goes all the way
+  through shows the white background through it; a blind hole or pocket shows a shaded floor instead.
+- "iso front (angled)" and "iso back (angled)" are 3D views from above at an angle, for the overall shape
+  and the back side. In angled views you look into holes at a slant, so even a through-hole looks closed:
+  decide whether holes go through from the flat views, never from the angled ones.
+Each view is zoomed to fit, so sizes can't be compared between views, and there is no scale; the measured
+overall size is given in the message.""")
+assert PROMPTS["v2"] != PROMPTS["v1"]
+
 SCALE = (1, 10)
 
 
@@ -56,7 +73,7 @@ def parse_judge_reply(reply: str) -> Judgement:
 
 
 class LLMJudge:
-    def __init__(self, llm, prompt: str = "v1", model_name: str = ""):
+    def __init__(self, llm, prompt: str = "v2", model_name: str = ""):
         self.llm, self.prompt = llm, prompt
         self.name = f"llm:{model_name or getattr(llm, 'model', 'unknown')}"
 

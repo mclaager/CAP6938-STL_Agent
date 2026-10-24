@@ -58,5 +58,5 @@ RETRIEVER = os.environ.get("CAD_RETRIEVER", "tfidf").lower()
 JUDGE_KIND = os.environ.get("CAD_JUDGE", "llm").lower()
 JUDGE_PROVIDER = os.environ.get("CAD_JUDGE_PROVIDER", PROVIDER).lower()
 JUDGE_MODEL = os.environ.get("CAD_JUDGE_MODEL")
-JUDGE_THRESHOLD = float(os.environ.get("CAD_JUDGE_THRESHOLD", "0.3"))  # provisional: eval/judge.py calibrate
+JUDGE_THRESHOLD = float(os.environ.get("CAD_JUDGE_THRESHOLD", "0.5"))  # from calibrate (prompt v2, render v2)
 GATE_PICKS = os.environ.get("CAD_GATE_PICKS", "0").lower() in ("1", "true", "yes", "on")
