@@ -45,9 +45,9 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `config.py` — paths, `.env` loading and `CAD_*` settings.
 - `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`.
 - `retrieval.py` — RAG over `data/examples.json` (each example's request plus its `keywords`: generic
-  shape/operation words). Retrievers selected by `CAD_RETRIEVER`: `tfidf` (default, words), `tfidf-char`
-  (letter chunks, numbers stripped), `embed` (local fastembed model, ONNX, no PyTorch; model cached in
-  `~/.cache/stl_agent`), `hybrid` (tfidf-char + embed). Keep the app lightweight (#19): no PyTorch.
+  shape/operation words). Retrievers selected by `CAD_RETRIEVER`: `tfidf` (default, words) or `tfidf-char`
+  (letter chunks, numbers stripped). A local embedding model and a similarity cutoff were tried and removed
+  (no gain; see `eval/results/retrieval-lib26.md`). Keep the app lightweight (#19): no PyTorch.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
@@ -70,14 +70,14 @@ Elsewhere:
   `eval/results/<model>.jsonl` (committed), skips pairs already done, and stops before exceeding
   `--budget` requests, so a full run can be spread over several days of free-tier quota.
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
-  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1`, `rag-t30` (RAG with a
-  0.2 / 0.3 similarity cutoff; the app's cutoff is `CAD_RAG_MIN_SIM`, default 0). Each result row records
+  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-char` (letter-chunk
+  retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size
   (`python -m eval.references`; also run by the tests). Add one for every new case with an expected bbox,
   so the case is known to be buildable and its bbox is right. Never shown to the model.
 - `eval/retrieval.py` + `eval/retrieval_labels.json` — offline retrieval evaluation (#20): hit@1, recall@3,
-  MRR, AUC, best cutoff and latency per retriever, against hand-labelled relevant examples.
+  MRR and latency per retriever, against hand-labelled relevant examples (original 19 cases only).
 - `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness, retrieval (all offline).
 - `scripts/` — maintenance scripts (`make_examples.py`).
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a

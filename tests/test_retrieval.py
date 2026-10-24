@@ -1,4 +1,4 @@
-"""Retrieval methods that need no model download (the embedding model is covered by eval/retrieval.py)."""
+"""Retrieval methods (word and letter-chunk TF-IDF)."""
 
 import pytest
 

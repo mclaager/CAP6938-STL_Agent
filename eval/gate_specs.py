@@ -2,7 +2,7 @@
 
     python -m eval.gate_specs            # one gate request per query not yet saved
     CAD_GATE_PICKS=1 CAD_GATE_MODEL=gemini-3.5-flash-lite python -m eval.gate_specs --out eval/retrieval_queries_gate_lite_picks.json
-                                         # also save the gate's example picks and shape summary
+                                         # also save the gate's example picks
 
 In the app, retrieval runs on the gate's spec (a geometric restatement of the request), not on the
 user's words. This saves those specs to eval/retrieval_queries_gate.json so
@@ -48,9 +48,9 @@ def main(argv=None):
             print(f"stopping at {cid}: {type(e).__name__}: {e}")
             break
         out["specs"][cid] = {"query": query, "spec": d.spec, "action": d.action, "scope": d.scope, "gate_model": gate_model(),
-                             "shape": d.shape, "examples": d.example_ids,
+                             "examples": d.example_ids,
                              "generated": time.strftime("%Y-%m-%dT%H:%M:%S")}
-        print(f"{cid} [{d.action}] picks={d.example_ids} shape={d.shape!r}")
+        print(f"{cid} [{d.action}] picks={d.example_ids}")
         args.out.write_text(json.dumps(out, indent=1) + "\n")  # save after each, so nothing is lost
     print(f"\n{len(out['specs'])}/{len(casual['queries'])} specs in {args.out}")
 

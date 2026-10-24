@@ -11,11 +11,7 @@ Environment variables:
     CAD_TOP_K           RAG examples per prompt (default 3)
     CAD_GATE_PICKS      1 = the intake gate picks the RAG examples from a library index; when it picks
                         none, the retriever runs on the spec (default 0 until tested on all requests, #20)
-    CAD_RETRIEVER       "tfidf" (default), "tfidf-char", "embed" (local fastembed model) or "hybrid"; see retrieval.py
-    CAD_EMBED_MODEL     fastembed model for embed/hybrid (default snowflake/snowflake-arctic-embed-s, ~130 MB)
-    CAD_MODEL_CACHE     where downloaded models are kept (default ~/.cache/stl_agent)
-    CAD_RAG_MIN_SIM     skip examples with TF-IDF similarity below this (default 0 = always use top k).
-                        A cutoff helped with the old 9-example library but not with the 26-example one.
+    CAD_RETRIEVER       "tfidf" (default) or "tfidf-char"; see retrieval.py
     CAD_RPM             max LLM requests per minute per model (Gemini default 10; free tier allows 15)
     CAD_GATE, CAD_GATE_MAX_ROUNDS   intake gate settings (see gate/)
 """
@@ -54,9 +50,5 @@ MODEL = os.environ.get("CAD_MODEL")  # None -> the provider's default in llm.PRO
 GATE_MODEL = os.environ.get("CAD_GATE_MODEL")  # None -> the provider's default_gate_model, else MODEL
 MAX_ATTEMPTS = int(os.environ.get("CAD_MAX_ATTEMPTS", "4"))
 TOP_K = int(os.environ.get("CAD_TOP_K", "3"))
-RAG_MIN_SIM = float(os.environ.get("CAD_RAG_MIN_SIM", "0"))
 RETRIEVER = os.environ.get("CAD_RETRIEVER", "tfidf").lower()
 GATE_PICKS = os.environ.get("CAD_GATE_PICKS", "0").lower() in ("1", "true", "yes", "on")
-EMBED_MODEL = os.environ.get("CAD_EMBED_MODEL", "snowflake/snowflake-arctic-embed-s")  # best in eval/retrieval.py
-# Downloaded model files (embedding models now; local LLMs later). Outside the repo so they are never committed.
-MODEL_CACHE_DIR = Path(os.environ.get("CAD_MODEL_CACHE", Path.home() / ".cache" / "stl_agent"))
