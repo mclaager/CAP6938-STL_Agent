@@ -54,4 +54,5 @@ Settings (model, attempts, gate behaviour) are environment variables documented 
 
 Done: the generation pipeline with retrieval and intake gate, the evaluation benchmark with RAG ablation,
 and the visual judge. Open work is tracked in [GitHub issues](../../issues): Thingiverse fallback,
-combining parts, the final report, a Jev gate backend, a fully local mode, and the size-check fix.
+combining parts, the final report, a Jev gate backend, a fully local mode, the size-check fix, a stronger
+judge model, and whether retrieved examples make the model skip requested features.

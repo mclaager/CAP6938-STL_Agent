@@ -128,3 +128,5 @@ Open work is in GitHub issues, with the original course timeline's target dates 
 - #12 Jev gate backend and gate evaluation (not from the original proposal; a Jev judge backend could follow)
 - #19 Fully local mode, configurable in the app
 - #23 Size check rejects correct parts when the model's own BBOX estimate is wrong
+- #28 Compare a stronger judge model on the hand-labelled parts
+- #29 Test whether RAG makes the model copy the retrieved example instead of building every requested feature
