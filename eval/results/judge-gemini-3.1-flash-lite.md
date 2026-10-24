@@ -24,7 +24,12 @@ Two render/prompt versions were run on the same parts:
 - New mistake: the pipe elbow reference is marked down because "the front view doesn't show the white
   background". A bent tube can't show background in any flat view, so the through-hole rule misleads the
   judge for bent passages.
-- Remaining mistake in both versions: the stepped shaft (m13) is called "symmetrical".
+- Remaining mistake in both versions: the stepped shaft (m13). The reference and both generated shafts are
+  correct (10 mm × 20, 16 mm × 15, 8 mm × 25 from the bottom up; measured from the meshes), and the render
+  shows this clearly, but the judge calls them "symmetrical with two identical ends" and fails all three.
+  This is a judge capability error, not a misleading input, so it is not patched in the prompt; prompts are
+  changed only when the input itself misleads (as with v1's underside view). The remedy is a stronger judge
+  model, compared on the same items.
 - `CAD_JUDGE_THRESHOLD` default is 0.5, from the v2 calibration. Hand labels (`eval/judge_labels.json`) are
   still to be added; rerun `calibrate` when they are.
 
