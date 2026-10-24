@@ -113,8 +113,7 @@ def test_bands_and_label_grades():
                                                              "minor", "minor", "match", "match"]
     assert band(None) is None
     assert label_pass({"grade": "minor"}) is True and label_pass({"grade": "feature_wrong"}) is False
-    assert label_pass({"pass": True}) is True  # old pass/fail labels still count
-    assert label_pass({"why": "not sure yet"}) is None
+    assert label_pass({"pass": True}) is None and label_pass({"why": "not sure yet"}) is None  # grades only
 
 
 def test_band_agreement_counts_lenient_and_harsh():

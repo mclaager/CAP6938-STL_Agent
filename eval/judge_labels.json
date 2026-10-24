@@ -1,4 +1,4 @@
 {
- "about": "Hand grades for judged benchmark parts, keyed by part id (as shown on eval/renders/index.html). Each entry: {\"grade\": \"match\" | \"minor\" | \"feature_wrong\" | \"different\", \"why\": \"...\"}, the same four bands the judge scores on; match and minor pass. Old {\"pass\": true/false} entries still count for the threshold. Used by `python -m eval.judge calibrate` (threshold + band agreement). Fill in from the review page's 'Copy labels JSON' button.",
+ "about": "Hand grades for judged benchmark parts, keyed by part id (as shown on eval/renders/index.html). Each entry: {\"grade\": \"match\" | \"minor\" | \"feature_wrong\" | \"different\", \"why\": \"...\"}, the same four bands the judge scores on; match and minor pass. Used by `python -m eval.judge calibrate` (threshold + band agreement). Fill in from the review page's 'Copy labels JSON' button.",
  "labels": {}
 }

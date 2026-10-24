@@ -3,7 +3,7 @@
     python -m eval.judge run --gen-model gemini-3.5-flash-lite --config rag norag   # judge benchmark parts
     python -m eval.judge calibrate      # judge reference parts (+ your labels) and pick a pass threshold
     python -m eval.judge report         # pass rates per config/category, judge vs bounding-box check
-    python -m eval.judge sheet          # eval/renders/index.html: browse renders, label pass/fail
+    python -m eval.judge sheet          # eval/renders/index.html: browse renders, grade parts
 
 Each judged part is one request. Results are appended to eval/results/judge/<judge-model>.jsonl, one row
 per (part, judge, prompt, render settings); a run skips rows already there, so changing the judge model
@@ -246,10 +246,8 @@ def band(raw_score: float | None) -> str | None:
 
 
 def label_pass(label: dict) -> bool | None:
-    """Pass/fail from a hand label: its grade, or an old-style {"pass": bool}. None if neither is set."""
-    if label.get("grade") in GRADES:
-        return label["grade"] in PASS_GRADES
-    return bool(label["pass"]) if isinstance(label.get("pass"), bool) else None
+    """Pass/fail derived from a hand label's grade (match / minor pass). None when it has no valid grade."""
+    return label["grade"] in PASS_GRADES if label.get("grade") in GRADES else None
 
 
 def band_agreement(pairs: list[tuple[str, str]]) -> dict:
@@ -264,7 +262,12 @@ def band_agreement(pairs: list[tuple[str, str]]) -> dict:
 
 
 def load_labels() -> dict:
-    return json.loads(LABELS_PATH.read_text()).get("labels", {}) if LABELS_PATH.exists() else {}
+    labels = json.loads(LABELS_PATH.read_text()).get("labels", {}) if LABELS_PATH.exists() else {}
+    ungraded = [pid for pid, label in labels.items() if label_pass(label) is None]
+    if ungraded:
+        print(f"Note: {len(ungraded)} label(s) without a valid grade ({', '.join(GRADES)}) are ignored: "
+              + ", ".join(ungraded[:5]) + (" ..." if len(ungraded) > 5 else ""))
+    return labels
 
 
 def cmd_calibrate(args, s: Session) -> None:
@@ -280,7 +283,7 @@ def cmd_calibrate(args, s: Session) -> None:
     if labels and not s.stopped:  # labelled benchmark parts that haven't been judged yet
         cases = {c["id"]: c for c in load_cases()}
         for pid in labels:
-            if s.stopped or s.is_done(pid):
+            if s.stopped or s.is_done(pid) or label_pass(labels[pid]) is None:
                 continue
             gen_model, library, config, case, rep = pid.split("/")
             rows = [r for r in bench_rows(gen_model, [config], [case], library) if f"rep{r.get('rep', 0)}" == rep]
@@ -319,7 +322,7 @@ def calibration_report(s: Session, labels: dict) -> str:
     out.append(f"\nBest threshold {best['threshold']:.2f}: set CAD_JUDGE_THRESHOLD={best['threshold']:.2f} "
                "(or update the default in stl_agent/config.py).")
     pairs = [(band(r["raw_score"]), labels[r["part"]]["grade"]) for r in rows
-             if r["score"] is not None and r["part"] in labels and labels[r["part"]].get("grade") in GRADES]
+             if r["score"] is not None and r["part"] in labels and label_pass(labels[r["part"]]) is not None]
     if pairs:
         out.append("\n" + agreement_table(band_agreement(pairs)))
     return "\n".join(out)
@@ -421,7 +424,7 @@ h1{font-size:20px} h2{font-size:16px;margin-top:28px}
 .id{font:12px ui-monospace,monospace;color:#555;word-break:break-all}
 .req{margin:6px 0}.meta{font-size:12px;color:#444}.prob{font-size:12px;color:#a33;margin:4px 0 0 16px;padding:0}
 .lbl button{margin:6px 4px 0 0;font-size:12px}.lbl .on{background:#246;color:#fff}
-.lbl input{width:100%;margin-top:4px;font-size:12px;box-sizing:border-box}.old{font-size:11px;color:#777}
+.lbl input{width:100%;margin-top:4px;font-size:12px;box-sizing:border-box}
 textarea{width:100%;height:120px;font:12px ui-monospace,monospace}
 """
 
@@ -431,13 +434,12 @@ const labels = JSON.parse(document.getElementById('labels').textContent);
 try { Object.assign(labels, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}  // in-progress labels
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(labels)); } catch (e) {} }
 function grade(pid, g){ const l = labels[pid] || {};
-  if (l.grade === g) { delete l.grade; } else { l.grade = g; delete l.pass; }
-  if (l.grade || l.why || l.pass !== undefined) labels[pid] = l; else delete labels[pid]; save(); paint(); }
+  if (l.grade === g) delete l.grade; else l.grade = g;
+  if (l.grade || l.why) labels[pid] = l; else delete labels[pid]; save(); paint(); }
 function why(pid, text){ const l = labels[pid] || {}; l.why = text;
-  if (l.grade || l.why || l.pass !== undefined) labels[pid] = l; else delete labels[pid]; save(); paint(); }
+  if (l.grade || l.why) labels[pid] = l; else delete labels[pid]; save(); paint(); }
 function paint(){ document.querySelectorAll('.lbl').forEach(d => { const l = labels[d.dataset.pid] || {};
   d.querySelectorAll('button').forEach(b => b.classList.toggle('on', l.grade === b.dataset.g));
-  d.querySelector('.old').textContent = (!l.grade && l.pass !== undefined) ? '(old label: ' + (l.pass ? 'pass' : 'fail') + ')' : '';
   const w = d.querySelector('input'); if (document.activeElement !== w) w.value = l.why || ''; });
   document.getElementById('out').value = JSON.stringify({labels}, null, 1);
   const graded = Object.values(labels).filter(l => l.grade).length;
@@ -482,7 +484,7 @@ def write_sheet(path: Path, threshold: float, render: str | None = None) -> Path
         pid = html.escape(r0["part"])
         lbl = (f"<div class=lbl data-pid='{pid}'>"
                + "".join(f"<button data-g={g} onclick=\"grade('{pid}','{g}')\">{GRADE_NAMES[g]}</button>" for g in GRADES)
-               + f"<span class=old></span><input placeholder='why (optional)' oninput=\"why('{pid}',this.value)\"></div>"
+               + f"<input placeholder='why (optional)' oninput=\"why('{pid}',this.value)\"></div>"
                if labellable else "")
         return (f"<div class=card><img loading=lazy src='{html.escape(str(Path(render_file).relative_to('renders')))}'>"
                 f"<div class=id>{html.escape(r0['part'] if r0.get('kind') == 'bench' else 'references/' + r0['case'])}</div>"
