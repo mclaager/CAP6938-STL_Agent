@@ -1,4 +1,156 @@
 {
  "about": "Hand grades for judged benchmark parts, keyed by part id (as shown on eval/renders/index.html). Each entry: {\"grade\": \"match\" | \"minor\" | \"feature_wrong\" | \"different\", \"why\": \"...\"}, the same four bands the judge scores on; match and minor pass. Used by `python -m eval.judge calibrate` (threshold + band agreement). Fill in from the review page's 'Copy labels JSON' button.",
- "labels": {}
+ "labels": {
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/h12/rep0": {
+   "grade": "feature_wrong"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/h02/rep0": {
+   "grade": "minor",
+   "why": "This structure is missing back support for the stand, meaning that it would likely fail."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/h11/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/p06/rep0": {
+   "grade": "feature_wrong",
+   "why": "Grooves were too deep, covering 50% of the entire geometry. "
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/s05/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/h07/rep0": {
+   "grade": "feature_wrong",
+   "why": "The tube is not 90 degrees. The end of the tube is cut off along on axis, rather than flush with the curvature."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/c02/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/c01/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/h09/rep0": {
+   "grade": "different"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/h08/rep0": {
+   "grade": "match",
+   "why": "Did not specify centering of the combs, so this design fits the specification as written."
+  },
+  "gemini-3.5-flash-lite/lib9/norag/m01/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/c03/rep0": {
+   "grade": "feature_wrong"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/c01/rep0": {
+   "grade": "feature_wrong"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/h01/rep0": {
+   "grade": "match",
+   "why": "Tooth count matches the 20 requested."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/h06/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/h08/rep0": {
+   "grade": "minor",
+   "why": "The walls appear to be larger than 2mm, without any real measurements."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/m01/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/m06/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/m11/rep0": {
+   "grade": "different",
+   "why": "The keyhole shape is missing, and is instead a simple slot."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/s04/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/s03/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/s02/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/h07/rep0": {
+   "grade": "match",
+   "why": "There appears to be no straight edges, the tub appears to be 90 degrees."
+  },
+  "gemini-3.5-flash-lite/lib9/norag/s05/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib9/norag/p01/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib9/norag/m06/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib9/norag/m05/rep0": {
+   "grade": "different",
+   "why": "Six slots are required, this only features 1 slot."
+  },
+  "gemini-3.5-flash-lite/lib9/norag/h02/rep0": {
+   "grade": "feature_wrong",
+   "why": "The base and back are not connected. There is no back support for the phone."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/m16/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/m17/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/p06/rep0": {
+   "grade": "different"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/m09/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/h10/rep0": {
+   "grade": "feature_wrong",
+   "why": "The gussets are incorrectly offset. The second gusset is not even on the L bracket."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/h11/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/m13/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/c04/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/c03/rep0": {
+   "grade": "different",
+   "why": "The flap is unsupported and likely to break when used. The geometry is irregular, and it is not clear how this would be used as a stand."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/c02/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/m07/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/m08/rep0": {
+   "grade": "different"
+  },
+  "gemini-3.5-flash-lite/lib9/norag/m04/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib9/norag/h01/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/h04/rep0": {
+   "grade": "feature_wrong"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/m13/rep0": {
+   "grade": "match"
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/rag/p01/rep0": {
+   "grade": "feature_wrong",
+   "why": "No tick marks. This is borderline different object because of the lack of all but one tick mark."
+  },
+  "gemini-3.5-flash-lite/lib26-cdabac/norag/h04/rep0": {
+   "grade": "different"
+  }
+ }
 }

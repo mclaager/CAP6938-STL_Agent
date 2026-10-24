@@ -30,8 +30,45 @@ Two render/prompt versions were run on the same parts:
   This is a judge capability error, not a misleading input, so it is not patched in the prompt; prompts are
   changed only when the input itself misleads (as with v1's underside view). The remedy is a stronger judge
   model, compared on the same items.
-- `CAD_JUDGE_THRESHOLD` default is 0.5, from the v2 calibration. Hand labels (`eval/judge_labels.json`) are
-  still to be added; rerun `calibrate` when they are.
+- `CAD_JUDGE_THRESHOLD` default is 0.5, from the v2 calibration, and confirmed by the hand labels below.
+
+## Hand labels (v2)
+
+46 generated parts graded by hand on the judge's four bands (`eval/judge_labels.json`): 28 match, 2 minor
+deviation, 9 feature wrong, 7 different object. All had already been judged, so no extra requests.
+
+**Pass/fail:** 0.50 stays the best threshold over all 104 calibration items (92% accuracy). On the 46 hand
+labels alone the judge agrees on pass/fail for 40 (87%).
+
+**Bands:** the judge picks the same band as the human 67% of the time, within one band 87%. It is harsher
+more often than lenient (11 vs 4); most harsh misses are one band down on a part that still passes.
+
+| judge band \ human grade | match | minor deviation | feature wrong | different object |
+|---|---|---|---|---|
+| match | 19 | 0 | 1 | 0 |
+| minor deviation | 4 | 2 | 2 | 0 |
+| feature wrong | 3 | 0 | 4 | 1 |
+| different object | 2 | 0 | 2 | 6 |
+
+**The six pass/fail disagreements:**
+
+| | part | human grade | judge |
+|---|---|---|---|
+| too harsh | stepped shaft m13, rag and norag | match | different object (0.22) |
+| too harsh | pipe elbow h07, rag | match | feature wrong (0.44) |
+| too lenient | pipe elbow h07, norag | feature wrong | minor deviation (0.78) |
+| too lenient | chess rook p06, rag | feature wrong | match (1.00) |
+| too lenient | phone stand h02, norag | feature wrong | minor deviation (0.78) |
+
+- The elbows are judged the wrong way round: the RAG elbow is a correct 90° bend (measured: perpendicular
+  ends, both 30 mm from the bend axis) but fails, while the no-RAG elbow, whose profile was placed off the
+  path so its ends are cut along the X/Y axes instead of square to the tube, passes.
+- The rook's notches are so deep they split the top into quarters ("too deep, covering 50% of the
+  geometry"); the judge gave 10/10 with no problems. This is the case that motivated graded labels:
+  about 90% there, but not recognisable as the object.
+- The phone stand's base and back support aren't connected; the judge didn't mention it. The mesh check
+  flagged this part (2 disconnected pieces; the bench counts it as a best-effort failure), so the two checks complement each other.
+- All six are judge errors on clear renders, so they're counted, not patched in the prompt.
 
 ## Benchmark parts, v2 (`judge run --gen-model gemini-3.5-flash-lite --config rag norag --reps 0`)
 
@@ -71,6 +108,6 @@ The v1 renders are in `eval/renders/v1-256px/`.
 ## Caveats
 
 - One judge model, one run per case: a difference of one or two parts is noise.
-- Hand labels still to come; the near-miss calibration items mostly differ in size, which the judge gets
-  as text, so labels on real generated parts are the better test.
-- A stronger judge (`--judge-model gemini-3.8-flash`) could be compared on the labelled set.
+- Hand labels are one person's grades on 46 parts, from one run per case.
+- Next: compare a stronger judge (`--judge-model gemini-3.8-flash`) on the same 46 labelled parts, to see
+  whether these errors are specific to gemini-3.1-flash-lite.
