@@ -232,6 +232,37 @@ def calibration_items(px: int) -> list[dict]:
     return items
 
 
+# Hand-label grades, the same four bands the judge prompt scores on (1-10 scale). The top two pass.
+GRADES = ["match", "minor", "feature_wrong", "different"]
+GRADE_NAMES = {"match": "match", "minor": "minor deviation", "feature_wrong": "feature wrong", "different": "different object"}
+PASS_GRADES = {"match", "minor"}
+
+
+def band(raw_score: float | None) -> str | None:
+    """The prompt's band for an LLM judge score: 9-10 match, 7-8 minor, 4-6 feature wrong, 1-3 different."""
+    if raw_score is None:
+        return None
+    return "match" if raw_score >= 9 else "minor" if raw_score >= 7 else "feature_wrong" if raw_score >= 4 else "different"
+
+
+def label_pass(label: dict) -> bool | None:
+    """Pass/fail from a hand label: its grade, or an old-style {"pass": bool}. None if neither is set."""
+    if label.get("grade") in GRADES:
+        return label["grade"] in PASS_GRADES
+    return bool(label["pass"]) if isinstance(label.get("pass"), bool) else None
+
+
+def band_agreement(pairs: list[tuple[str, str]]) -> dict:
+    """(judge band, human grade) pairs -> exact / within-one agreement, lenient / harsh counts, 4x4 counts.
+    Lenient: the judge's band is better than the human grade (e.g. 'match' for a 'feature_wrong' part)."""
+    idx = {g: i for i, g in enumerate(GRADES)}
+    diffs = [idx[h] - idx[j] for j, h in pairs]  # > 0: judge rated it better than the human did
+    matrix = {(j, h): sum(1 for p in pairs if p == (j, h)) for j in GRADES for h in GRADES}
+    n = len(pairs) or 1
+    return dict(n=len(pairs), exact=sum(d == 0 for d in diffs) / n, within_one=sum(abs(d) <= 1 for d in diffs) / n,
+                lenient=sum(d > 0 for d in diffs), harsh=sum(d < 0 for d in diffs), matrix=matrix)
+
+
 def load_labels() -> dict:
     return json.loads(LABELS_PATH.read_text()).get("labels", {}) if LABELS_PATH.exists() else {}
 
@@ -269,8 +300,8 @@ def calibration_report(s: Session, labels: dict) -> str:
             continue
         if r.get("kind") in ("reference", "mismatch", "near_miss"):
             data.append((r["score"], r["label"], r["kind"]))
-        elif r["part"] in labels:
-            data.append((r["score"], bool(labels[r["part"]]["pass"]), "label"))
+        elif r["part"] in labels and label_pass(labels[r["part"]]) is not None:
+            data.append((r["score"], label_pass(labels[r["part"]]), "label"))
     if not data:
         return "No calibration results yet."
     errors = sum(1 for r in rows if r["score"] is None)
@@ -287,6 +318,21 @@ def calibration_report(s: Session, labels: dict) -> str:
                    f"{t['reference']} | {t['mismatch']} | {t['near_miss']} | {t['label']} |")
     out.append(f"\nBest threshold {best['threshold']:.2f}: set CAD_JUDGE_THRESHOLD={best['threshold']:.2f} "
                "(or update the default in stl_agent/config.py).")
+    pairs = [(band(r["raw_score"]), labels[r["part"]]["grade"]) for r in rows
+             if r["score"] is not None and r["part"] in labels and labels[r["part"]].get("grade") in GRADES]
+    if pairs:
+        out.append("\n" + agreement_table(band_agreement(pairs)))
+    return "\n".join(out)
+
+
+def agreement_table(a: dict) -> str:
+    out = [f"### Band agreement with your graded labels ({a['n']} parts)\n",
+           f"Exact band {a['exact']:.0%}, within one band {a['within_one']:.0%}. "
+           f"Judge more lenient than you on {a['lenient']}, harsher on {a['harsh']}.\n",
+           "| judge band \\ your grade | " + " | ".join(GRADE_NAMES[g] for g in GRADES) + " |",
+           "|---|" + "---|" * len(GRADES)]
+    for j in GRADES:
+        out.append(f"| {GRADE_NAMES[j]} | " + " | ".join(str(a["matrix"][(j, h)]) for h in GRADES) + " |")
     return "\n".join(out)
 
 
@@ -348,6 +394,10 @@ def summarize(rows: list[dict], threshold: float) -> str:
                 label = f"**{config}**" if cat == "all" else f"{config} / {cat}"
                 out.append(f"| {label} | {n} | {len(passed) / n:.0%} | {sum(r['score'] for r in xs) / n:.2f} | "
                            f"{sum(bool(r['bench_correct']) for r in xs) / n:.0%} | {len(both) / n:.0%} |")
+        out.append("\n| config | " + " | ".join(GRADE_NAMES[g] for g in GRADES) + " |\n|---|" + "---|" * len(GRADES))
+        for config in sorted({r["config"] for r in rs}):
+            bands = [band(r["raw_score"]) for r in rs if r["config"] == config and r["score"] is not None]
+            out.append(f"| {config} | " + " | ".join(str(bands.count(g)) for g in GRADES) + " |")
         usable = [r for r in rs if r["score"] is not None]
         cell = lambda c, p: sum(1 for r in usable if bool(r["bench_correct"]) == c and (r["score"] >= threshold) == p)
         out.append("\n| | judge pass | judge fail |\n|---|---|---|")
@@ -370,18 +420,28 @@ h1{font-size:20px} h2{font-size:16px;margin-top:28px}
 .card.big{grid-column:1/-1} .card.big img{max-width:768px}
 .id{font:12px ui-monospace,monospace;color:#555;word-break:break-all}
 .req{margin:6px 0}.meta{font-size:12px;color:#444}.prob{font-size:12px;color:#a33;margin:4px 0 0 16px;padding:0}
-.lbl button{margin:6px 6px 0 0}.lbl .on{background:#246;color:#fff}
+.lbl button{margin:6px 4px 0 0;font-size:12px}.lbl .on{background:#246;color:#fff}
+.lbl input{width:100%;margin-top:4px;font-size:12px;box-sizing:border-box}.old{font-size:11px;color:#777}
 textarea{width:100%;height:120px;font:12px ui-monospace,monospace}
 """
 
 SHEET_JS = """
+const KEY = 'stl-agent-judge-labels';
 const labels = JSON.parse(document.getElementById('labels').textContent);
-function mark(btn, pid, val){ if (labels[pid] && labels[pid].pass === val) delete labels[pid];
-  else labels[pid] = {pass: val, why: (labels[pid]||{}).why || ''}; paint(); }
-function paint(){ document.querySelectorAll('.lbl').forEach(d => { const l = labels[d.dataset.pid];
-  d.querySelectorAll('button').forEach(b => b.classList.toggle('on', !!l && String(l.pass) === b.dataset.v)); });
+try { Object.assign(labels, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}  // in-progress labels
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(labels)); } catch (e) {} }
+function grade(pid, g){ const l = labels[pid] || {};
+  if (l.grade === g) { delete l.grade; } else { l.grade = g; delete l.pass; }
+  if (l.grade || l.why || l.pass !== undefined) labels[pid] = l; else delete labels[pid]; save(); paint(); }
+function why(pid, text){ const l = labels[pid] || {}; l.why = text;
+  if (l.grade || l.why || l.pass !== undefined) labels[pid] = l; else delete labels[pid]; save(); paint(); }
+function paint(){ document.querySelectorAll('.lbl').forEach(d => { const l = labels[d.dataset.pid] || {};
+  d.querySelectorAll('button').forEach(b => b.classList.toggle('on', l.grade === b.dataset.g));
+  d.querySelector('.old').textContent = (!l.grade && l.pass !== undefined) ? '(old label: ' + (l.pass ? 'pass' : 'fail') + ')' : '';
+  const w = d.querySelector('input'); if (document.activeElement !== w) w.value = l.why || ''; });
   document.getElementById('out').value = JSON.stringify({labels}, null, 1);
-  document.getElementById('count').textContent = Object.keys(labels).length + ' labelled'; }
+  const graded = Object.values(labels).filter(l => l.grade).length;
+  document.getElementById('count').textContent = graded + ' graded'; }
 function copyLabels(){ navigator.clipboard.writeText(document.getElementById('out').value); }
 function filt(q){ q = q.toLowerCase(); document.querySelectorAll('.card').forEach(c =>
   c.style.display = c.textContent.toLowerCase().includes(q) ? '' : 'none'); }
@@ -414,13 +474,15 @@ def write_sheet(path: Path, threshold: float, render: str | None = None) -> Path
         verdicts = []
         for r in sorted(rs, key=lambda r: (r["part"], r["judge"])):
             asked = f" (asked: {r['asked_case']})" if r.get("asked_case") else ""
-            score = "error" if r["score"] is None else f"{r['score']:.2f} {'pass' if r['score'] >= threshold else 'FAIL'}"
+            score = ("error" if r["score"] is None else
+                     f"{r['score']:.2f} {'pass' if r['score'] >= threshold else 'FAIL'} ({GRADE_NAMES[band(r['raw_score'])]})")
             probs = "".join(f"<li>{html.escape(p)}</li>" for p in r["problems"])
             verdicts.append(f"<div class=meta>{html.escape(r['judge'])} {r['prompt']}{asked}: <b>{score}</b></div>"
                             + (f"<ul class=prob>{probs}</ul>" if probs else ""))
-        lbl = (f"<div class=lbl data-pid='{html.escape(r0['part'])}'>"
-               f"<button data-v=true onclick=\"mark(this,'{html.escape(r0['part'])}',true)\">pass</button>"
-               f"<button data-v=false onclick=\"mark(this,'{html.escape(r0['part'])}',false)\">fail</button></div>"
+        pid = html.escape(r0["part"])
+        lbl = (f"<div class=lbl data-pid='{pid}'>"
+               + "".join(f"<button data-g={g} onclick=\"grade('{pid}','{g}')\">{GRADE_NAMES[g]}</button>" for g in GRADES)
+               + f"<span class=old></span><input placeholder='why (optional)' oninput=\"why('{pid}',this.value)\"></div>"
                if labellable else "")
         return (f"<div class=card><img loading=lazy src='{html.escape(str(Path(render_file).relative_to('renders')))}'>"
                 f"<div class=id>{html.escape(r0['part'] if r0.get('kind') == 'bench' else 'references/' + r0['case'])}</div>"
@@ -442,7 +504,9 @@ def write_sheet(path: Path, threshold: float, render: str | None = None) -> Path
 <h1>Judge renders</h1>
 <p>Generated by <code>python -m eval.judge sheet</code>. Renders: {html.escape(render or "all versions")}.
 Pass threshold {threshold:.2f}. Click an image to enlarge.
-To label: mark parts pass/fail, then copy the JSON into <code>eval/judge_labels.json</code>.</p>
+To label: grade each part on the judge's scale (match and minor deviation pass; feature wrong and different object
+fail), optionally say why, then copy the JSON into <code>eval/judge_labels.json</code>. Grades are kept in this
+browser until then, so reloading or regenerating the page doesn't lose them.</p>
 <div class=bar><input placeholder="filter (case, config, text...)" oninput="filt(this.value)">
 <button onclick=copyLabels()>Copy labels JSON</button><span id=count></span></div>
 {body}

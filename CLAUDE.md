@@ -92,7 +92,9 @@ Elsewhere:
   prompt, render settings), so changing `--judge-model`, `--prompt` or `--px` adds a study beside the old
   one. Renders are committed under `eval/renders/<render version>-<px>px/` (~35 KB each), with a review/labelling page
   (`judge sheet`). `calibrate` judges each reference solution against its own request (should pass) and
-  another case's request (should fail), plus hand labels in `eval/judge_labels.json`.
+  another case's request (should fail), plus hand labels in `eval/judge_labels.json`. Labels are graded on the
+  judge's four bands (match / minor / feature wrong / different object; the top two pass), so calibration
+  also reports band agreement (exact, within one band, lenient vs harsh), and `report` shows band counts.
 - `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size
   (`python -m eval.references`; also run by the tests). Add one for every new case with an expected bbox,
   so the case is known to be buildable and its bbox is right. Never shown to the model.

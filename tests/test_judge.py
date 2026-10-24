@@ -104,3 +104,44 @@ def test_locate_stl_finds_current_and_legacy_run_folders(tmp_path, monkeypatch):
     assert ej.locate_stl(row) == tmp_path / "bench/m/lib1/rag/s01/rep0/attempt_2/model.stl"
     legacy = dict(model="m", config="norag", case="s01", rep=1)  # no library: old folder layout
     assert ej.locate_stl(legacy) == tmp_path / "bench/m/norag/s01/rep1/attempt_2/model.stl"
+
+
+def test_bands_and_label_grades():
+    from eval.judge import band, label_pass
+
+    assert [band(x) for x in (1, 3, 4, 6, 7, 8, 9, 10)] == ["different", "different", "feature_wrong", "feature_wrong",
+                                                             "minor", "minor", "match", "match"]
+    assert band(None) is None
+    assert label_pass({"grade": "minor"}) is True and label_pass({"grade": "feature_wrong"}) is False
+    assert label_pass({"pass": True}) is True  # old pass/fail labels still count
+    assert label_pass({"why": "not sure yet"}) is None
+
+
+def test_band_agreement_counts_lenient_and_harsh():
+    from eval.judge import agreement_table, band_agreement
+
+    pairs = [("match", "match"), ("match", "feature_wrong"),  # the rook: judge says match, human says feature wrong
+             ("minor", "match"), ("different", "different")]
+    a = band_agreement(pairs)
+    assert (a["n"], a["exact"], a["within_one"], a["lenient"], a["harsh"]) == (4, 0.5, 0.75, 1, 1)
+    assert a["matrix"][("match", "feature_wrong")] == 1
+    assert "Exact band 50%" in agreement_table(a)
+
+
+def test_sheet_has_grade_buttons_and_keeps_labels_in_browser(tmp_path, monkeypatch):
+    import eval.judge as ej
+
+    row = dict(part="gen/lib1/rag/s01/rep0", judge="llm:j", prompt="v2", render="v2-256px", kind="bench", case="s01",
+               config="rag", rep=0, gen_model="gen", library="lib1", category="simple", bench_outcome="built",
+               bench_correct=True, render_file="renders/v2-256px/gen/lib1/rag/s01-rep0.png", score=0.8889,
+               raw_score=9.0, matches=[], problems=[], error=None)
+    (tmp_path / "judge").mkdir()
+    (tmp_path / "judge" / "j.jsonl").write_text(json.dumps(row) + "\n")
+    monkeypatch.setattr(ej, "JUDGE_DIR", tmp_path / "judge")
+    monkeypatch.setattr(ej, "LABELS_PATH", tmp_path / "labels.json")
+    page = ej.write_sheet(tmp_path / "index.html", threshold=0.5).read_text()
+    for g in ej.GRADES:
+        assert f"data-g={g}" in page
+    assert "localStorage" in page and "(match)" in page  # judge band shown next to the score
+    report = ej.summarize([row], threshold=0.5)
+    assert "| rag | 1 | 0 | 0 | 0 |" in report  # band counts: one 'match'
