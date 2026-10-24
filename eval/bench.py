@@ -33,6 +33,8 @@ RESULTS_DIR = EVAL_DIR / "results"
 CONFIGS = {
     "rag": dict(use_rag=True, top_k=3),  # pinned, whatever the app default is
     "norag": dict(use_rag=False),
+    "rag-k1": dict(use_rag=True, top_k=1),  # top-k ablation (#7): 1 and 5 examples vs the default 3
+    "rag-k5": dict(use_rag=True, top_k=5),
     # "retriever" is a stl_agent.retrieval kind, default "tfidf". Older results also contain
     # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag).
     "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char"),
@@ -201,7 +203,8 @@ def summarize(rows: list[dict]) -> str:
             out.append(f"| {config} | " + " | ".join(stats([r for r in mrows if r["config"] == config])) + " |")
         out.append("\n" + head.format("config / category"))
         for config in sorted({r["config"] for r in mrows}):
-            for cat in ["simple", "medium", "hard", "proposal"]:
+            known = ["simple", "medium", "hard", "proposal", "casual"]
+            for cat in known + sorted({r["category"] for r in mrows} - set(known)):
                 rs = [r for r in mrows if r["config"] == config and r["category"] == cat]
                 if rs:
                     out.append(f"| {config} / {cat} | " + " | ".join(stats(rs)) + " |")
