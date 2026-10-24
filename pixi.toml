@@ -19,12 +19,15 @@ anthropic = "*"
 gradio = ">=4.0"
 pytest = ">=9.1.1, <10"
 networkx = ">=3.7, <4"
+vtk = "*"  # offscreen rendering for the judge (already a CadQuery dependency)
+pillow = "*"
 
 [feature.cap6938.tasks]
 app = "python -m stl_agent.app"
 examples = "python -m scripts.make_examples"
 test = "python -m pytest -q"
 bench = "python -m eval.bench"
+judge = "python -m eval.judge"
 retrieval-eval = "python -m eval.retrieval"
 
 [feature.cap6938.dependencies]

@@ -1,7 +1,14 @@
-"""LLM backends. Anything with `.complete(system, messages) -> str` works as an LLM."""
+"""LLM backends. Anything with `.complete(system, messages) -> str` works as an LLM.
+
+A message's "content" is either a string or a list of parts, so images can be sent to vision models:
+    {"type": "text", "text": "..."}   and   {"type": "image", "png": b"..."}
+Each backend converts the parts to its own API format.
+"""
 
 from __future__ import annotations
 
+import base64
+import json
 import os
 import re
 import time
@@ -19,6 +26,7 @@ class AnthropicLLM:
         self.input_tokens = self.output_tokens = 0
 
     def complete(self, system: str, messages: list[dict]) -> str:
+        messages = [{**m, "content": anthropic_content(m["content"])} for m in messages]
         kwargs = dict(model=self.model, max_tokens=self.max_tokens, system=system, messages=messages)
         # Newer SDK/model versions don't accept sampling params; only send if explicitly requested.
         if self.temperature is not None:
@@ -64,7 +72,8 @@ class OpenAICompatLLM:
         body = {
             "model": self.model,
             "max_tokens": self.max_tokens,
-            "messages": [{"role": "system", "content": system}, *messages],
+            "messages": [{"role": "system", "content": system},
+                         *({**m, "content": openai_content(m["content"])} for m in messages)],
         }
         if self.temperature is not None:
             body["temperature"] = self.temperature
@@ -110,6 +119,40 @@ class OpenAICompatLLM:
         return choice["message"].get("content") or ""
 
 
+def _b64(png: bytes) -> str:
+    return base64.b64encode(png).decode("ascii")
+
+
+def anthropic_content(content):
+    """Message content in Anthropic's format (strings pass through)."""
+    if isinstance(content, str):
+        return content
+    return [{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": _b64(p["png"])}}
+            if p["type"] == "image" else p for p in content]
+
+
+def openai_content(content):
+    """Message content in the OpenAI chat format (strings pass through)."""
+    if isinstance(content, str):
+        return content
+    return [{"type": "image_url", "image_url": {"url": "data:image/png;base64," + _b64(p["png"])}}
+            if p["type"] == "image" else p for p in content]
+
+
+_JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*\n(.*?)```", re.S | re.I)
+
+
+def parse_json_object(text: str) -> dict:
+    """Pull a JSON object out of a model reply (fenced block preferred, else the outermost braces).
+    Raises ValueError (or json.JSONDecodeError) when there is none."""
+    m = _JSON_BLOCK_RE.search(text)
+    candidate = m.group(1) if m else text[text.find("{") : text.rfind("}") + 1]
+    data = json.loads(candidate)
+    if not isinstance(data, dict):
+        raise ValueError("reply is not a JSON object")
+    return data
+
+
 class RateLimiter:
     """Allows at most `rpm` calls in any 60-second window by sleeping before a call when needed."""
 
@@ -150,6 +193,8 @@ PROVIDERS = {
         key_env="GEMINI_API_KEY",
         default_model="gemini-3.8-flash",
         default_gate_model="gemini-3.6-flash",  # separate daily quota from the build model
+        # Judges benchmark renders (#8): a different model from 3.5 Flash Lite, which built most parts.
+        default_judge_model="gemini-3.1-flash-lite",
         # Free tier allows 15 requests/minute per model. Google counts requests at a different moment
         # than when we send them, so 14 still showed up as 17 in one minute; keep a wide margin.
         default_rpm=10,

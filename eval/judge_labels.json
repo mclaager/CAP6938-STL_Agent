@@ -1,0 +1,4 @@
+{
+ "about": "Hand pass/fail labels for judged benchmark parts, keyed by part id (as shown on eval/renders/index.html). Used by `python -m eval.judge calibrate` to choose the pass threshold. Fill in from the review page's 'Copy labels JSON' button.",
+ "labels": {}
+}

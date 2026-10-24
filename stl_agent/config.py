@@ -14,6 +14,10 @@ Environment variables:
     CAD_RETRIEVER       "tfidf" (default) or "tfidf-char"; see retrieval.py
     CAD_RPM             max LLM requests per minute per model (Gemini default 10; free tier allows 15)
     CAD_GATE, CAD_GATE_MAX_ROUNDS   intake gate settings (see gate/)
+    CAD_JUDGE           visual judge backend for evaluation (#8): "llm" (default); see judge/
+    CAD_JUDGE_PROVIDER  provider for the judge (default: CAD_PROVIDER)
+    CAD_JUDGE_MODEL     judge model (default: the provider's default_judge_model, else its default model)
+    CAD_JUDGE_THRESHOLD score (0-1) at which a judged part passes (default from eval/judge.py calibrate)
 """
 
 from __future__ import annotations
@@ -51,4 +55,8 @@ GATE_MODEL = os.environ.get("CAD_GATE_MODEL")  # None -> the provider's default_
 MAX_ATTEMPTS = int(os.environ.get("CAD_MAX_ATTEMPTS", "4"))
 TOP_K = int(os.environ.get("CAD_TOP_K", "3"))
 RETRIEVER = os.environ.get("CAD_RETRIEVER", "tfidf").lower()
+JUDGE_KIND = os.environ.get("CAD_JUDGE", "llm").lower()
+JUDGE_PROVIDER = os.environ.get("CAD_JUDGE_PROVIDER", PROVIDER).lower()
+JUDGE_MODEL = os.environ.get("CAD_JUDGE_MODEL")
+JUDGE_THRESHOLD = float(os.environ.get("CAD_JUDGE_THRESHOLD", "0.3"))  # provisional: eval/judge.py calibrate
 GATE_PICKS = os.environ.get("CAD_GATE_PICKS", "0").lower() in ("1", "true", "yes", "on")

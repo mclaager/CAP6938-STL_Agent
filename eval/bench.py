@@ -22,7 +22,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from stl_agent.config import EXAMPLES_PATH, MAX_ATTEMPTS, OUTPUT_DIR
+from stl_agent.config import EXAMPLES_PATH, MAX_ATTEMPTS, OUTPUT_DIR, ROOT
 from stl_agent.pipeline import generate_cad
 
 EVAL_DIR = Path(__file__).parent
@@ -52,6 +52,14 @@ def _lib_key(config: str, library: str) -> str:
     return "any" if not CONFIGS.get(config, {}).get("use_rag", True) else library  # no-RAG ignores the library
 
 BBOX_REL_TOL, BBOX_ABS_TOL = 0.03, 1.0  # per dimension: within 3% or 1 mm, whichever is larger
+
+
+def _repo_relative(path) -> str | None:
+    """The part's STL path relative to the repo root (outputs/ is gitignored, so local only)."""
+    if not path:
+        return None
+    p = Path(path).resolve()
+    return str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)
 
 
 def load_cases(path: Path = CASES_PATH) -> list[dict]:
@@ -165,6 +173,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
                    requests=counter.requests - before[0],
                    input_tokens=getattr(llm, "input_tokens", 0) - before[1],
                    output_tokens=getattr(llm, "output_tokens", 0) - before[2],
+                   stl=_repo_relative(res.stl_path),
                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
         with results_path.open("a") as f:
             f.write(json.dumps(row) + "\n")

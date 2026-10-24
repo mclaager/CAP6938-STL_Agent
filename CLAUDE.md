@@ -17,6 +17,8 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 bench run [--model M] [--category simple] [--budget 18]` — benchmark (#7);
   `pixi run -e cap6938 bench report` prints markdown tables from `eval/results/`
 - `pixi run -e cap6938 retrieval-eval` — offline retrieval scores (no LLM requests, seconds)
+- `pixi run -e cap6938 judge run --gen-model M [--config rag norag]` — visual judge over benchmark parts (#8);
+  `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`)
 
 LLM backend is picked by `CAD_PROVIDER`: `anthropic` (default, needs `ANTHROPIC_API_KEY`) or
 `gemini` (free tier, needs `GEMINI_API_KEY`). `stl_agent/config.py` reads a `.env` file in the repo root;
@@ -24,6 +26,8 @@ it is gitignored, never commit keys. Optional: `CAD_MODEL`, `CAD_MAX_ATTEMPTS`, 
 (see `config.py` docstring), and `CAD_GATE` (`llm` default, `off`, `jev` stub) /
 `CAD_GATE_MAX_ROUNDS` for the intake gate. With Gemini, the gate runs on `gemini-3.6-flash` by
 default (override with `CAD_GATE_MODEL`) so its checks use a different daily quota than builds.
+The visual judge uses `CAD_JUDGE_MODEL` (default `gemini-3.1-flash-lite`, a different model from the one that
+built most benchmark parts), optionally `CAD_JUDGE_PROVIDER`, and `CAD_JUDGE_THRESHOLD`.
 Other OpenAI-compatible providers (Groq, OpenRouter, Ollama) can be
 added as one entry in `PROVIDERS` in `stl_agent/llm.py`.
 
@@ -52,6 +56,12 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
   out_of_scope. `llm_gate.py` is the LLM backend, `jev.py` a stub (#12). Each gate check is one LLM request.
+- `render.py` — STL to one 768x512 PNG of six labelled views (front/right/top + iso front/back/below), offscreen VTK
+  (works headless via EGL). `RENDER_VERSION` is recorded with judged rows; bump it when views change.
+- `judge/` — visual judge (#8), evaluation only (not run by the app). Same shape as `gate/`: `base.py`
+  (`Judgement`, 0-1 score), `llm_judge.py` (versioned `PROMPTS`; one request with the request text, the
+  measured size and the render). A Jev backend (#12) would be `judge/jev.py`. Images go to LLMs as message
+  parts `{"type": "image", "png": bytes}`, converted per backend in `llm.py`.
 - `app.py` — Gradio chat front end; uses `run_gate` for intake, then `run_pipeline` on the confirmed
   spec when the user clicks "Build it".
   Gradio's `Model3D` goes blank when updated from a streaming handler, so result panels are
@@ -73,6 +83,11 @@ Elsewhere:
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1` / `rag-k5` (1 or 5
   examples instead of 3), `rag-char` (letter-chunk retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
+- `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,
+  prompt, render settings), so changing `--judge-model`, `--prompt` or `--px` adds a study beside the old
+  one. Renders are committed under `eval/renders/` (~25 KB each), with a review/labelling page
+  (`judge sheet`). `calibrate` judges each reference solution against its own request (should pass) and
+  another case's request (should fail), plus hand labels in `eval/judge_labels.json`.
 - `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size
   (`python -m eval.references`; also run by the tests). Add one for every new case with an expected bbox,
   so the case is known to be buildable and its bbox is right. Never shown to the model.
@@ -83,9 +98,8 @@ Elsewhere:
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
   colored `<name>.preview.glb` for the viewer (gitignored).
 
-Where planned work goes: LLM-as-judge in `stl_agent/judge/` (#8), Thingiverse and part combining in
-`stl_agent/sources/` (#9, #10), Jev in `stl_agent/gate/jev.py` (#12); judge scores and the gate
-evaluation set also go in `eval/`.
+Where planned work goes: Thingiverse and part combining in `stl_agent/sources/` (#9, #10), Jev in
+`stl_agent/gate/jev.py` and `stl_agent/judge/jev.py` (#12); the gate evaluation set goes in `eval/`.
 
 ## Roadmap
 
