@@ -112,12 +112,19 @@ Where planned work goes: Thingiverse and part combining in `stl_agent/sources/` 
 
 ## Roadmap
 
-Done: CadQuery + LLM pipeline, few-shot library + RAG, intake gate and chat UI.
-Open work is in GitHub issues, with the original course timeline's target dates:
+Done:
+- CadQuery + LLM pipeline, few-shot library + RAG, intake gate and chat UI
+- #7 Evaluation harness: 48-case benchmark with reference solutions, RAG and top-k ablation
+  (`eval/results/ablation-lib26.md`)
+- #8 LLM-as-judge: six-view renders scored by a multimodal model, calibrated against reference parts and
+  hand-graded labels (`eval/results/judge-gemini-3.1-flash-lite.md`)
+- #20 Retrieval evaluation (offline); retrievers that showed no gain were removed
 
-- #7 Evaluation harness: benchmark set + RAG ablation (weeks 3–4, overdue)
-- #8 LLM-as-judge: render the mesh from several angles, score with a multimodal model (weeks 5–6, by 11/1)
+Open work is in GitHub issues, with the original course timeline's target dates where there is one:
+
 - #9 Thingiverse fallback for requests code can't build (weeks 7–8, by 11/15)
 - #10 Combine downloaded and generated parts into one STL (weeks 7–8)
 - #11 Final report (weeks 9–10)
-- #12 Jev gate backend and gate evaluation (not from the original proposal)
+- #12 Jev gate backend and gate evaluation (not from the original proposal; a Jev judge backend could follow)
+- #19 Fully local mode, configurable in the app
+- #23 Size check rejects correct parts when the model's own BBOX estimate is wrong
