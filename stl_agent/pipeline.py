@@ -56,7 +56,8 @@ SCRIPT RULES
 - Hollowing: .faces(">Z").shell(-wall) (negative = inward, selected face is opened).
 - Fillet/chamfer radius must be clearly smaller than the thinnest adjacent feature, and apply it
   to the whole solid BEFORE cutting small holes next to those edges when possible.
-- Centering: box() and circle() are centred on the workplane origin unless centered=(False, ...).
+- Centering: box() and rect() are centred on the workplane origin unless centered=(False, ...).
+  extrude() has NO `centered` argument; use extrude(h, both=True) to extrude symmetrically.
 - Do NOT invent methods (there is no fillet_all, no add_hole, no Workplane.sphere with 3 args).
   Methods that exist include: box, sphere, cylinder, circle, rect, polygon, ellipse, slot2D,
   extrude, revolve, loft, sweep, union, cut, intersect, translate, rotate, mirror, fillet, chamfer.
