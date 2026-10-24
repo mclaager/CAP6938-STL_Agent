@@ -3,7 +3,8 @@
 Used for evaluation (eval/judge.py), not in the app. Every backend returns a `Judgement` with a
 0-1 score, so thresholds and calibration work the same for any backend.
 
-Modules: base.py (types), llm_judge.py (multimodal LLM judge, versioned prompts).
+Modules: base.py (types), llm_judge.py (multimodal LLM judge). Its system prompts are text files in
+prompts/ (one per version, see prompts/README.md), not in the code.
 A Jev backend (#12) would go in jev.py and return Jev's calibrated confidence as the score; whether
 Jev accepts images, or would need a text description of the render, is still open.
 

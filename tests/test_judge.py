@@ -144,3 +144,13 @@ def test_sheet_has_grade_buttons_and_keeps_labels_in_browser(tmp_path, monkeypat
     assert "localStorage" in page and "(match)" in page  # judge band shown next to the score
     report = ej.summarize([row], threshold=0.5)
     assert "| rag | 1 | 0 | 0 | 0 |" in report  # band counts: one 'match'
+
+
+def test_prompts_are_files_paired_with_render_versions():
+    from stl_agent.judge import DEFAULT_PROMPT
+    from stl_agent.judge.llm_judge import PROMPTS, RENDER_FOR_PROMPT
+    from stl_agent.render import RENDER_VERSION
+
+    assert set(PROMPTS) == set(RENDER_FOR_PROMPT)  # every prompt file says which render it describes
+    assert RENDER_FOR_PROMPT[DEFAULT_PROMPT] == RENDER_VERSION  # the default matches the current renders
+    assert all("Score 1-10" in p and '"score"' in p for p in PROMPTS.values())

@@ -562,6 +562,11 @@ def main(argv=None):
         print(f"Wrote {write_sheet(RENDERS_DIR / 'index.html', args.threshold, render).relative_to(ROOT)}")
         return
 
+    from stl_agent.judge.llm_judge import RENDER_FOR_PROMPT
+
+    if RENDER_FOR_PROMPT.get(args.prompt) != RENDER_VERSION:
+        print(f"Warning: prompt {args.prompt} was written for render {RENDER_FOR_PROMPT.get(args.prompt, '?')}, but "
+              f"renders are {RENDER_VERSION}; its view descriptions won't match the images.")
     name = judge_model(model=args.judge_model)
     judge = make_judge(model=name, prompt=args.prompt)
     judge.llm = CountingLLM(judge.llm)

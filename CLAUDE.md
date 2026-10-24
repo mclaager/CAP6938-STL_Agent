@@ -64,8 +64,10 @@ pypi deps for non-pixi users, so keep the two in sync.
   describes the new views. v2 differs from v1 in one view only: v1's angled "from below" view became the flat
   "bottom" view, because the judge read through-holes as blind pockets in the angled underside view.
 - `judge/` — visual judge (#8), evaluation only (not run by the app). Same shape as `gate/`: `base.py`
-  (`Judgement`, 0-1 score), `llm_judge.py` (versioned `PROMPTS`; one request with the request text, the
-  measured size and the render). A Jev backend (#12) would be `judge/jev.py`. Images go to LLMs as message
+  (`Judgement`, 0-1 score), `llm_judge.py` (one request with the request text, the measured size and the
+  render). System prompts are files in `judge/prompts/<version>.txt`, never edited once used (results record
+  the version); each is paired with the render version it describes (`RENDER_FOR_PROMPT`, `prompts/README.md`),
+  and `eval/judge.py` warns on a mismatch. A Jev backend (#12) would be `judge/jev.py`. Images go to LLMs as message
   parts `{"type": "image", "png": bytes}`, converted per backend in `llm.py`.
 - `app.py` — Gradio chat front end; uses `run_gate` for intake, then `run_pipeline` on the confirmed
   spec when the user clicks "Build it".
