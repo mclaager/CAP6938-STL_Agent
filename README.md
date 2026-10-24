@@ -26,6 +26,9 @@ pixi run -e cap6938 test       # tests (no API calls)
 pixi run -e cap6938 examples   # rebuild the few-shot example library
 pixi run -e cap6938 bench run --budget 18   # benchmark; resumes where it stopped
 pixi run -e cap6938 bench report             # results tables
+pixi run -e cap6938 judge run --gen-model gemini-3.5-flash-lite   # visual judge over benchmark parts
+pixi run -e cap6938 judge sheet              # review page: eval/renders/index.html
+pixi run -e cap6938 retrieval-eval           # offline retrieval scores (no API calls)
 ```
 
 ## How it works
@@ -39,7 +42,17 @@ pixi run -e cap6938 bench report             # results tables
 
 Settings (model, attempts, gate behaviour) are environment variables documented in `stl_agent/config.py`.
 
+## Evaluation
+
+- **Benchmark** (`eval/`): 48 requests from simple parts to out-of-scope ones, each fixed-size case with a
+  hand-written reference solution. Results and the RAG ablation are in `eval/results/`.
+- **Visual judge** (`stl_agent/judge/`, `eval/judge.py`): renders each generated part from six views and asks
+  a multimodal model whether it matches the request, catching parts with the right size but the wrong shape.
+  Calibrated against reference parts and hand-graded labels; renders are kept in `eval/renders/`.
+
 ## Roadmap
 
-Planned work is tracked in [GitHub issues](../../issues): evaluation harness, LLM-as-judge
-benchmark, Thingiverse fallback, combining parts, and the final report.
+Done: the generation pipeline with retrieval and intake gate, the evaluation benchmark with RAG ablation,
+and the visual judge. Open work is tracked in [GitHub issues](../../issues): Thingiverse fallback,
+combining parts, the final report, a Jev gate backend, a fully local mode, the size-check fix, a stronger
+judge model, and whether retrieved examples make the model skip requested features.
