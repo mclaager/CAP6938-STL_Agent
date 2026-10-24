@@ -127,6 +127,10 @@ def main(argv=None):
     cases = json.loads(CASES_PATH.read_text())["cases"]
     labels_doc = json.loads(LABELS_PATH.read_text())
     labels = labels_doc["labels"]
+    unlabelled = [c["id"] for c in cases if c["id"] not in labels]
+    if unlabelled:
+        print(f"Skipping {len(unlabelled)} cases without relevance labels: {', '.join(unlabelled)}\n")
+        cases = [c for c in cases if c["id"] in labels]
     if not labels_doc.get("reviewed"):
         print("Note: relevance labels have not been reviewed by a human yet (eval/retrieval_labels.json).\n")
     if args.queries == "casual":
