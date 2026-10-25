@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..llm import parse_json_object
+from ..replies import parse_json_object
 from .base import Judgement
 
 # System prompts live in prompts/<version>.txt (see prompts/README.md). Judged rows record the version,

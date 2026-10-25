@@ -49,7 +49,10 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `pipeline.py` — prompts, response parsing, and the generate → execute → validate → repair loop
   (`generate_cad`). App entry points `run_gate(conversation, rounds)` and `run_pipeline(request, log, name)`.
 - `config.py` — paths, `.env` loading and `CAD_*` settings.
-- `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`.
+- `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`. Every backend
+  follows the `LLM` protocol: `complete(system, messages) -> str` plus `input_tokens`, `output_tokens`, `last_truncated`.
+
+- `replies.py` — `parse_json_object`, used by the gate and the judge to read JSON from model replies.
 - `retrieval.py` — RAG over `data/examples.json` (each example's request plus its `keywords`: generic
   shape/operation words). Retrievers selected by `CAD_RETRIEVER`: `tfidf` (default, words) or `tfidf-char`
   (letter chunks, numbers stripped). A local embedding model and a similarity cutoff were tried and removed

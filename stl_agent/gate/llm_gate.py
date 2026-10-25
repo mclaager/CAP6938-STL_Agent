@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from ..llm import parse_json_object
+from ..replies import parse_json_object
 from .base import MAX_ROUNDS, PROCEED, Decision, decide_from_report
 
 GATE_PROMPT = """\

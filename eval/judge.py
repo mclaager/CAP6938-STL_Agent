@@ -138,7 +138,7 @@ class Session:
             self.stopped = f"budget: {self.requests}/{self.budget} requests used; run again to continue"
             return None
         llm = getattr(self.judge, "llm", None)
-        before = (getattr(llm, "input_tokens", 0), getattr(llm, "output_tokens", 0))
+        before = (llm.input_tokens, llm.output_tokens)
         try:
             self.requests += 1
             j = self.judge.judge(request, image, facts)
@@ -148,8 +148,8 @@ class Session:
         row = dict(part=pid, judge=self.judge.name, prompt=self.prompt, render=render_tag(self.px), **extra,
                    request=request, facts=facts, score=j.score, raw_score=j.raw_score, matches=j.matches,
                    problems=j.problems, error=j.error,
-                   input_tokens=getattr(llm, "input_tokens", 0) - before[0],
-                   output_tokens=getattr(llm, "output_tokens", 0) - before[1],
+                   input_tokens=llm.input_tokens - before[0],
+                   output_tokens=llm.output_tokens - before[1],
                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
         if j.error:
             row["reply"] = j.reply[:2000]

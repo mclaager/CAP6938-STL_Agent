@@ -1,4 +1,4 @@
-"""LLM backends. Anything with `.complete(system, messages) -> str` works as an LLM.
+"""LLM backends. Every backend follows the `LLM` interface below; `make_llm` builds one from settings.
 
 A message's "content" is either a string or a list of parts, so images can be sent to vision models:
     {"type": "text", "text": "..."}   and   {"type": "image", "png": b"..."}
@@ -8,15 +8,28 @@ Each backend converts the parts to its own API format.
 from __future__ import annotations
 
 import base64
-import json
 import os
 import re
 import time
+from typing import Protocol, runtime_checkable
 
 from .config import MODEL, PROVIDER
 
 
-class AnthropicLLM:
+@runtime_checkable
+class LLM(Protocol):
+    """What the pipeline, gate and judge expect from a backend."""
+
+    input_tokens: int  # running totals over all requests, for cost reports
+    output_tokens: int
+    last_truncated: bool  # the last reply was cut off by the output token limit
+
+    def complete(self, system: str, messages: list[dict]) -> str:
+        """Send one request and return the reply text."""
+        ...
+
+
+class AnthropicLLM(LLM):
     def __init__(self, model: str | None = MODEL, max_tokens: int = 2048, temperature: float | None = None):
         import anthropic
 
@@ -24,6 +37,7 @@ class AnthropicLLM:
         self.model = model or "claude-sonnet-5-5"
         self.max_tokens, self.temperature = max_tokens, temperature
         self.input_tokens = self.output_tokens = 0
+        self.last_truncated = False
 
     def complete(self, system: str, messages: list[dict]) -> str:
         messages = [{**m, "content": anthropic_content(m["content"])} for m in messages]
@@ -34,10 +48,11 @@ class AnthropicLLM:
         resp = self.client.messages.create(**kwargs)
         self.input_tokens += resp.usage.input_tokens
         self.output_tokens += resp.usage.output_tokens
+        self.last_truncated = resp.stop_reason == "max_tokens"
         return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
 
 
-class OpenAICompatLLM:
+class OpenAICompatLLM(LLM):
     """Any provider with an OpenAI-style /chat/completions endpoint (Gemini, Groq,
     OpenRouter, Ollama, ...). Uses plain httpx so no extra SDK is needed."""
 
@@ -139,20 +154,6 @@ def openai_content(content):
             if p["type"] == "image" else p for p in content]
 
 
-_JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*\n(.*?)```", re.S | re.I)
-
-
-def parse_json_object(text: str) -> dict:
-    """Pull a JSON object out of a model reply (fenced block preferred, else the outermost braces).
-    Raises ValueError (or json.JSONDecodeError) when there is none."""
-    m = _JSON_BLOCK_RE.search(text)
-    candidate = m.group(1) if m else text[text.find("{") : text.rfind("}") + 1]
-    data = json.loads(candidate)
-    if not isinstance(data, dict):
-        raise ValueError("reply is not a JSON object")
-    return data
-
-
 class RateLimiter:
     """Allows at most `rpm` calls in any 60-second window by sleeping before a call when needed."""
 
@@ -224,11 +225,13 @@ def make_llm(provider: str = PROVIDER, model: str | None = MODEL):
     return OpenAICompatLLM(cfg["base_url"], api_key, model or cfg["default_model"], rpm=rpm)
 
 
-class ScriptedLLM:
+class ScriptedLLM(LLM):
     """Returns canned replies in order. For tests and offline demos."""
 
     def __init__(self, replies: list[str]):
         self.replies, self.calls = list(replies), []
+        self.input_tokens = self.output_tokens = 0
+        self.last_truncated = False
 
     def complete(self, system: str, messages: list[dict]) -> str:
         self.calls.append([dict(m) for m in messages])
