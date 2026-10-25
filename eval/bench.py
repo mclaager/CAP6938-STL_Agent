@@ -22,7 +22,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from stl_agent.config import EXAMPLES_PATH, MAX_ATTEMPTS, OUTPUT_DIR, ROOT
+from stl_agent.config import EXAMPLES_PATH, OUTPUT_DIR, ROOT, add_set_argument, override_settings, settings
 from stl_agent.pipeline import generate_cad
 
 EVAL_DIR = Path(__file__).parent
@@ -129,11 +129,12 @@ def read_results(path: Path) -> list[dict]:
 
 
 def run(cases: list[dict], configs: list[str], llm, model: str, retriever, results_path: Path,
-        budget: int, max_attempts: int = MAX_ATTEMPTS, log=print, repeats: int = 1,
+        budget: int, max_attempts: int | None = None, log=print, repeats: int = 1,
         library: str | None = None) -> RunSummary:
     """Run every (repeat, case, config) not yet in the results file. Repeats go in the outer loop, so a
     partial run covers all cases evenly; rows from before repeats existed count as repeat 0."""
     library = library or library_id()
+    max_attempts = max_attempts or settings().max_attempts
     done = {(r["case"], r["config"], r.get("rep", 0), _lib_key(r["config"], r.get("library", "lib9")))
             for r in read_results(results_path)}
     results_path.parent.mkdir(parents=True, exist_ok=True)
@@ -243,9 +244,10 @@ def main(argv=None):
     r.add_argument("--cases", nargs="+", help="case ids (default: all)")
     r.add_argument("--category", nargs="+", help="only these categories")
     r.add_argument("--budget", type=int, default=18, help="max LLM requests this run (default 18)")
-    r.add_argument("--max-attempts", type=int, default=MAX_ATTEMPTS)
-    r.add_argument("--model", help="model id (default: CAD_MODEL / provider default)")
+    r.add_argument("--max-attempts", type=int, help="default: the max_attempts setting")
+    r.add_argument("--model", help="model id (default: the provider's model in settings)")
     r.add_argument("--repeats", type=int, default=1, help="runs per (case, config), to average out randomness")
+    add_set_argument(r)
     rep = sub.add_parser("report", help="summarize results")
     rep.add_argument("files", nargs="*", type=Path, help="results files (default: all in eval/results)")
     args = ap.parse_args(argv)
@@ -255,6 +257,7 @@ def main(argv=None):
         print(summarize([row for f in files for row in read_results(f)]))
         return
 
+    override_settings(args.set)
     from stl_agent.llm import make_llm
     from stl_agent.retrieval import ExampleRetriever
 

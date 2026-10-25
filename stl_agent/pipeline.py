@@ -18,8 +18,8 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .config import EXAMPLES_PATH, GATE_MODEL, GATE_PICKS, MAX_ATTEMPTS, OUTPUT_DIR, PROVIDER, TOP_K
-from .llm import PROVIDERS, make_llm
+from .config import EXAMPLES_PATH, OUTPUT_DIR, ignored_env_vars, settings, settings_path
+from .llm import make_llm, provider_config
 from .retrieval import BaseRetriever, make_retriever
 from .sandbox import ExecResult, ValidationReport, feedback_for_llm, run_cadquery, validate_mesh
 
@@ -169,19 +169,22 @@ def generate_cad(
     retriever: BaseRetriever,
     log=lambda s: None,
     out_dir: str | Path | None = None,
-    max_attempts: int = MAX_ATTEMPTS,
-    top_k: int = TOP_K,
+    max_attempts: int | None = None,
+    top_k: int | None = None,
     use_rag: bool = True,
     example_ids: list[str] | None = None,
     exec_timeout: float = 60.0,
 ) -> GenResult:
-    """Run the full generate -> execute -> validate -> repair loop."""
+    """Run the full generate -> execute -> validate -> repair loop. `max_attempts` / `top_k` left as None
+    come from the current settings."""
+    max_attempts = max_attempts or settings().max_attempts
+    top_k = settings().top_k if top_k is None else top_k
     t0 = time.time()
     out_dir = Path(out_dir) if out_dir else OUTPUT_DIR / time.strftime("run_%Y%m%d_%H%M%S")
     out_dir.mkdir(parents=True, exist_ok=True)
     res = GenResult(success=False)
 
-    # Examples: the intake gate's picks when it made any (CAD_GATE_PICKS), otherwise the retriever
+    # Examples: the intake gate's picks when it made any (gate_picks setting), otherwise the retriever
     # run on the request (in the app, the gate's confirmed spec).
     by_id = {e["id"]: e for e in retriever.examples}
     picked = [by_id[i] for i in (example_ids or []) if i in by_id][:top_k]
@@ -275,6 +278,25 @@ _llm = None
 _gate = None
 
 
+def describe_settings() -> str:
+    """One line for the app's startup log: settings file, provider and models, and ignored env variables."""
+    s = settings()
+    cfg = provider_config(s.provider)
+    where = f"settings file {s.path}" if s.path else "built-in defaults (no settings file)"
+    gate = f", gate {cfg['gate_model']}" if cfg["gate_model"] != cfg["model"] else ""
+    line = f"Settings: {where}; provider {s.provider}, model {cfg['model']}{gate}, address {cfg['base_url'] or 'default'}."
+    if ignored_env_vars():
+        line += (f" Ignored environment variables (settings now live in {settings_path().name}): "
+                 f"{', '.join(ignored_env_vars())}.")
+    return line
+
+
+def reset_backends() -> None:
+    """Forget the cached LLM, gate and retriever, so the next request builds them from current settings."""
+    global _retriever, _llm, _gate
+    _retriever = _llm = _gate = None
+
+
 def get_llm():
     global _llm
     if _llm is None:
@@ -288,9 +310,11 @@ def run_gate(conversation: list[dict], rounds_asked: int = 0):
     if _gate is None:
         from .gate import make_gate
 
-        gate_model = GATE_MODEL or PROVIDERS.get(PROVIDER, {}).get("default_gate_model")
-        library = json.loads(EXAMPLES_PATH.read_text()) if GATE_PICKS else None
-        _gate = make_gate(make_llm(model=gate_model) if gate_model else get_llm(), library=library)
+        cfg = provider_config(settings().provider)
+        library = json.loads(EXAMPLES_PATH.read_text()) if settings().gate_picks else None
+        # A separate gate model (e.g. Gemini's) has its own free-tier quota, so gate checks don't use up builds.
+        llm = make_llm(model=cfg["gate_model"]) if cfg["gate_model"] != cfg["model"] else get_llm()
+        _gate = make_gate(llm, library=library)
     return _gate.decide(conversation, rounds_asked)
 
 
@@ -307,7 +331,7 @@ def run_pipeline(request: str, log, name: str | None = None,
     """`name` is a file-name slug (the gate supplies one); otherwise it's made from the request."""
     global _retriever
     if _retriever is None:
-        _retriever = make_retriever()  # CAD_RETRIEVER
+        _retriever = make_retriever()  # the retriever setting
 
     res = generate_cad(request, get_llm(), _retriever, log=log, example_ids=example_ids)
     if res.unsupported or res.stl_path is None:

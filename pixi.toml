@@ -29,6 +29,7 @@ test = "python -m pytest -q"
 bench = "python -m eval.bench"
 judge = "python -m eval.judge"
 retrieval-eval = "python -m eval.retrieval"
+settings = "python -m stl_agent.config"
 
 [feature.cap6938.dependencies]
 python = "3.12.*"

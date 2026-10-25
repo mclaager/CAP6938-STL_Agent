@@ -1,7 +1,8 @@
 """Run the everyday-language queries through the intake gate once and save its specs (issue #20).
 
     python -m eval.gate_specs            # one gate request per query not yet saved
-    CAD_GATE_PICKS=1 CAD_GATE_MODEL=gemini-3.5-flash-lite python -m eval.gate_specs --out eval/retrieval_queries_gate_lite_picks.json
+    python -m eval.gate_specs --set gate_picks=true --set providers.gemini.gate_model=gemini-3.5-flash-lite \
+        --out eval/retrieval_queries_gate_lite_picks.json
                                          # also save the gate's example picks
 
 In the app, retrieval runs on the gate's spec (a geometric restatement of the request), not on the
@@ -31,7 +32,11 @@ def gate_model() -> str:
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", type=Path, default=GATE_PATH)
+    from stl_agent.config import add_set_argument, override_settings
+
+    add_set_argument(ap)
     args = ap.parse_args(argv)
+    override_settings(args.set)
     from stl_agent.pipeline import run_gate
 
     casual = json.loads(CASUAL_PATH.read_text())

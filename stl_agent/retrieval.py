@@ -1,7 +1,7 @@
 """RAG over the few-shot example library (data/examples.json).
 
 Retrievers score every example against the request and share one `retrieve()` (top-k, with a cap
-per example class so the top-k stays diverse). Pick one with `make_retriever(kind)` / `CAD_RETRIEVER`:
+per example class so the top-k stays diverse). Pick one with `make_retriever(kind)` / the `retriever` setting:
 
     tfidf       word TF-IDF over each example's request + keywords (default; no model needed)
     tfidf-char  TF-IDF over 3-5 letter chunks with numbers removed: "hexagonal" overlaps "hex",
@@ -20,7 +20,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .config import EXAMPLES_PATH, RETRIEVER, TOP_K
+from .config import EXAMPLES_PATH, settings
 
 
 def example_text(e: dict) -> str:
@@ -46,8 +46,9 @@ class BaseRetriever:
         """Similarity of `query` to every example, in library order."""
         raise NotImplementedError
 
-    def retrieve(self, query: str, k: int = TOP_K) -> list[dict]:
+    def retrieve(self, query: str, k: int | None = None) -> list[dict]:
         """Top-k examples by similarity, at most `max_per_class` from any one example class."""
+        k = settings().top_k if k is None else k
         sims = self.scores(query)
         picked, per_class = [], {}
         for i in sims.argsort()[::-1]:
@@ -94,11 +95,12 @@ class CharTfidfRetriever(TfidfRetriever):
 
 RETRIEVERS = {"tfidf": TfidfRetriever, "tfidf-char": CharTfidfRetriever}
 
-# Kept for existing callers: the default retriever before CAD_RETRIEVER existed.
+# Kept for existing callers: the default retriever before the retriever setting existed.
 ExampleRetriever = TfidfRetriever
 
 
-def make_retriever(kind: str = RETRIEVER, path: Path = EXAMPLES_PATH, **kw) -> BaseRetriever:
+def make_retriever(kind: str | None = None, path: Path = EXAMPLES_PATH, **kw) -> BaseRetriever:
+    kind = (kind or settings().retriever).lower()
     if kind not in RETRIEVERS:
-        raise ValueError(f"Unknown CAD_RETRIEVER {kind!r}; use one of {sorted(RETRIEVERS)}")
+        raise ValueError(f"Unknown retriever {kind!r}; use one of {sorted(RETRIEVERS)}")
     return RETRIEVERS[kind].from_file(path, **kw)

@@ -126,7 +126,7 @@ def main(argv=None):
         print(f"| {name} | {m['hit1']:.0%} | {m['recall3']:.0%} | {m['mrr']:.2f} | "
               f"{m['load_s']:.2f} s | {m['query_ms']:.2f} ms |")
     if specs and any("examples" in v for v in specs.values()):
-        print("\nGate picks (CAD_GATE_PICKS): the examples the gate chose, in its order; when it chose none,"
+        print("\nGate picks (gate_picks setting): the examples the gate chose, in its order; when it chose none,"
               " the retriever's ranking on these queries")
         print("| method | hit@1 | recall@3 | MRR | requests with picks |\n|---|---|---|---|---|")
         for name in args.methods:

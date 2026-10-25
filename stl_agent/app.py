@@ -20,7 +20,7 @@ import trimesh
 
 from .config import CACHE_DIR, OUTPUT_DIR
 from .gate import CLARIFY, OUT_OF_SCOPE
-from .pipeline import run_gate, run_pipeline
+from .pipeline import describe_settings, run_gate, run_pipeline
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -281,4 +281,5 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
     reset.click(on_reset, outputs=[chat, state, build, log_box, viewer, download, code_box, report_box])
 
 if __name__ == "__main__":
+    print(describe_settings())
     demo.launch(**LAUNCH_KW)

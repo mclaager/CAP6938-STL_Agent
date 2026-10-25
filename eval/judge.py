@@ -7,7 +7,7 @@
 
 Each judged part is one request. Results are appended to eval/results/judge/<judge-model>.jsonl, one row
 per (part, judge, prompt, render settings); a run skips rows already there, so changing the judge model
-(--judge-model / CAD_JUDGE_MODEL), prompt (--prompt) or resolution (--px) adds a new study next to the
+(--judge-model / providers.<p>.judge_model), prompt (--prompt) or resolution (--px) adds a new study next to the
 old one. Renders are saved once under eval/renders/<render version>-<px>px/ (committed, ~35 KB each).
 
 Parts come from benchmark runs (eval/bench.py), whose STLs are under outputs/bench/ (gitignored, local).
@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 
 from eval.bench import RESULTS_DIR, CountingLLM, _lib_key, library_id, load_cases, read_results
-from stl_agent.config import JUDGE_THRESHOLD, OUTPUT_DIR, ROOT
+from stl_agent.config import OUTPUT_DIR, ROOT, add_set_argument, override_settings, settings
 from stl_agent.render import RENDER_VERSION, png_bytes, render_grid
 
 EVAL_DIR = Path(__file__).parent
@@ -319,8 +319,8 @@ def calibration_report(s: Session, labels: dict) -> str:
         mark = " **(best)**" if t is best or t["threshold"] == best["threshold"] else ""
         out.append(f"| {t['threshold']:.2f}{mark} | {t['accuracy']:.0%} | {t['balanced']:.0%} | "
                    f"{t['reference']} | {t['mismatch']} | {t['near_miss']} | {t['label']} |")
-    out.append(f"\nBest threshold {best['threshold']:.2f}: set CAD_JUDGE_THRESHOLD={best['threshold']:.2f} "
-               "(or update the default in stl_agent/config.py).")
+    out.append(f"\nBest threshold {best['threshold']:.2f}: set judge_threshold = {best['threshold']:.2f} "
+               "in settings.toml (or update the default in stl_agent/data/settings.defaults.toml).")
     pairs = [(band(r["raw_score"]), labels[r["part"]]["grade"]) for r in rows
              if r["score"] is not None and r["part"] in labels and label_pass(labels[r["part"]]) is not None]
     if pairs:
@@ -530,9 +530,10 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     def judge_args(p):
-        p.add_argument("--judge-model", help="judge model (default: CAD_JUDGE_MODEL / provider's judge default)")
+        p.add_argument("--judge-model", help="judge model (default: the judge model in settings)")
         p.add_argument("--prompt", default=DEFAULT_PROMPT, choices=sorted(PROMPTS))
         p.add_argument("--px", type=int, default=DEFAULT_PX, help="pixels per view (the render is 2*px square)")
+        add_set_argument(p)
 
     r = sub.add_parser("run", help="judge benchmark parts")
     r.add_argument("--gen-model", required=True, help="model whose benchmark parts to judge")
@@ -548,10 +549,14 @@ def main(argv=None):
     for name, helptext in (("report", "pass rates from judged parts"), ("sheet", "write eval/renders/index.html")):
         p = sub.add_parser(name, help=helptext)
         p.add_argument("--judge-model", help="only this judge model (default: all judge result files)")
-        p.add_argument("--threshold", type=float, default=JUDGE_THRESHOLD)
+        p.add_argument("--threshold", type=float, help="default: the judge_threshold setting")
+        add_set_argument(p)
     sub.choices["sheet"].add_argument("--render", default=render_tag(DEFAULT_PX),
                                       help='render setting to show (default: current), or "all"')
     args = ap.parse_args(argv)
+    override_settings(args.set)
+    if getattr(args, "threshold", None) is None:
+        args.threshold = settings().judge_threshold
 
     if args.cmd == "report":
         files = [JUDGE_DIR / f"{args.judge_model}.jsonl"] if args.judge_model else sorted(JUDGE_DIR.glob("*.jsonl"))
