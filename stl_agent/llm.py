@@ -13,7 +13,7 @@ import re
 import time
 from typing import Protocol, runtime_checkable
 
-from .config import MODEL, PROVIDER
+from .config import Settings, settings
 
 
 @runtime_checkable
@@ -30,11 +30,13 @@ class LLM(Protocol):
 
 
 class AnthropicLLM(LLM):
-    def __init__(self, model: str | None = MODEL, max_tokens: int = 2048, temperature: float | None = None):
+    def __init__(self, model: str | None = None, max_tokens: int = 2048, temperature: float | None = None,
+                 base_url: str | None = None):
         import anthropic
 
-        self.client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
-        self.model = model or "claude-sonnet-5-5"
+        # Reads ANTHROPIC_API_KEY, and ANTHROPIC_BASE_URL when no base_url is given.
+        self.client = anthropic.Anthropic(base_url=base_url) if base_url else anthropic.Anthropic()
+        self.model = model or provider_config("anthropic")["model"]
         self.max_tokens, self.temperature = max_tokens, temperature
         self.input_tokens = self.output_tokens = 0
         self.last_truncated = False
@@ -183,46 +185,47 @@ def _retry_delay(text: str) -> float | None:
 def _quota_hint(text: str) -> str:
     m = re.search(r"Quota exceeded for metric: [^,]*, limit: (\d+)[^\n]*\n?[^\n]*?retry in ([\dhms.]+)", text)
     if m:
-        return f"Limit is {m.group(1)} requests; retry in {m.group(2).split('.')[0]}s, or set CAD_MODEL to another model."
-    return "Try again later, or set CAD_MODEL to another model."
+        return (f"Limit is {m.group(1)} requests; retry in {m.group(2).split('.')[0]}s, or switch model "
+                "(providers.gemini.model in settings.toml, or --model).")
+    return "Try again later, or switch model (providers.gemini.model in settings.toml, or --model)."
 
 
-# name -> how to build it. Add more OpenAI-compatible providers here.
+# What the code needs to know about each provider. Everything a user may change (address, models, rpm)
+# is in data/settings.defaults.toml and settings.toml instead. Add more OpenAI-compatible providers here
+# and in the defaults file.
 PROVIDERS = {
-    "gemini": dict(
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-        key_env="GEMINI_API_KEY",
-        default_model="gemini-3.8-flash",
-        default_gate_model="gemini-3.6-flash",  # separate daily quota from the build model
-        # Judges benchmark renders (#8): a different model from 3.5 Flash Lite, which built most parts.
-        default_judge_model="gemini-3.1-flash-lite",
-        # Free tier allows 15 requests/minute per model. Google counts requests at a different moment
-        # than when we send them, so 14 still showed up as 17 in one minute; keep a wide margin.
-        default_rpm=10,
-    ),
-    # Local models served by Ollama (ollama.com). No API key; nothing leaves the machine.
-    # OLLAMA_BASE_URL overrides the address, e.g. for Ollama on another computer.
-    "ollama": dict(
-        base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-        key_env=None,
-        default_model="qwen3.5:9b",
-    ),
+    "anthropic": dict(key_env="ANTHROPIC_API_KEY"),
+    "gemini": dict(key_env="GEMINI_API_KEY"),
+    "ollama": dict(key_env=None),  # local server, no key
 }
 
 
-def make_llm(provider: str = PROVIDER, model: str | None = MODEL):
-    """Build the LLM backend selected by CAD_PROVIDER / CAD_MODEL."""
+def provider_config(name: str, s: Settings | None = None) -> dict:
+    """One provider's settings: key_env, base_url, model, gate_model, judge_model, rpm.
+    Unset gate and judge models fall back to the build model; unset base_url / rpm are None."""
+    s = s or settings()
+    name = name.lower()
+    if name not in PROVIDERS or name not in s.providers:
+        raise ValueError(f"Unknown provider {name!r}; use one of {sorted(PROVIDERS)}")
+    p = s.providers[name]
+    model = p["model"]
+    return dict(key_env=PROVIDERS[name]["key_env"], base_url=p.get("base_url"), model=model,
+                gate_model=p.get("gate_model") or model, judge_model=p.get("judge_model") or model,
+                rpm=p.get("rpm"))
+
+
+def make_llm(provider: str | None = None, model: str | None = None, base_url: str | None = None) -> LLM:
+    """Build an LLM backend. Arguments left as None come from the current settings (see provider_config)."""
+    provider = (provider or settings().provider).lower()
+    cfg = provider_config(provider)
+    model, base_url = model or cfg["model"], base_url or cfg["base_url"]
     if provider == "anthropic":
-        return AnthropicLLM(model=model)
-    if provider not in PROVIDERS:
-        raise ValueError(f"Unknown CAD_PROVIDER {provider!r}; use 'anthropic' or one of {sorted(PROVIDERS)}")
-    cfg = PROVIDERS[provider]
+        return AnthropicLLM(model=model, base_url=base_url)
     key_env = cfg["key_env"]
     api_key = os.environ.get(key_env) if key_env else "none"  # local servers ignore the key
     if not api_key:
-        raise RuntimeError(f"CAD_PROVIDER={provider} needs {key_env} set (env or .env file).")
-    rpm = int(os.environ.get("CAD_RPM") or cfg.get("default_rpm") or 0) or None
-    return OpenAICompatLLM(cfg["base_url"], api_key, model or cfg["default_model"], rpm=rpm)
+        raise RuntimeError(f"Provider {provider} needs {key_env} in .env (or the environment).")
+    return OpenAICompatLLM(base_url, api_key, model, rpm=cfg["rpm"] or None)
 
 
 class ScriptedLLM(LLM):

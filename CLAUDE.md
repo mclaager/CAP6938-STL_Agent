@@ -20,23 +20,41 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 judge run --gen-model M [--config rag norag]` — visual judge over benchmark parts (#8);
   `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`)
 
-LLM backend is picked by `CAD_PROVIDER`: `anthropic` (default, needs `ANTHROPIC_API_KEY`),
-`gemini` (free tier, needs `GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default
-`qwen3.5:9b`, address from `OLLAMA_BASE_URL`). Ollama's server defaults to a 4096-token context and drops
-the start of longer prompts without an error; raise it with `OLLAMA_CONTEXT_LENGTH` on the Ollama service. `stl_agent/config.py` reads a `.env` file in the repo root;
-it is gitignored, never commit keys. Optional: `CAD_MODEL`, `CAD_MAX_ATTEMPTS`, `CAD_TOP_K`
-(see `config.py` docstring), and `CAD_GATE` (`llm` default, `off`, `jev` stub) /
-`CAD_GATE_MAX_ROUNDS` for the intake gate. With Gemini, the gate runs on `gemini-3.6-flash` by
-default (override with `CAD_GATE_MODEL`) so its checks use a different daily quota than builds.
-The visual judge uses `CAD_JUDGE_MODEL` (default `gemini-3.1-flash-lite`, a different model from the one that
-built most benchmark parts), optionally `CAD_JUDGE_PROVIDER`, and `CAD_JUDGE_THRESHOLD`.
-Other OpenAI-compatible providers (Groq, OpenRouter) can be
-added as one entry in `PROVIDERS` in `stl_agent/llm.py`.
+- `pixi run -e cap6938 settings` — every setting, its current value and where it came from
+
+Settings live in `settings.toml` in the repo root (gitignored, per user; another file with `CAD_SETTINGS`).
+On first run it is created from the built-in defaults, `stl_agent/data/settings.defaults.toml`, with every
+setting commented out: uncomment a line to change it. Commented lines use the default, so default changes still
+apply; settings added later are appended commented out (user lines are never changed). `.env` (gitignored)
+holds only API keys (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`); other `CAD_*` variables are not read, and the
+app lists leftover ones at startup. The eval commands take `--set key=value` (repeatable, that run only), e.g.
+`bench run --set provider=ollama --set providers.ollama.model=qwen3.5:9b`.
+
+Rules for code:
+- Read settings when used (`config.settings()`), never into module constants or default arguments: new code
+  takes `None` defaults and reads `settings()` at call time, so the app can change settings without a restart
+  (`config.set_setting` / `unset_setting` edit the file; `pipeline.reset_backends()` drops cached backends).
+- A new setting goes in `settings.defaults.toml` with a comment, and its type in `TOP_FIELDS` /
+  `PROVIDER_FIELDS` in `config.py`; `tests/test_config.py` fails if they disagree.
+- Models and addresses are per provider (`[providers.<name>]`: `base_url`, `model`, `gate_model`,
+  `judge_model`, `rpm`), resolved by `llm.provider_config`. `PROVIDERS` in `llm.py` holds only what users don't
+  change (which env var has the key). A new OpenAI-compatible provider (Groq, OpenRouter, LM Studio) is one
+  `PROVIDERS` entry plus a `[providers.<name>]` table in the defaults file.
+
+Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemini` (free tier, needs
+`GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default `qwen3.5:9b`). Ollama's server
+defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
+`OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `top_k`, `retriever`, `gate`
+(`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, and for the visual judge `judge_provider`,
+`providers.<p>.judge_model` (Gemini default `gemini-3.1-flash-lite`, a different model from the one that built
+most benchmark parts) and `judge_threshold`. With Gemini, the gate runs on `gemini-3.6-flash` by default
+(`providers.gemini.gate_model`) so its checks use a different daily quota than builds.
 
 Gemini free tier is about 20 requests/day per model, and each repair attempt is one request.
-If one model's quota runs out, switch with `CAD_MODEL` (e.g. `gemini-3.6-flash`), which has its own quota.
-The free tier also caps each model at 15 requests/minute; the client paces itself to `CAD_RPM`
-(default 10 for Gemini; at 14, Google still counted up to 17 in a minute) and waits out short rate-limit replies instead of failing.
+If one model's quota runs out, switch with `providers.gemini.model` (or `--model` on `bench`), e.g.
+`gemini-3.6-flash`, which has its own quota. The free tier also caps each model at 15 requests/minute; the
+client paces itself to `providers.gemini.rpm` (default 10; at 14, Google still counted up to 17 in a minute)
+and waits out short rate-limit replies instead of failing.
 `gemini-3.5-flash-lite` has a much larger daily quota (about 500) but is a weaker coder; see `bench report`.
 
 Add dependencies to `pixi.toml` under the `cap6938` feature. `requirements.txt` mirrors the
@@ -48,13 +66,14 @@ pypi deps for non-pixi users, so keep the two in sync.
 
 - `pipeline.py` — prompts, response parsing, and the generate → execute → validate → repair loop
   (`generate_cad`). App entry points `run_gate(conversation, rounds)` and `run_pipeline(request, log, name)`.
-- `config.py` — paths, `.env` loading and `CAD_*` settings.
+- `config.py` — paths, `.env` loading (API keys), and settings: `Settings`, `settings()`, the settings file
+  (create, validate, `set_setting` / `unset_setting`), `--set` overrides. Defaults in `data/settings.defaults.toml`.
 - `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`. Every backend
   follows the `LLM` protocol: `complete(system, messages) -> str` plus `input_tokens`, `output_tokens`, `last_truncated`.
 
 - `replies.py` — `parse_json_object`, used by the gate and the judge to read JSON from model replies.
 - `retrieval.py` — RAG over `data/examples.json` (each example's request plus its `keywords`: generic
-  shape/operation words). Retrievers selected by `CAD_RETRIEVER`: `tfidf` (default, words) or `tfidf-char`
+  shape/operation words). Retrievers selected by the `retriever` setting: `tfidf` (default, words) or `tfidf-char`
   (letter chunks, numbers stripped). A local embedding model and a similarity cutoff were tried and removed
   (no gain; see `eval/results/retrieval-lib26.md`). Keep the app lightweight (#19): no PyTorch.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).

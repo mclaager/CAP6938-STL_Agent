@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import os
 import re
 from dataclasses import asdict, dataclass, field
 from typing import Protocol
 
-MAX_ROUNDS = int(os.environ.get("CAD_GATE_MAX_ROUNDS", "2"))
+from ..config import settings
+
+MAX_ROUNDS = 2  # the usual value; the setting is gate_max_rounds (settings.defaults.toml)
 MAX_QUESTIONS = 3
 
 PROCEED, CLARIFY, OUT_OF_SCOPE = "proceed", "clarify", "out_of_scope"
@@ -23,7 +24,7 @@ class Decision:
     assumptions: list[dict] = field(default_factory=list)  # [{"param", "default", "critical", ...}]
     note: str = ""  # e.g. why the gate fell back to proceeding
     name: str = ""  # short file-name slug for the part, e.g. "flange-80mm-6-holes"
-    # Gate-picked library examples (CAD_GATE_PICKS): None = the gate wasn't asked to pick,
+    # Gate-picked library examples (gate_picks setting): None = the gate wasn't asked to pick,
     # [] = it found nothing relevant.
     example_ids: list[str] | None = None
 
@@ -43,8 +44,9 @@ def slugify(text: str, max_words: int = 6, max_len: int = 48) -> str:
 
 
 
-def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_rounds: int = MAX_ROUNDS) -> Decision:
+def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_rounds: int | None = None) -> Decision:
     """The decision rules. Kept separate from the LLM call so they can be tested directly."""
+    max_rounds = settings().gate_max_rounds if max_rounds is None else max_rounds
     scope = str(report.get("scope", "in_scope")).strip().lower()
     if scope not in ("in_scope", "simplified", "out_of_scope"):
         scope = "in_scope"
@@ -69,7 +71,7 @@ def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_
 
 
 class PassthroughGate:
-    """CAD_GATE=off: the old behaviour, every request goes straight to generation."""
+    """gate = "off": the old behaviour, every request goes straight to generation."""
 
     def decide(self, conversation: list[dict], rounds_asked: int = 0) -> Decision:
         return Decision(action=PROCEED, spec="\n".join(t["content"] for t in conversation if t["role"] == "user"))

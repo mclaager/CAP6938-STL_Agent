@@ -9,6 +9,10 @@ __pycache__/
 # Secrets
 .env
 
+# Per-user settings (created on first run from stl_agent/data/settings.defaults.toml)
+settings.toml
+settings.toml.tmp
+
 # Generated output
 outputs/
 *.stl

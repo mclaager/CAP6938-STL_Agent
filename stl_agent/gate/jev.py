@@ -14,4 +14,4 @@ class JevGate:
     """
 
     def decide(self, conversation: list[dict], rounds_asked: int = 0) -> Decision:
-        raise NotImplementedError("Jev gate is not implemented yet; set CAD_GATE=llm or off.")
+        raise NotImplementedError("Jev gate is not implemented yet; set gate = 'llm' or 'off' in settings.toml.")

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 from ..replies import parse_json_object
-from .base import MAX_ROUNDS, PROCEED, Decision, decide_from_report
+from .base import PROCEED, Decision, decide_from_report
 
 GATE_PROMPT = """\
 You are the intake step of a text-to-CAD agent. A later step writes CadQuery (Python parametric CAD)
@@ -77,8 +77,8 @@ def parse_gate_reply(text: str) -> dict:
 
 
 class LLMGate:
-    def __init__(self, llm, max_rounds: int = MAX_ROUNDS, library: list[dict] | None = None):
-        """With `library`, the gate also picks relevant examples."""
+    def __init__(self, llm, max_rounds: int | None = None, library: list[dict] | None = None):
+        """With `library`, the gate also picks relevant examples. `max_rounds` None: the gate_max_rounds setting."""
         self.llm, self.max_rounds = llm, max_rounds
         self.known_ids = {e["id"] for e in library} if library else set()
         self.prompt = GATE_PROMPT + (LIBRARY_PROMPT.format(index=library_index(library)) if library else "")

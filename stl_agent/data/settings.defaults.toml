@@ -1,0 +1,70 @@
+# Built-in defaults for every setting. Don't edit this file to change a setting: edit settings.toml in
+# the project root instead (created on first run as a copy of this file with every line commented out).
+# Adding a setting: add it here with a comment, and to the schema in stl_agent/config.py.
+
+# LLM provider for builds and the intake gate: "anthropic", "gemini" or "ollama" (local, no key).
+provider = "anthropic"
+
+# Generation + repair attempts per build. Each attempt is one LLM request.
+max_attempts = 4
+
+# Examples from the few-shot library put in each prompt (RAG). 0 for none.
+top_k = 3
+
+# How those examples are found: "tfidf" (words) or "tfidf-char" (letter chunks, numbers stripped).
+retriever = "tfidf"
+
+# Intake gate run before generation: "llm", "off" (always build), or "jev" (not implemented yet, #12).
+gate = "llm"
+
+# Clarifying rounds the gate may ask before building on assumptions.
+gate_max_rounds = 2
+
+# Let the gate pick the RAG examples from a library index (not yet tested on all requests, #20).
+gate_picks = false
+
+# Visual judge for evaluation (#8, eval/judge.py only): "llm".
+judge = "llm"
+
+# Provider for the judge. Unset: the build provider.
+# judge_provider = "gemini"
+
+# Score (0-1) at which a judged part passes. From `judge calibrate` (prompt v2, render v2).
+judge_threshold = 0.5
+
+# Per-provider settings. API keys never go here: put them in .env.
+#   base_url      API address
+#   model         model for builds
+#   gate_model    model for the intake gate (unset: model)
+#   judge_model   model for the visual judge (unset: model)
+#   rpm           max requests per minute per model (unset: no limit)
+
+[providers.anthropic]
+# Claude. Needs ANTHROPIC_API_KEY in .env.
+# base_url = "https://api.anthropic.com"
+model = "claude-sonnet-5-5"
+# gate_model = "claude-haiku-5-5"
+# judge_model = "claude-sonnet-5-5"
+# rpm = 50
+
+[providers.gemini]
+# Google Gemini, free tier. Needs GEMINI_API_KEY in .env (free key: aistudio.google.com).
+# About 20 requests/day per model; each model has its own quota.
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+model = "gemini-3.8-flash"
+# A separate gate model has its own daily quota, so gate checks don't use up builds.
+gate_model = "gemini-3.6-flash"
+# Judges benchmark renders: a different model from 3.5 Flash Lite, which built most parts.
+judge_model = "gemini-3.1-flash-lite"
+# The free tier allows 15/minute, but Google counted 14 sent as up to 17; keep a wide margin.
+rpm = 10
+
+[providers.ollama]
+# Local models served by Ollama (ollama.com). No key; nothing leaves the machine.
+# Ollama's server defaults to a 4096-token context and silently drops the start of longer prompts;
+# raise it with OLLAMA_CONTEXT_LENGTH on the Ollama service.
+base_url = "http://localhost:11434/v1"
+model = "qwen3.5:9b"
+# gate_model = "qwen3.5:9b"
+# judge_model = "qwen3.5:9b"
+# rpm = 60
