@@ -1,9 +1,10 @@
 """Paths and settings. Reads a `.env` file in the repo root; real environment variables win.
 
 Environment variables:
-    CAD_PROVIDER        "anthropic" (default) or "gemini"
+    CAD_PROVIDER        "anthropic" (default), "gemini" or "ollama" (local models, no key)
     ANTHROPIC_API_KEY   required when CAD_PROVIDER=anthropic
     GEMINI_API_KEY      required when CAD_PROVIDER=gemini (free key: aistudio.google.com)
+    OLLAMA_BASE_URL     Ollama's OpenAI-compatible address (default http://localhost:11434/v1)
     CAD_MODEL           model id (default depends on provider, see llm.PROVIDERS)
     CAD_GATE_MODEL      model for the intake gate (default: the provider's gate model, else CAD_MODEL).
                         A separate model has its own free-tier quota, so gate checks don't use up builds.

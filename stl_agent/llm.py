@@ -199,6 +199,13 @@ PROVIDERS = {
         # than when we send them, so 14 still showed up as 17 in one minute; keep a wide margin.
         default_rpm=10,
     ),
+    # Local models served by Ollama (ollama.com). No API key; nothing leaves the machine.
+    # OLLAMA_BASE_URL overrides the address, e.g. for Ollama on another computer.
+    "ollama": dict(
+        base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
+        key_env=None,
+        default_model="qwen3.5:9b",
+    ),
 }
 
 
@@ -209,9 +216,10 @@ def make_llm(provider: str = PROVIDER, model: str | None = MODEL):
     if provider not in PROVIDERS:
         raise ValueError(f"Unknown CAD_PROVIDER {provider!r}; use 'anthropic' or one of {sorted(PROVIDERS)}")
     cfg = PROVIDERS[provider]
-    api_key = os.environ.get(cfg["key_env"])
+    key_env = cfg["key_env"]
+    api_key = os.environ.get(key_env) if key_env else "none"  # local servers ignore the key
     if not api_key:
-        raise RuntimeError(f"CAD_PROVIDER={provider} needs {cfg['key_env']} set (env or .env file).")
+        raise RuntimeError(f"CAD_PROVIDER={provider} needs {key_env} set (env or .env file).")
     rpm = int(os.environ.get("CAD_RPM") or cfg.get("default_rpm") or 0) or None
     return OpenAICompatLLM(cfg["base_url"], api_key, model or cfg["default_model"], rpm=rpm)
 

@@ -20,15 +20,17 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 judge run --gen-model M [--config rag norag]` — visual judge over benchmark parts (#8);
   `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`)
 
-LLM backend is picked by `CAD_PROVIDER`: `anthropic` (default, needs `ANTHROPIC_API_KEY`) or
-`gemini` (free tier, needs `GEMINI_API_KEY`). `stl_agent/config.py` reads a `.env` file in the repo root;
+LLM backend is picked by `CAD_PROVIDER`: `anthropic` (default, needs `ANTHROPIC_API_KEY`),
+`gemini` (free tier, needs `GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default
+`qwen3.5:9b`, address from `OLLAMA_BASE_URL`). Ollama's server defaults to a 4096-token context and drops
+the start of longer prompts without an error; raise it with `OLLAMA_CONTEXT_LENGTH` on the Ollama service. `stl_agent/config.py` reads a `.env` file in the repo root;
 it is gitignored, never commit keys. Optional: `CAD_MODEL`, `CAD_MAX_ATTEMPTS`, `CAD_TOP_K`
 (see `config.py` docstring), and `CAD_GATE` (`llm` default, `off`, `jev` stub) /
 `CAD_GATE_MAX_ROUNDS` for the intake gate. With Gemini, the gate runs on `gemini-3.6-flash` by
 default (override with `CAD_GATE_MODEL`) so its checks use a different daily quota than builds.
 The visual judge uses `CAD_JUDGE_MODEL` (default `gemini-3.1-flash-lite`, a different model from the one that
 built most benchmark parts), optionally `CAD_JUDGE_PROVIDER`, and `CAD_JUDGE_THRESHOLD`.
-Other OpenAI-compatible providers (Groq, OpenRouter, Ollama) can be
+Other OpenAI-compatible providers (Groq, OpenRouter) can be
 added as one entry in `PROVIDERS` in `stl_agent/llm.py`.
 
 Gemini free tier is about 20 requests/day per model, and each repair attempt is one request.
