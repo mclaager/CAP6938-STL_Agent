@@ -151,7 +151,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
             return summary
 
         log(f"[{case['id']} / {config} / rep {rep}] {case['request'][:60]}")
-        before = (counter.requests, getattr(llm, "input_tokens", 0), getattr(llm, "output_tokens", 0))
+        before = (counter.requests, llm.input_tokens, llm.output_tokens)
         out_dir = OUTPUT_DIR / "bench" / model / library / config / case["id"] / f"rep{rep}"
         try:
             kw = dict(CONFIGS[config])
@@ -171,8 +171,8 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
                    category=case["category"], expect=case["expect"],
                    **score(case, res),
                    requests=counter.requests - before[0],
-                   input_tokens=getattr(llm, "input_tokens", 0) - before[1],
-                   output_tokens=getattr(llm, "output_tokens", 0) - before[2],
+                   input_tokens=llm.input_tokens - before[1],
+                   output_tokens=llm.output_tokens - before[2],
                    stl=_repo_relative(res.stl_path),
                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
         with results_path.open("a") as f:

@@ -217,7 +217,7 @@ def generate_cad(
         if not parsed.code:
             rec["outcome"] = "no_code_block"
             res.history.append(rec)
-            if getattr(llm, "last_truncated", False):
+            if llm.last_truncated:
                 rec["outcome"] = "truncated"
                 log("Reply was cut off by the output token limit before the code finished; asking again.")
             else:
