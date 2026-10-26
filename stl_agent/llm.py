@@ -23,6 +23,7 @@ class LLM(Protocol):
     input_tokens: int  # running totals over all requests, for cost reports
     output_tokens: int
     last_truncated: bool  # the last reply was cut off by the output token limit
+    last_reasoning: str = ""  # the model's reasoning before the last reply, when the provider returns it
 
     def complete(self, system: str, messages: list[dict]) -> str:
         """Send one request and return the reply text."""
@@ -31,11 +32,12 @@ class LLM(Protocol):
 
 class AnthropicLLM(LLM):
     def __init__(self, model: str | None = None, max_tokens: int = 2048, temperature: float | None = None,
-                 base_url: str | None = None):
+                 base_url: str | None = None, timeout: float = 300.0, max_retries: int = 2):
         import anthropic
 
         # Reads ANTHROPIC_API_KEY, and ANTHROPIC_BASE_URL when no base_url is given.
-        self.client = anthropic.Anthropic(base_url=base_url) if base_url else anthropic.Anthropic()
+        kw = {"base_url": base_url} if base_url else {}
+        self.client = anthropic.Anthropic(timeout=timeout, max_retries=max_retries, **kw)
         self.model = model or provider_config("anthropic")["model"]
         self.max_tokens, self.temperature = max_tokens, temperature
         self.input_tokens = self.output_tokens = 0
@@ -51,6 +53,7 @@ class AnthropicLLM(LLM):
         self.input_tokens += resp.usage.input_tokens
         self.output_tokens += resp.usage.output_tokens
         self.last_truncated = resp.stop_reason == "max_tokens"
+        self.last_reasoning = "".join(getattr(b, "thinking", "") for b in resp.content if getattr(b, "type", "") == "thinking")
         return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
 
 
@@ -133,7 +136,9 @@ class OpenAICompatLLM(LLM):
         self.output_tokens += usage.get("completion_tokens", 0)
         choice = data["choices"][0]
         self.last_truncated = choice.get("finish_reason") == "length"
-        return choice["message"].get("content") or ""
+        msg = choice["message"]
+        self.last_reasoning = msg.get("reasoning") or msg.get("reasoning_content") or ""  # Ollama / others
+        return msg.get("content") or ""
 
 
 def _b64(png: bytes) -> str:
@@ -201,8 +206,8 @@ PROVIDERS = {
 
 
 def provider_config(name: str, s: Settings | None = None) -> dict:
-    """One provider's settings: key_env, base_url, model, gate_model, judge_model, rpm.
-    Unset gate and judge models fall back to the build model; unset base_url / rpm are None."""
+    """One provider's settings: key_env, base_url, model, gate_model, judge_model, rpm, timeout.
+    Unset gate and judge models fall back to the build model; unset base_url / rpm / timeout are None."""
     s = s or settings()
     name = name.lower()
     if name not in PROVIDERS or name not in s.providers:
@@ -211,21 +216,56 @@ def provider_config(name: str, s: Settings | None = None) -> dict:
     model = p["model"]
     return dict(key_env=PROVIDERS[name]["key_env"], base_url=p.get("base_url"), model=model,
                 gate_model=p.get("gate_model") or model, judge_model=p.get("judge_model") or model,
-                rpm=p.get("rpm"))
+                rpm=p.get("rpm"), timeout=p.get("timeout"))
 
 
-def make_llm(provider: str | None = None, model: str | None = None, base_url: str | None = None) -> LLM:
-    """Build an LLM backend. Arguments left as None come from the current settings (see provider_config)."""
+def make_llm(provider: str | None = None, model: str | None = None, base_url: str | None = None,
+             timeout: float | None = None, quick: bool = False) -> LLM:
+    """Build an LLM backend. Arguments left as None come from the current settings (see provider_config).
+    `quick`: no retries, for a connection test that should fail fast (use with a short `timeout`)."""
     provider = (provider or settings().provider).lower()
     cfg = provider_config(provider)
     model, base_url = model or cfg["model"], base_url or cfg["base_url"]
     if provider == "anthropic":
-        return AnthropicLLM(model=model, base_url=base_url)
-    key_env = cfg["key_env"]
-    api_key = os.environ.get(key_env) if key_env else "none"  # local servers ignore the key
-    if not api_key:
+        api_key(provider)  # a clear error now instead of the SDK's at the first request
+    timeout = timeout or cfg["timeout"]
+    kw = {"timeout": float(timeout)} if timeout else {}
+    if quick:
+        kw["max_retries"] = 0
+    if provider == "anthropic":
+        return AnthropicLLM(model=model, base_url=base_url, **kw)
+    return OpenAICompatLLM(base_url, api_key(provider), model, rpm=cfg["rpm"] or None, **kw)
+
+
+def api_key(provider: str) -> str:
+    """The provider's API key from the environment (.env); "none" for local servers, which ignore it."""
+    key_env = PROVIDERS[provider.lower()]["key_env"]
+    if not key_env:
+        return "none"
+    if not os.environ.get(key_env):
         raise RuntimeError(f"Provider {provider} needs {key_env} in .env (or the environment).")
-    return OpenAICompatLLM(base_url, api_key, model, rpm=cfg["rpm"] or None)
+    return os.environ[key_env]
+
+
+def list_models(provider: str | None = None, base_url: str | None = None, timeout: float = 10.0) -> list[str]:
+    """Model names the provider's server offers (for Ollama, the models pulled on that machine).
+    Arguments left as None come from the current settings. Raises if the server can't be reached."""
+    provider = (provider or settings().provider).lower()
+    base_url = base_url or provider_config(provider)["base_url"]
+    if provider == "anthropic":
+        import anthropic
+
+        kw = {"base_url": base_url} if base_url else {}
+        client = anthropic.Anthropic(api_key=api_key(provider), timeout=timeout, **kw)
+        return sorted(m.id for m in client.models.list(limit=100))
+    import httpx
+
+    resp = httpx.get(base_url.rstrip("/") + "/models", timeout=timeout,
+                     headers={"Authorization": f"Bearer {api_key(provider)}"})
+    if resp.status_code >= 400:
+        raise RuntimeError(f"listing models failed ({resp.status_code}): {resp.text[:300]}")
+    # Gemini names models "models/gemini-..."; requests use the name without the prefix.
+    return sorted(m["id"].removeprefix("models/") for m in resp.json().get("data", []))
 
 
 class ScriptedLLM(LLM):

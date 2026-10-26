@@ -19,7 +19,9 @@ pixi run -e cap6938 app                    # http://127.0.0.1:7860
 The first run creates `settings.toml` in the project root, listing every setting with its default, commented
 out. To change one, uncomment its line and edit it: for example `provider = "gemini"` for the key above, or
 `provider = "ollama"` to run on a local model with [Ollama](https://ollama.com) (no key needed).
-`.env` holds only API keys. `pixi run -e cap6938 settings` shows every setting and where its value came from.
+Provider, model and server address can also be set in the app, under "Model settings" ("Test connection"
+checks them first). `.env` holds only API keys. `pixi run -e cap6938 settings` shows every setting and where
+its value came from.
 
 Without pixi: `pip install -r requirements.txt`, then `python -m stl_agent.app` from the repo root.
 
@@ -35,6 +37,43 @@ pixi run -e cap6938 judge sheet              # review page: eval/renders/index.h
 pixi run -e cap6938 retrieval-eval           # offline retrieval scores (no API calls)
 ```
 
+## Run it locally (no API key)
+
+The agent can run entirely on your machine with [Ollama](https://ollama.com); nothing leaves the machine and
+there is no daily quota.
+
+1. Install Ollama and pull a model: `ollama pull gemma4:12b`.
+2. Raise Ollama's context window. Its server defaults to 4096 tokens and silently drops the start of longer
+   prompts, which breaks repair attempts. With the Linux service: `sudo systemctl edit ollama`, add
+   ```ini
+   [Service]
+   Environment="OLLAMA_CONTEXT_LENGTH=16384"
+   ```
+   then `sudo systemctl restart ollama`. (Running `ollama serve` by hand: set the variable before it.)
+3. In the app, open the settings panel (⚙, top right), pick `ollama`, check it with "Test connection", and
+   Save. Or set `provider = "ollama"` in `settings.toml`. Ollama on another machine: change the server address
+   (default `http://localhost:11434/v1`).
+
+The intake gate uses the same local model. The visual judge (evaluation only) also runs locally with
+`gemma4:12b` (`--set judge_provider=ollama --set judge_threshold=0.94`): about as accurate as Gemini on the
+calibration set, but more lenient; see `eval/results/judge-local-gemma4-12b.md`.
+
+**Which model.** Three models that fit a 10 GB GPU (RTX 3080), on a 12-case subset of the benchmark
+(3 runs each, with retrieval; results in `eval/results/<model>.jsonl`):
+
+| Model | Download | Correct parts | First try | Median time per case |
+|---|---|---|---|---|
+| `gemma4:12b` (default) | 8.0 GB | 22/36 (61%) | 16/36 | 207 s |
+| `ornith:9b` | 5.6 GB | 16/36 (44%) | 9/36 | 260 s |
+| `qwen3.5:9b` | 6.6 GB | 9/36 (25%) | 3/36 | 73 s |
+
+For comparison, Gemini's free `gemini-3.5-flash-lite` got 23/27 (85%) of the same cases right. Local models
+are slower and miss more on complex parts: `gemma4:12b` got all 6 simple runs and 14 of 18 medium ones right,
+but only 2 of 9 hard ones. Expect a few minutes per part. `gemma4:12b` needs about
+10 GB of GPU memory with a 16K context; with less, pick a smaller model or Ollama runs part of it on the CPU,
+which is much slower. A reply that runs on can take over 5 minutes, so Ollama's request timeout is 600 s
+(`providers.ollama.timeout`).
+
 ## How it works
 
 1. **Intake gate** (`stl_agent/gate/`): checks whether the request is in scope and whether any
@@ -44,7 +83,8 @@ pixi run -e cap6938 retrieval-eval           # offline retrieval scores (no API 
    the sandbox (`stl_agent/sandbox.py`), the mesh is validated, and errors are fed back for another attempt.
 4. **UI** (`stl_agent/app.py`): Gradio chat with a 3D preview, the generated code, and a validation report.
 
-Settings (model, attempts, gate behaviour) are environment variables documented in `stl_agent/config.py`.
+Settings (model, attempts, gate behaviour) are in `settings.toml`; the defaults, with a comment for each, are in
+`stl_agent/data/settings.defaults.toml`.
 
 ## Evaluation
 

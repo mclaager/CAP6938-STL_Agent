@@ -42,13 +42,14 @@ Rules for code:
   `PROVIDERS` entry plus a `[providers.<name>]` table in the defaults file.
 
 Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemini` (free tier, needs
-`GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default `qwen3.5:9b`). Ollama's server
+`GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default `gemma4:12b`, the best of three local models tried, see
+`eval/results/`). Ollama's server
 defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
-`OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `top_k`, `retriever`, `gate`
+`OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off), `top_k`, `retriever`, `gate`
 (`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, and for the visual judge `judge_provider`,
 `providers.<p>.judge_model` (Gemini default `gemini-3.1-flash-lite`, a different model from the one that built
-most benchmark parts) and `judge_threshold`. With Gemini, the gate runs on `gemini-3.6-flash` by default
-(`providers.gemini.gate_model`) so its checks use a different daily quota than builds.
+most benchmark parts) and `judge_threshold`. The gate uses the build model unless `providers.<p>.gate_model` is
+set (with Gemini, another model has its own daily quota, so gate checks don't use up builds).
 
 Gemini free tier is about 20 requests/day per model, and each repair attempt is one request.
 If one model's quota runs out, switch with `providers.gemini.model` (or `--model` on `bench`), e.g.
@@ -77,6 +78,11 @@ pypi deps for non-pixi users, so keep the two in sync.
   (letter chunks, numbers stripped). A local embedding model and a similarity cutoff were tried and removed
   (no gain; see `eval/results/retrieval-lib26.md`). Keep the app lightweight (#19): no PyTorch.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
+- `api_check.py` — extra repair feedback when a script fails (`api_hints` setting): reads the script with `ast`
+  and checks each CadQuery call it can resolve against the installed CadQuery (`inspect`): missing methods (with
+  close real names), arguments that don't fit the signature, a tuple where a number goes. Only used after a
+  failed run, so a wrong guess can't block working code; `tests/test_api_check.py` checks it raises nothing on
+  the examples and reference solutions.
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
   out_of_scope. `llm_gate.py` is the LLM backend, `jev.py` a stub (#12). Each gate check is one LLM request.
@@ -94,7 +100,10 @@ pypi deps for non-pixi users, so keep the two in sync.
   and `eval/judge.py` warns on a mismatch. A Jev backend (#12) would be `judge/jev.py`. Images go to LLMs as message
   parts `{"type": "image", "png": bytes}`, converted per backend in `llm.py`.
 - `app.py` — Gradio chat front end; uses `run_gate` for intake, then `run_pipeline` on the confirmed
-  spec when the user clicks "Build it".
+  spec when the user clicks "Build it". A "Model settings" panel picks provider, model, gate model and server
+  address: the model dropdown lists the server's chat models (`llm.list_models`); "Test connection" sends one tiny
+  request without saving (`make_llm(timeout=90, quick=True)`: no retries, so a busy model fails fast); "Save" writes the settings file (values equal to the default stay commented out) and calls
+  `reset_backends()`, so the next request uses them.
   Gradio's `Model3D` goes blank when updated from a streaming handler, so result panels are
   filled by a separate non-streaming `show_result` step.
   Layout CSS (fixed-height code/report, log stretched to line up with them) is passed via
@@ -111,7 +120,8 @@ Elsewhere:
   `eval/results/<model>.jsonl` (committed), skips pairs already done, and stops before exceeding
   `--budget` requests, so a full run can be spread over several days of free-tier quota.
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
-  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1` / `rag-k5` (1 or 5
+  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-hints` (rag plus `api_hints`; the others pin it off, as all
+  earlier rows had it off), `rag-k1` / `rag-k5` (1 or 5
   examples instead of 3), `rag-char` (letter-chunk retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,

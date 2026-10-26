@@ -40,8 +40,9 @@ OUTPUT_DIR = ROOT / "outputs"
 CACHE_DIR = ROOT / "demo_cache"  # optional offline demo results, see app.load_cached
 
 
-def _load_dotenv(path: Path = ROOT / ".env") -> None:
-    """Minimal .env reader (KEY=value lines). Real environment variables win."""
+def load_dotenv(path: Path = ROOT / ".env") -> None:
+    """Minimal .env reader (KEY=value lines). Real environment variables win. The app calls it again
+    to pick up keys added while it runs."""
     if not path.exists():
         return
     for line in path.read_text().splitlines():
@@ -53,19 +54,20 @@ def _load_dotenv(path: Path = ROOT / ".env") -> None:
         os.environ.setdefault(key, value.strip().strip("'\""))
 
 
-_load_dotenv()
+load_dotenv()
 
 DEFAULTS_PATH = DATA_DIR / "settings.defaults.toml"
 
 # Schema: every setting and its type. Settings in OPTIONAL may be left unset (TOML has no null).
 TOP_FIELDS = {
-    "provider": str, "max_attempts": int, "top_k": int, "retriever": str, "gate": str,
+    "provider": str, "max_attempts": int, "api_hints": bool, "top_k": int, "retriever": str, "gate": str,
     "gate_max_rounds": int, "gate_picks": bool, "judge": str, "judge_provider": str,
     "judge_threshold": (int, float),
 }
-PROVIDER_FIELDS = {"base_url": str, "model": str, "gate_model": str, "judge_model": str, "rpm": int}
+PROVIDER_FIELDS = {"base_url": str, "model": str, "gate_model": str, "judge_model": str, "rpm": int,
+                   "timeout": (int, float)}
 OPTIONAL = {"judge_provider"}
-OPTIONAL_PROVIDER = {"base_url", "gate_model", "judge_model", "rpm"}
+OPTIONAL_PROVIDER = {"base_url", "gate_model", "judge_model", "rpm", "timeout"}
 _LOWERCASE = {"provider", "retriever", "gate", "judge", "judge_provider"}
 
 
@@ -73,6 +75,7 @@ _LOWERCASE = {"provider", "retriever", "gate", "judge", "judge_provider"}
 class Settings:
     provider: str
     max_attempts: int
+    api_hints: bool
     top_k: int
     retriever: str
     gate: str

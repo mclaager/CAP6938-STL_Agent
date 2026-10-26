@@ -55,7 +55,8 @@ def test_models_follow_the_selected_provider(write_settings):
     write_settings('provider = "gemini"\n')
     gem = defaults()["providers"]["gemini"]
     cfg = provider_config("gemini")
-    assert (cfg["model"], cfg["gate_model"], cfg["judge_model"]) == (gem["model"], gem["gate_model"], gem["judge_model"])
+    assert (cfg["model"], cfg["judge_model"]) == (gem["model"], gem["judge_model"])
+    assert cfg["gate_model"] == gem["model"]  # no gate model set: the gate uses the build model
 
 
 def test_make_llm_uses_the_file(write_settings):
