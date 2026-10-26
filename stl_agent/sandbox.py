@@ -61,7 +61,7 @@ _RUNNER = textwrap.dedent(
     def show_object(obj, *args, **kwargs):
         shown.append(obj)
 
-    out = {"ok": False, "error_type": None, "error_msg": None, "traceback": None}
+    out = {"ok": False, "error_type": None, "error_msg": None, "traceback": None, "lib_call": None}
 
     def trimmed_tb():
         exc_type, exc, tb = sys.exc_info()
@@ -70,6 +70,21 @@ _RUNNER = textwrap.dedent(
         for f in frames:
             lines.append(f'  line {f.lineno}, in {f.name}: {(f.line or "").strip()}')
         return f"{exc_type.__name__}: {exc}\n" + "\n".join(lines)
+
+    def lib_call():
+        # The function the generated code called when the error happened (e.g. "Workplane.rect"):
+        # the frame right after the last one in the generated code, if it is CadQuery's.
+        tb, last_generated, after = sys.exc_info()[2], False, None
+        while tb is not None:
+            code = tb.tb_frame.f_code
+            if code.co_filename == FILENAME:
+                last_generated, after = True, None
+            elif last_generated and after is None:
+                after = code
+            tb = tb.tb_next
+        if after is not None and "cadquery" in after.co_filename.replace("\\", "/"):
+            return after.co_qualname
+        return None
 
     try:
         import cadquery as cq
@@ -112,6 +127,10 @@ _RUNNER = textwrap.dedent(
         out["error_type"] = type(e).__name__
         out["error_msg"] = str(e)
         out["traceback"] = trimmed_tb()
+        try:
+            out["lib_call"] = lib_call()
+        except Exception:
+            pass
 
     json.dump(out, open(result_path, "w"))
     '''
@@ -125,6 +144,7 @@ class ExecResult:
     error_type: str | None = None  # e.g. "AttributeError", "Timeout", "Crash"
     error_msg: str | None = None
     traceback: str | None = None  # trimmed to generated-code frames
+    lib_call: str | None = None  # CadQuery function the error happened in, e.g. "Workplane.rect"
     stdout: str = ""
     stderr: str = ""
     code: str = ""
@@ -188,6 +208,7 @@ def run_cadquery(
         error_type=info.get("error_type") or "ExportError",
         error_msg=info.get("error_msg") or "STL file was not produced.",
         traceback=info.get("traceback"),
+        lib_call=info.get("lib_call"),
         stdout=proc.stdout,
         stderr=proc.stderr,
         code=code,
@@ -278,11 +299,19 @@ def validate_mesh(
 # ---------------------------------------------------------------------------
 # Feedback text for the repair loop
 # ---------------------------------------------------------------------------
-def feedback_for_llm(res: ExecResult, report: ValidationReport | None = None) -> str:
-    """Compact failure description to append to the next repair prompt."""
+def feedback_for_llm(res: ExecResult, report: ValidationReport | None = None, api_hints: bool = False) -> str:
+    """Compact failure description to append to the next repair prompt. `api_hints` adds the real CadQuery
+    signatures and names for the calls that failed (api_check.py)."""
     if not res.success:
         tb = res.traceback or res.error_msg or "unknown error"
-        return f"The code failed to execute.\n{tb}"
+        text = f"The code failed to execute.\n{tb}"
+        if api_hints and res.code:
+            from .api_check import hints
+
+            extra = hints(res.code, res.error_type, res.error_msg, res.lib_call)
+            if extra:
+                text += "\n\n" + extra
+        return text
     if report is not None and not report.valid:
         return "The code ran, but the resulting mesh failed validation:\n- " + "\n- ".join(report.issues)
     return ""

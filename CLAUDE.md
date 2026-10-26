@@ -42,9 +42,10 @@ Rules for code:
   `PROVIDERS` entry plus a `[providers.<name>]` table in the defaults file.
 
 Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemini` (free tier, needs
-`GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default `qwen3.5:9b`). Ollama's server
+`GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default `gemma4:12b`, the best of three local models tried, see
+`eval/results/`). Ollama's server
 defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
-`OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `top_k`, `retriever`, `gate`
+`OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off), `top_k`, `retriever`, `gate`
 (`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, and for the visual judge `judge_provider`,
 `providers.<p>.judge_model` (Gemini default `gemini-3.1-flash-lite`, a different model from the one that built
 most benchmark parts) and `judge_threshold`. With Gemini, the gate runs on `gemini-3.6-flash` by default
@@ -77,6 +78,11 @@ pypi deps for non-pixi users, so keep the two in sync.
   (letter chunks, numbers stripped). A local embedding model and a similarity cutoff were tried and removed
   (no gain; see `eval/results/retrieval-lib26.md`). Keep the app lightweight (#19): no PyTorch.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
+- `api_check.py` — extra repair feedback when a script fails (`api_hints` setting): reads the script with `ast`
+  and checks each CadQuery call it can resolve against the installed CadQuery (`inspect`): missing methods (with
+  close real names), arguments that don't fit the signature, a tuple where a number goes. Only used after a
+  failed run, so a wrong guess can't block working code; `tests/test_api_check.py` checks it raises nothing on
+  the examples and reference solutions.
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
   out_of_scope. `llm_gate.py` is the LLM backend, `jev.py` a stub (#12). Each gate check is one LLM request.
@@ -111,7 +117,8 @@ Elsewhere:
   `eval/results/<model>.jsonl` (committed), skips pairs already done, and stops before exceeding
   `--budget` requests, so a full run can be spread over several days of free-tier quota.
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
-  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-k1` / `rag-k5` (1 or 5
+  difference on a single case is still noise). Configs: `rag`, `norag`, `rag-hints` (rag plus `api_hints`; the others pin it off, as all
+  earlier rows had it off), `rag-k1` / `rag-k5` (1 or 5
   examples instead of 3), `rag-char` (letter-chunk retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,

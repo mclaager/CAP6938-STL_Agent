@@ -23,6 +23,7 @@ class LLM(Protocol):
     input_tokens: int  # running totals over all requests, for cost reports
     output_tokens: int
     last_truncated: bool  # the last reply was cut off by the output token limit
+    last_reasoning: str = ""  # the model's reasoning before the last reply, when the provider returns it
 
     def complete(self, system: str, messages: list[dict]) -> str:
         """Send one request and return the reply text."""
@@ -51,6 +52,7 @@ class AnthropicLLM(LLM):
         self.input_tokens += resp.usage.input_tokens
         self.output_tokens += resp.usage.output_tokens
         self.last_truncated = resp.stop_reason == "max_tokens"
+        self.last_reasoning = "".join(getattr(b, "thinking", "") for b in resp.content if getattr(b, "type", "") == "thinking")
         return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
 
 
@@ -133,7 +135,9 @@ class OpenAICompatLLM(LLM):
         self.output_tokens += usage.get("completion_tokens", 0)
         choice = data["choices"][0]
         self.last_truncated = choice.get("finish_reason") == "length"
-        return choice["message"].get("content") or ""
+        msg = choice["message"]
+        self.last_reasoning = msg.get("reasoning") or msg.get("reasoning_content") or ""  # Ollama / others
+        return msg.get("content") or ""
 
 
 def _b64(png: bytes) -> str:
@@ -201,8 +205,8 @@ PROVIDERS = {
 
 
 def provider_config(name: str, s: Settings | None = None) -> dict:
-    """One provider's settings: key_env, base_url, model, gate_model, judge_model, rpm.
-    Unset gate and judge models fall back to the build model; unset base_url / rpm are None."""
+    """One provider's settings: key_env, base_url, model, gate_model, judge_model, rpm, timeout.
+    Unset gate and judge models fall back to the build model; unset base_url / rpm / timeout are None."""
     s = s or settings()
     name = name.lower()
     if name not in PROVIDERS or name not in s.providers:
@@ -211,7 +215,7 @@ def provider_config(name: str, s: Settings | None = None) -> dict:
     model = p["model"]
     return dict(key_env=PROVIDERS[name]["key_env"], base_url=p.get("base_url"), model=model,
                 gate_model=p.get("gate_model") or model, judge_model=p.get("judge_model") or model,
-                rpm=p.get("rpm"))
+                rpm=p.get("rpm"), timeout=p.get("timeout"))
 
 
 def make_llm(provider: str | None = None, model: str | None = None, base_url: str | None = None) -> LLM:
@@ -225,7 +229,8 @@ def make_llm(provider: str | None = None, model: str | None = None, base_url: st
     api_key = os.environ.get(key_env) if key_env else "none"  # local servers ignore the key
     if not api_key:
         raise RuntimeError(f"Provider {provider} needs {key_env} in .env (or the environment).")
-    return OpenAICompatLLM(base_url, api_key, model, rpm=cfg["rpm"] or None)
+    kw = {"timeout": float(cfg["timeout"])} if cfg["timeout"] else {}
+    return OpenAICompatLLM(base_url, api_key, model, rpm=cfg["rpm"] or None, **kw)
 
 
 class ScriptedLLM(LLM):

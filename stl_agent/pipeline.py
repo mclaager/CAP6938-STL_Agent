@@ -172,12 +172,14 @@ def generate_cad(
     max_attempts: int | None = None,
     top_k: int | None = None,
     use_rag: bool = True,
+    api_hints: bool | None = None,
     example_ids: list[str] | None = None,
     exec_timeout: float = 60.0,
 ) -> GenResult:
-    """Run the full generate -> execute -> validate -> repair loop. `max_attempts` / `top_k` left as None
-    come from the current settings."""
+    """Run the full generate -> execute -> validate -> repair loop. `max_attempts` / `top_k` / `api_hints` left
+    as None come from the current settings."""
     max_attempts = max_attempts or settings().max_attempts
+    api_hints = settings().api_hints if api_hints is None else api_hints
     top_k = settings().top_k if top_k is None else top_k
     t0 = time.time()
     out_dir = Path(out_dir) if out_dir else OUTPUT_DIR / time.strftime("run_%Y%m%d_%H%M%S")
@@ -207,7 +209,9 @@ def generate_cad(
         reply = llm.complete(SYSTEM_PROMPT, messages)
         messages.append({"role": "assistant", "content": reply})
         parsed = parse_response(reply)
-        rec = {"attempt": attempt, "plan": parsed.plan, "bbox_claimed": parsed.bbox}
+        # The full reply and reasoning are kept for error analysis (the code is also stored on its own below).
+        rec = {"attempt": attempt, "plan": parsed.plan, "bbox_claimed": parsed.bbox, "reply": reply,
+               "reasoning": getattr(llm, "last_reasoning", "") or ""}
 
         if parsed.unsupported:
             res.unsupported = parsed.unsupported
@@ -225,7 +229,8 @@ def generate_cad(
                 log("Reply was cut off by the output token limit before the code finished; asking again.")
             else:
                 log("Reply contained no code block; asking again.")
-            messages.append({"role": "user", "content": "Your reply had no ```python code block. Reply in the required format."})
+            rec["feedback"] = "Your reply had no ```python code block. Reply in the required format."
+            messages.append({"role": "user", "content": rec["feedback"]})
             continue
 
         log("Executing code in sandbox...")
@@ -234,9 +239,14 @@ def generate_cad(
 
         if not ex.success:
             rec.update(outcome="exec_error", error_type=ex.error_type, error=(ex.traceback or ex.error_msg))
+            if api_hints:
+                from .api_check import check_code
+
+                rec["api_problems"] = len(check_code(parsed.code))
             res.history.append(rec)
             log(f"Execution failed ({ex.error_type}): {(ex.error_msg or '')[:160]}")
-            messages.append({"role": "user", "content": build_repair_message(feedback_for_llm(ex))})
+            rec["feedback"] = build_repair_message(feedback_for_llm(ex, api_hints=api_hints))
+            messages.append({"role": "user", "content": rec["feedback"]})
             continue
 
         log("Validating mesh (watertight, volume, bounding box)...")
@@ -252,7 +262,8 @@ def generate_cad(
             break
 
         log("Mesh failed validation: " + "; ".join(val.issues))
-        messages.append({"role": "user", "content": build_repair_message(feedback_for_llm(ex, val))})
+        rec["feedback"] = build_repair_message(feedback_for_llm(ex, val))
+        messages.append({"role": "user", "content": rec["feedback"]})
 
     if not res.success and best is not None and not res.unsupported:
         ex, val, code = best
@@ -344,4 +355,8 @@ def run_pipeline(request: str, log, name: str | None = None,
     shutil.copy(res.stl_path, final_stl)
     log(f"Saved {final_stl.name}")
     log("Done." if res.success else "Done (with warnings; see report).")
-    return str(final_stl), res.code or "", res.report()
+    # The app's report panel leaves out the long text kept for analysis (it stays in the run's report.json).
+    report = res.report()
+    report["attempt_log"] = [{k: v for k, v in h.items() if k not in ("reply", "reasoning", "feedback")}
+                             for h in report["attempt_log"]]
+    return str(final_stl), res.code or "", report

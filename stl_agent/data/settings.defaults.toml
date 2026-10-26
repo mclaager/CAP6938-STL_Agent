@@ -8,6 +8,11 @@ provider = "anthropic"
 # Generation + repair attempts per build. Each attempt is one LLM request.
 max_attempts = 4
 
+# When a script fails, also tell the model which CadQuery calls in it are wrong and their real signatures
+# (read from the installed CadQuery), not only the error. Off until a benchmark shows a gain: on a 12-case
+# local-model run (rag vs rag-hints in eval/results/), it gave no more correct parts.
+api_hints = false
+
 # Examples from the few-shot library put in each prompt (RAG). 0 for none.
 top_k = 3
 
@@ -38,6 +43,7 @@ judge_threshold = 0.5
 #   gate_model    model for the intake gate (unset: model)
 #   judge_model   model for the visual judge (unset: model)
 #   rpm           max requests per minute per model (unset: no limit)
+#   timeout       seconds to wait for one reply (unset: 300)
 
 [providers.anthropic]
 # Claude. Needs ANTHROPIC_API_KEY in .env.
@@ -46,6 +52,7 @@ model = "claude-sonnet-5-5"
 # gate_model = "claude-haiku-5-5"
 # judge_model = "claude-sonnet-5-5"
 # rpm = 50
+# timeout = 300
 
 [providers.gemini]
 # Google Gemini, free tier. Needs GEMINI_API_KEY in .env (free key: aistudio.google.com).
@@ -58,13 +65,19 @@ gate_model = "gemini-3.6-flash"
 judge_model = "gemini-3.1-flash-lite"
 # The free tier allows 15/minute, but Google counted 14 sent as up to 17; keep a wide margin.
 rpm = 10
+# timeout = 300
 
 [providers.ollama]
 # Local models served by Ollama (ollama.com). No key; nothing leaves the machine.
 # Ollama's server defaults to a 4096-token context and silently drops the start of longer prompts;
 # raise it with OLLAMA_CONTEXT_LENGTH on the Ollama service.
 base_url = "http://localhost:11434/v1"
-model = "qwen3.5:9b"
-# gate_model = "qwen3.5:9b"
-# judge_model = "qwen3.5:9b"
+# gemma4:12b (7.7 GB, fits a 10 GB GPU with a 16K context) built 60% of a 12-case benchmark subset, against
+# 43% for ornith:9b and 25% for qwen3.5:9b (eval/results/<model>.jsonl).
+model = "gemma4:12b"
+# gate_model = "gemma4:12b"
+# judge_model = "gemma4:12b"
 # rpm = 60
+# A reply that never stops runs until it fills the context, which on a 10 GB GPU can take over 5 minutes.
+# Local requests cost nothing, so wait for it rather than abandon the request.
+timeout = 600
