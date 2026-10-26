@@ -363,6 +363,9 @@ RESULT_HEIGHT = 280  # px; code and report scroll inside this instead of stretch
 # left column, so its bottom lines up with the code/report box on the right.
 CSS = f"""
 #code-box .cm-editor {{ height: {RESULT_HEIGHT}px; }}
+#settings-cog, #settings-cog:hover {{ font-size: 1.4em; align-self: flex-start; background: transparent;
+  border: none; box-shadow: none; }}  /* just the icon, no button background */
+#settings-cog:hover {{ opacity: 0.7; }}
 #code-box {{ min-height: {RESULT_HEIGHT + 27}px; }}  /* same size while empty; 27px is the label */
 #left-col {{ display: flex; flex-direction: column; }}
 #log-box {{ flex-grow: 1; display: flex; flex-direction: column; }}
@@ -386,8 +389,25 @@ setInterval(() => {
 LAUNCH_KW = dict(css=CSS, head=HEAD)
 
 with gr.Blocks(title="Text-to-STL Agent") as demo:
-    gr.Markdown("# Text-to-STL CAD Agent\nDescribe a part. The agent asks about missing details, then generates CadQuery code and an STL.")
+    with gr.Row(equal_height=True):
+        gr.Markdown("# Text-to-STL CAD Agent\nDescribe a part. The agent asks about missing details, then generates "
+                    "CadQuery code and an STL.")
+        cog = gr.Button("⚙", scale=0, min_width=48, elem_id="settings-cog")
     state = gr.State(new_state())
+
+    # Settings live in a side panel, closed at first; the cog or the panel's edge arrow opens and closes it.
+    with gr.Sidebar(label="Model settings", open=False, position="right", width=360) as settings_panel:
+        gr.Markdown("## Model settings\nWhich model builds the parts. Saved to the settings file; the next "
+                    "request uses it, no restart needed. API keys go in `.env`.")
+        provider_in = gr.Dropdown(sorted(known_providers()), label="Provider")
+        model_in = gr.Dropdown(label="Model", allow_custom_value=True)
+        gate_in = gr.Dropdown(label="Gate model (intake questions)", allow_custom_value=True)
+        url_in = gr.Textbox(label="Server address")
+        key_md = gr.Markdown()
+        with gr.Row():
+            test_btn = gr.Button("Test connection")
+            save_btn = gr.Button("Save", variant="primary")
+        settings_md = gr.Markdown()
 
     with gr.Row(equal_height=True):
         with gr.Column(scale=1, elem_id="left-col"):
@@ -409,19 +429,6 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
                 with gr.Tab("Validation report"):
                     report_box = gr.JSON(height=RESULT_HEIGHT, max_height=RESULT_HEIGHT)
 
-    with gr.Accordion("Model settings", open=False):
-        gr.Markdown("Which model builds the parts. Saved to the settings file; the next request uses it, "
-                    "no restart needed. Leave a field empty for its default. API keys go in `.env`.")
-        with gr.Row():
-            provider_in = gr.Dropdown(sorted(known_providers()), label="Provider")
-            model_in = gr.Dropdown(label="Model", allow_custom_value=True)
-            gate_in = gr.Dropdown(label="Gate model (intake questions)", allow_custom_value=True)
-            url_in = gr.Textbox(label="Server address")
-        key_md = gr.Markdown()
-        with gr.Row():
-            test_btn = gr.Button("Test connection")
-            save_btn = gr.Button("Save", variant="primary")
-        settings_md = gr.Markdown()
 
     results = [viewer, download, code_box, report_box]
     for trigger in (send.click, msg.submit):
@@ -438,6 +445,12 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
     # Gradio's own progress overlay would cover the fields and show a countdown guessed from the last run;
     # test_connection writes its own "Testing..." line instead.
     quiet = dict(show_progress="hidden")
+    # The cog toggles the panel; the panel's own arrow works too, so track its state from its events.
+    panel_open = gr.State(False)
+    settings_panel.expand(lambda: True, outputs=panel_open, **quiet)
+    settings_panel.collapse(lambda: False, outputs=panel_open, **quiet)
+    cog.click(lambda is_open: (gr.Sidebar(open=not is_open), not is_open), inputs=panel_open,
+              outputs=[settings_panel, panel_open], **quiet)
     demo.load(load_form, outputs=[provider_in, *form, settings_md], **quiet)
     provider_in.input(provider_form, inputs=provider_in, outputs=form, **quiet)
     test_btn.click(test_connection, inputs=[provider_in, model_in, url_in], outputs=[settings_md, model_in, gate_in], **quiet)
