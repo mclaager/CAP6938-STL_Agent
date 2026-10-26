@@ -40,8 +40,9 @@ OUTPUT_DIR = ROOT / "outputs"
 CACHE_DIR = ROOT / "demo_cache"  # optional offline demo results, see app.load_cached
 
 
-def _load_dotenv(path: Path = ROOT / ".env") -> None:
-    """Minimal .env reader (KEY=value lines). Real environment variables win."""
+def load_dotenv(path: Path = ROOT / ".env") -> None:
+    """Minimal .env reader (KEY=value lines). Real environment variables win. The app calls it again
+    to pick up keys added while it runs."""
     if not path.exists():
         return
     for line in path.read_text().splitlines():
@@ -53,7 +54,7 @@ def _load_dotenv(path: Path = ROOT / ".env") -> None:
         os.environ.setdefault(key, value.strip().strip("'\""))
 
 
-_load_dotenv()
+load_dotenv()
 
 DEFAULTS_PATH = DATA_DIR / "settings.defaults.toml"
 

@@ -19,7 +19,9 @@ pixi run -e cap6938 app                    # http://127.0.0.1:7860
 The first run creates `settings.toml` in the project root, listing every setting with its default, commented
 out. To change one, uncomment its line and edit it: for example `provider = "gemini"` for the key above, or
 `provider = "ollama"` to run on a local model with [Ollama](https://ollama.com) (no key needed).
-`.env` holds only API keys. `pixi run -e cap6938 settings` shows every setting and where its value came from.
+Provider, model and server address can also be set in the app, under "Model settings" ("Test connection"
+checks them first). `.env` holds only API keys. `pixi run -e cap6938 settings` shows every setting and where
+its value came from.
 
 Without pixi: `pip install -r requirements.txt`, then `python -m stl_agent.app` from the repo root.
 

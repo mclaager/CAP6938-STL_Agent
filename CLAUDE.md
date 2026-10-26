@@ -48,8 +48,8 @@ defaults to a 4096-token context and drops the start of longer prompts without a
 `OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off), `top_k`, `retriever`, `gate`
 (`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, and for the visual judge `judge_provider`,
 `providers.<p>.judge_model` (Gemini default `gemini-3.1-flash-lite`, a different model from the one that built
-most benchmark parts) and `judge_threshold`. With Gemini, the gate runs on `gemini-3.6-flash` by default
-(`providers.gemini.gate_model`) so its checks use a different daily quota than builds.
+most benchmark parts) and `judge_threshold`. The gate uses the build model unless `providers.<p>.gate_model` is
+set (with Gemini, another model has its own daily quota, so gate checks don't use up builds).
 
 Gemini free tier is about 20 requests/day per model, and each repair attempt is one request.
 If one model's quota runs out, switch with `providers.gemini.model` (or `--model` on `bench`), e.g.
@@ -100,7 +100,10 @@ pypi deps for non-pixi users, so keep the two in sync.
   and `eval/judge.py` warns on a mismatch. A Jev backend (#12) would be `judge/jev.py`. Images go to LLMs as message
   parts `{"type": "image", "png": bytes}`, converted per backend in `llm.py`.
 - `app.py` — Gradio chat front end; uses `run_gate` for intake, then `run_pipeline` on the confirmed
-  spec when the user clicks "Build it".
+  spec when the user clicks "Build it". A "Model settings" panel picks provider, model, gate model and server
+  address: the model dropdown lists the server's chat models (`llm.list_models`); "Test connection" sends one tiny
+  request without saving (`make_llm(timeout=90, quick=True)`: no retries, so a busy model fails fast); "Save" writes the settings file (values equal to the default stay commented out) and calls
+  `reset_backends()`, so the next request uses them.
   Gradio's `Model3D` goes blank when updated from a streaming handler, so result panels are
   filled by a separate non-streaming `show_result` step.
   Layout CSS (fixed-height code/report, log stretched to line up with them) is passed via

@@ -59,8 +59,8 @@ model = "claude-sonnet-5-5"
 # About 20 requests/day per model; each model has its own quota.
 base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 model = "gemini-3.8-flash"
-# A separate gate model has its own daily quota, so gate checks don't use up builds.
-gate_model = "gemini-3.6-flash"
+# Set gate_model to another model to give gate checks their own daily quota, so they don't use up builds.
+# gate_model = "gemini-3.8-flash"
 # Judges benchmark renders: a different model from 3.5 Flash Lite, which built most parts.
 judge_model = "gemini-3.1-flash-lite"
 # The free tier allows 15/minute, but Google counted 14 sent as up to 17; keep a wide margin.

@@ -11,16 +11,19 @@ or rejects out-of-scope requests. Once it is ready, it shows the spec it will bu
 import hashlib
 import json
 import queue
+import re
 import threading
+import time
 from pathlib import Path
 
 import gradio as gr
 import numpy as np
 import trimesh
 
-from .config import CACHE_DIR, OUTPUT_DIR
+from .config import CACHE_DIR, OUTPUT_DIR, defaults, known_providers, load_dotenv, set_setting, settings, unset_setting
 from .gate import CLARIFY, OUT_OF_SCOPE
-from .pipeline import describe_settings, run_gate, run_pipeline
+from .llm import PROVIDERS, list_models, make_llm
+from .pipeline import describe_settings, reset_backends, run_gate, run_pipeline
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -215,6 +218,143 @@ def on_reset():
 
 
 # ---------------------------------------------------------------------------
+# Model settings panel: provider, model, gate model and address, saved to the settings file.
+# Fields hold the current value; an empty field (or the default value) leaves the setting at its default.
+# ---------------------------------------------------------------------------
+FORM_KEYS = ("model", "gate_model", "base_url")
+
+
+def key_status(provider: str) -> str:
+    load_dotenv()  # pick up a key added to .env while the app runs
+    key_env = PROVIDERS[provider]["key_env"]
+    if not key_env:
+        return "No API key needed (local server)."
+    import os
+
+    if os.environ.get(key_env):
+        return f"`{key_env}` is set."
+    return f"**`{key_env}` is not set.** Add it to `.env` in the project folder; no restart needed."
+
+
+# Model names with these words are not chat models (speech, images, embeddings, ...); left out of the dropdown.
+NON_CHAT = ("embed", "tts", "image", "audio", "live", "transcribe", "translate", "lyria", "aqa", "banana",
+            "imagen", "veo", "research", "computer-use", "robotics", "antigravity")
+
+
+def chat_models(models: list[str]) -> list[str]:
+    return [m for m in models if not any(word in m.lower() for word in NON_CHAT)]
+
+
+def has_key(provider: str) -> bool:
+    import os
+
+    key_env = PROVIDERS[provider]["key_env"]
+    return not key_env or bool(os.environ.get(key_env))
+
+
+SAME_AS_MODEL = ("Same as the model", "")
+
+
+def gate_dropdown(models: list[str], value: str | None = None):
+    """The gate model's choices: the build model (empty value, the default) or any of the server's models.
+    `value` None leaves the current choice."""
+    kw = {} if value is None else {"value": value}
+    return gr.Dropdown(choices=[SAME_AS_MODEL, *models], **kw)
+
+
+def provider_form(provider: str):
+    """Fields for one provider from the current settings, with the server's models in the dropdown.
+    Returns (model, gate_model, base_url, status)."""
+    provider = provider.lower()
+    current, default = settings().providers[provider], defaults()["providers"][provider]
+    model = current["model"]
+    status, choices = key_status(provider), [model]
+    if has_key(provider):
+        try:
+            choices = sorted(set(chat_models(list_models(provider, timeout=3))) | {model})
+        except Exception as e:
+            status += f" Couldn't list the server's models: {e}"
+    url_default = default.get("base_url") or "the provider's own"
+    return (
+        gr.Dropdown(choices=choices, value=model),
+        gate_dropdown(choices, current.get("gate_model") or ""),
+        gr.Textbox(value=current.get("base_url") or "", placeholder=f"default: {url_default}"),
+        status,
+    )
+
+
+def load_form():
+    """Fill the panel when the page opens (the settings file may have changed since the app started)."""
+    return settings().provider, *provider_form(settings().provider), describe_settings()
+
+
+def save_settings(provider: str, model: str, gate_model: str, base_url: str) -> str:
+    """Write the panel to the settings file. The next request uses it (cached backends are dropped)."""
+    provider = (provider or "").lower()
+    default = defaults()["providers"].get(provider)
+    if default is None:
+        return f"Not saved: unknown provider {provider!r}."
+    values = dict(zip(FORM_KEYS, ((v or "").strip() for v in (model, gate_model, base_url))))
+    try:
+        changes = [("provider", provider, defaults()["provider"])]
+        changes += [(f"providers.{provider}.{k}", values[k], default.get(k)) for k in FORM_KEYS]
+        for name, value, default_value in changes:
+            if not value or value == default_value:
+                unset_setting(name)
+            else:
+                set_setting(name, value)
+    except ValueError as e:
+        return f"Not saved: {e}"
+    reset_backends()
+    return "Saved. " + describe_settings()
+
+
+def _installed(model: str, models: list[str]) -> bool:
+    return model in models or f"{model}:latest" in models  # Ollama lists "name" as "name:latest"
+
+
+TEST_TIMEOUT = 90  # seconds; a local model may first have to load into memory
+
+
+def test_connection(provider: str, model: str, base_url: str):
+    """List the server's models and send one tiny request with the panel's values (not saved).
+    Yields (status, model dropdown, gate model dropdown); the dropdowns get the server's models as choices."""
+    provider, model, base_url = (provider or "").lower(), (model or "").strip(), (base_url or "").strip() or None
+    yield f"_Testing `{model or 'the default model'}` on {provider}..._", gr.skip(), gr.skip()
+    load_dotenv()
+    if not has_key(provider):
+        yield key_status(provider), gr.skip(), gr.skip()
+        return
+    lines, dropdowns, listed = [], (gr.skip(), gr.skip()), False
+    try:
+        models = list_models(provider, base_url)
+        listed = True
+        choices = sorted(set(chat_models(models)) | ({model} if model else set()))
+        dropdowns = gr.Dropdown(choices=choices), gate_dropdown(choices)
+        if model and not _installed(model, models):
+            hint = f" Install it with `ollama pull {model}`." if provider == "ollama" else ""
+            lines.append(f"**`{model}` is not one of the server's {len(models)} models.**{hint}")
+    except Exception as e:
+        lines.append(f"Couldn't list the server's models: {e}")
+    try:
+        llm = make_llm(provider, model or None, base_url, timeout=TEST_TIMEOUT, quick=True)
+        t0 = time.time()
+        reply = llm.complete("You are a connection test. Reply with one word.", [{"role": "user", "content": "Say OK."}])
+        answer = f"answered {reply.strip()[:80]!r}" if reply.strip() else "sent an empty reply"
+        lines.insert(0, f"**Connected.** `{llm.model}` {answer} ({time.time() - t0:.1f} s for the reply).")
+    except Exception as e:
+        if "timed out" in str(e):
+            reached = " The server answered the model list, so the address and key work." if listed else ""
+            lines.append(f"**No reply within {TEST_TIMEOUT} s.**{reached} The model may be busy or still loading: "
+                         "try again, or pick another model.")
+        else:
+            # Providers wrap the reason in JSON; show just its message when there is one.
+            m = re.search(r'"message":\s*"([^"]+)"', str(e))
+            lines.append(f"**Request failed:** {m.group(1) if m else e}")
+    yield "\n\n".join(lines), *dropdowns
+
+
+# ---------------------------------------------------------------------------
 # Layout
 # ---------------------------------------------------------------------------
 RESULT_HEIGHT = 280  # px; code and report scroll inside this instead of stretching the page
@@ -269,6 +409,20 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
                 with gr.Tab("Validation report"):
                     report_box = gr.JSON(height=RESULT_HEIGHT, max_height=RESULT_HEIGHT)
 
+    with gr.Accordion("Model settings", open=False):
+        gr.Markdown("Which model builds the parts. Saved to the settings file; the next request uses it, "
+                    "no restart needed. Leave a field empty for its default. API keys go in `.env`.")
+        with gr.Row():
+            provider_in = gr.Dropdown(sorted(known_providers()), label="Provider")
+            model_in = gr.Dropdown(label="Model", allow_custom_value=True)
+            gate_in = gr.Dropdown(label="Gate model (intake questions)", allow_custom_value=True)
+            url_in = gr.Textbox(label="Server address")
+        key_md = gr.Markdown()
+        with gr.Row():
+            test_btn = gr.Button("Test connection")
+            save_btn = gr.Button("Save", variant="primary")
+        settings_md = gr.Markdown()
+
     results = [viewer, download, code_box, report_box]
     for trigger in (send.click, msg.submit):
         trigger(on_message, inputs=[msg, chat, state, use_cache], outputs=[msg, chat, state, build]).then(
@@ -279,6 +433,15 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
     ).then(show_result, inputs=state, outputs=[state, *results])
     chat.example_select(on_example, outputs=msg)
     reset.click(on_reset, outputs=[chat, state, build, log_box, viewer, download, code_box, report_box])
+
+    form = [model_in, gate_in, url_in, key_md]
+    # Gradio's own progress overlay would cover the fields and show a countdown guessed from the last run;
+    # test_connection writes its own "Testing..." line instead.
+    quiet = dict(show_progress="hidden")
+    demo.load(load_form, outputs=[provider_in, *form, settings_md], **quiet)
+    provider_in.input(provider_form, inputs=provider_in, outputs=form, **quiet)
+    test_btn.click(test_connection, inputs=[provider_in, model_in, url_in], outputs=[settings_md, model_in, gate_in], **quiet)
+    save_btn.click(save_settings, inputs=[provider_in, model_in, gate_in, url_in], outputs=settings_md, **quiet)
 
 if __name__ == "__main__":
     print(describe_settings())
