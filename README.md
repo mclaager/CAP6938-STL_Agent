@@ -54,8 +54,9 @@ there is no daily quota.
    Save. Or set `provider = "ollama"` in `settings.toml`. Ollama on another machine: change the server address
    (default `http://localhost:11434/v1`).
 
-The intake gate uses the same local model. The visual judge (evaluation only) has not been tried with a
-local model yet.
+The intake gate uses the same local model. The visual judge (evaluation only) also runs locally with
+`gemma4:12b` (`--set judge_provider=ollama --set judge_threshold=0.94`): about as accurate as Gemini on the
+calibration set, but more lenient; see `eval/results/judge-local-gemma4-12b.md`.
 
 **Which model.** Three models that fit a 10 GB GPU (RTX 3080), on a 12-case subset of the benchmark
 (3 runs each, with retrieval; results in `eval/results/<model>.jsonl`):
