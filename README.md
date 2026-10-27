@@ -104,6 +104,6 @@ Settings (model, attempts, gate behaviour) are in `settings.toml`; the defaults,
 ## Roadmap
 
 Done: the generation pipeline with retrieval and intake gate, the evaluation benchmark with RAG ablation,
-and the visual judge. Open work is tracked in [GitHub issues](../../issues): Thingiverse fallback,
+the visual judge, and the Thingiverse fallback. Open work is tracked in [GitHub issues](../../issues):
 combining parts, the final report, a Jev gate backend, a fully local mode, the size-check fix, a stronger
 judge model, and whether retrieved examples make the model skip requested features.

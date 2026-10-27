@@ -163,10 +163,11 @@ Done:
 - #8 LLM-as-judge: six-view renders scored by a multimodal model, calibrated against reference parts and
   hand-graded labels (`eval/results/judge-gemini-3.1-flash-lite.md`)
 - #20 Retrieval evaluation (offline); retrievers that showed no gain were removed
+- #9 Thingiverse fallback: out-of-scope requests search Thingiverse and download the picked model
+  (searching on an explicit user request is not planned)
 
 Open work is in GitHub issues, with the original course timeline's target dates where there is one:
 
-- #9 Thingiverse fallback for requests code can't build (weeks 7–8, by 11/15)
 - #10 Combine downloaded and generated parts into one STL (weeks 7–8)
 - #11 Final report (weeks 9–10)
 - #12 Jev gate backend and gate evaluation (not from the original proposal; a Jev judge backend could follow)
