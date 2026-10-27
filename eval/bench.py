@@ -38,7 +38,8 @@ CONFIGS = {
     "rag-k1": dict(use_rag=True, top_k=1, api_hints=False),  # top-k ablation (#7): 1 and 5 examples vs the default 3
     "rag-k5": dict(use_rag=True, top_k=5, api_hints=False),
     # "retriever" is a stl_agent.retrieval kind, default "tfidf". Older results also contain
-    # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag).
+    # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag) and rag-ext (built-in library
+    # plus a Text-to-CadQuery pool, removed: no gain, see eval/results/external-rag.md).
     "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char", api_hints=False),
 }
 
