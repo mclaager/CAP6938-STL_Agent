@@ -26,7 +26,7 @@ Settings live in `settings.toml` in the repo root (gitignored, per user; another
 On first run it is created from the built-in defaults, `stl_agent/data/settings.defaults.toml`, with every
 setting commented out: uncomment a line to change it. Commented lines use the default, so default changes still
 apply; settings added later are appended commented out (user lines are never changed). `.env` (gitignored)
-holds only API keys (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`); other `CAD_*` variables are not read, and the
+holds only API keys (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, optional `THINGIVERSE_TOKEN`); other `CAD_*` variables are not read, and the
 app lists leftover ones at startup. The eval commands take `--set key=value` (repeatable, that run only), e.g.
 `bench run --set provider=ollama --set providers.ollama.model=qwen3.5:9b`.
 
@@ -46,7 +46,7 @@ Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemin
 `eval/results/`). Ollama's server
 defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
 `OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off), `top_k`, `retriever`, `gate`
-(`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, and for the visual judge `judge_provider`,
+(`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, `thingiverse_results`, and for the visual judge `judge_provider`,
 `providers.<p>.judge_model` (Gemini default `gemini-3.1-flash-lite`, a different model from the one that built
 most benchmark parts) and `judge_threshold`. The gate uses the build model unless `providers.<p>.gate_model` is
 set (with Gemini, another model has its own daily quota, so gate checks don't use up builds).
@@ -86,6 +86,14 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
   out_of_scope. `llm_gate.py` is the LLM backend, `jev.py` a stub (#12). Each gate check is one LLM request.
+- `sources/thingiverse.py` — Thingiverse search and download (#9), plain httpx, Bearer app token
+  (`THINGIVERSE_TOKEN`; without it the app declines out-of-scope requests as before). `search(term)` returns
+  `Candidate`s (author, license, `allows_derivatives`, thumbnail; NSFW dropped; count from
+  `thingiverse_results`); `download_stl` takes the thing's largest STL via `download_url` (302 to the
+  CDN). Cloudflare 403s default User-Agents (curl, httpx) on both API and CDN, so the client sends
+  `USER_AGENT`. Tests use `httpx.MockTransport` (`client=` argument), never the network.
+  `pipeline.run_fetch` saves it to `outputs/<name>.stl` plus `<name>.source.json` (attribution) and runs
+  `validate_mesh`. The gate's JSON has a `search` field (keywords) for this.
 - `render.py` — STL to one 768x512 PNG (3x2 grid) of six labelled views, offscreen VTK (works headless via EGL):
   - flat, straight-on: front, right, top, bottom (a through-hole shows the white background)
   - angled 3D: iso front, iso back (overall shape, and the back side)
@@ -100,7 +108,9 @@ pypi deps for non-pixi users, so keep the two in sync.
   and `eval/judge.py` warns on a mismatch. A Jev backend (#12) would be `judge/jev.py`. Images go to LLMs as message
   parts `{"type": "image", "png": bytes}`, converted per backend in `llm.py`.
 - `app.py` — Gradio chat front end; uses `run_gate` for intake, then `run_pipeline` on the confirmed
-  spec when the user clicks "Build it". A "Model settings" panel picks provider, model, gate model and server
+  spec when the user clicks "Build it". An out-of-scope reply searches Thingiverse and shows the results
+  in a gallery; clicking one runs `run_fetch` (`on_pick`, first in its event chain since only the first
+  handler gets the click data). A "Model settings" panel picks provider, model, gate model and server
   address: the model dropdown lists the server's chat models (`llm.list_models`); "Test connection" sends one tiny
   request without saving (`make_llm(timeout=90, quick=True)`: no retries, so a busy model fails fast); "Save" writes the settings file (values equal to the default stay commented out) and calls
   `reset_backends()`, so the next request uses them.
@@ -141,7 +151,7 @@ Elsewhere:
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
   colored `<name>.preview.glb` for the viewer (gitignored).
 
-Where planned work goes: Thingiverse and part combining in `stl_agent/sources/` (#9, #10), Jev in
+Where planned work goes: part combining in `stl_agent/sources/` (#10), Jev in
 `stl_agent/gate/jev.py` and `stl_agent/judge/jev.py` (#12); the gate evaluation set goes in `eval/`.
 
 ## Roadmap

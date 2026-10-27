@@ -8,7 +8,8 @@ Settings added in later versions are appended to the file, commented out; your l
 
 Order (later wins): built-in defaults < settings.toml < `--set key=value` on the eval commands (that run only).
 
-The `.env` file in the project root holds only API keys (ANTHROPIC_API_KEY, GEMINI_API_KEY). Other CAD_*
+The `.env` file in the project root holds only API keys (ANTHROPIC_API_KEY, GEMINI_API_KEY, and the optional
+THINGIVERSE_TOKEN for the Thingiverse search). Other CAD_*
 variables are not read (the app warns about leftover ones), except CAD_SETTINGS, which picks another
 settings file. The Anthropic SDK itself still reads ANTHROPIC_BASE_URL when providers.anthropic.base_url is unset.
 
@@ -61,7 +62,7 @@ DEFAULTS_PATH = DATA_DIR / "settings.defaults.toml"
 # Schema: every setting and its type. Settings in OPTIONAL may be left unset (TOML has no null).
 TOP_FIELDS = {
     "provider": str, "max_attempts": int, "api_hints": bool, "top_k": int, "retriever": str, "gate": str,
-    "gate_max_rounds": int, "gate_picks": bool, "judge": str, "judge_provider": str,
+    "gate_max_rounds": int, "gate_picks": bool, "thingiverse_results": int, "judge": str, "judge_provider": str,
     "judge_threshold": (int, float),
 }
 PROVIDER_FIELDS = {"base_url": str, "model": str, "gate_model": str, "judge_model": str, "rpm": int,
@@ -81,6 +82,7 @@ class Settings:
     gate: str
     gate_max_rounds: int
     gate_picks: bool
+    thingiverse_results: int
     judge: str
     judge_threshold: float
     providers: dict[str, dict]  # name -> {"model": ..., "base_url": ...}; unset keys are missing
