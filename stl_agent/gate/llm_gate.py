@@ -30,12 +30,15 @@ SCOPE
   knobs, hooks, mounts, containers, organizers, simple text plaques.
 - simplified: only buildable as a stylized geometric approximation (a low-poly vase, a simple
   rocket, a chess pawn). The spec must describe that simplified version.
-- out_of_scope: organic or sculpted shapes (people, animals, faces, characters, realistic plants),
-  copies of images or logos, or anything that is not a single physical part.
-- composite: one part made by joining distinct objects, where at least one of them is organic or
-  sculpted (a cat sitting on a tree, a horse statue on a plinth with a name plate). Sculpted pieces
-  are downloaded as existing models; geometric pieces are built with code. If every piece could be
-  built with code, use in_scope instead: one script is better than joined pieces.
+- composite: one part made by joining several distinct objects, where at least one of them is
+  organic or sculpted (a cat sitting on a tree, a horse statue on a plinth with a name plate, people
+  on a bench). Sculpted pieces are downloaded as existing models; geometric pieces are built with
+  code. Check composite before out_of_scope: a request that combines objects is composite even when
+  some of them are people or animals. If every piece could be built with code, use in_scope instead:
+  one script is better than joined pieces.
+- out_of_scope: a single organic or sculpted object with nothing to join it to (a person, an animal,
+  a face, a character, a realistic plant), copies of images or logos, or something that is not a
+  physical part at all.
 
 COMPOSITE (only when scope is composite): add a "pieces" list, in build order, the base first:
   "pieces": [

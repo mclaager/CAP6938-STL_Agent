@@ -120,9 +120,11 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `app.py` — Gradio chat front end; uses `run_gate` for intake, then `run_pipeline` on the confirmed
   spec when the user clicks "Build it". An out-of-scope reply searches Thingiverse and shows the results
   in a gallery; clicking one runs `run_fetch` (`on_pick`, first in its event chain since only the first
-  handler gets the click data). A composite plan builds with `run_assembly`; with `thingiverse_pick = "manual"`,
+  handler gets the click data) and hides the gallery. With `thingiverse_pick = "auto"` there is no gallery:
+  the first result that downloads is used (`fetch_model`). A composite plan builds with `run_assembly`; with `thingiverse_pick = "manual"`,
   Build first shows a gallery per Thingiverse piece (`next_pick`, `pick_piece`), and `on_assemble`, chained
-  after `on_pick`, builds once the last piece is picked. A "Model settings" panel picks provider, model, gate model and server
+  after `on_pick`, builds once the last piece is picked. The settings panel's Thingiverse section sets
+  `thingiverse_pick` (saved on change, `save_pick`) and shows whether `THINGIVERSE_TOKEN` is set. A "Model settings" panel picks provider, model, gate model and server
   address: the model dropdown lists the server's chat models (`llm.list_models`); "Test connection" sends one tiny
   request without saving (`make_llm(timeout=90, quick=True)`: no retries, so a busy model fails fast); "Save" writes the settings file (values equal to the default stay commented out) and calls
   `reset_backends()`, so the next request uses them.

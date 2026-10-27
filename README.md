@@ -88,8 +88,8 @@ which is much slower. A reply that runs on can take over 5 minutes, so Ollama's 
    the sandbox (`stl_agent/sandbox.py`), the mesh is validated, and errors are fed back for another attempt.
 4. **Combined parts** (`stl_agent/sources/assembly.py`): for requests like "a cat sitting on a tree", the gate
    plans pieces, each downloaded from Thingiverse or built with CadQuery, plus where each one goes; they are
-   scaled, placed and merged into one STL. `thingiverse_pick` chooses whether you pick each model or the
-   first suitable result is used.
+   scaled, placed and merged into one STL. In the settings panel (⚙), "Picking models" chooses whether you
+   pick each model from a gallery or the first suitable result is used (`thingiverse_pick`).
 5. **Thingiverse fallback** (`stl_agent/sources/thingiverse.py`): for out-of-scope requests, searches with
    keywords from the gate and downloads the model the user picks.
 6. **UI** (`stl_agent/app.py`): Gradio chat with a 3D preview, the generated code, and a validation report.

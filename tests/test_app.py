@@ -75,6 +75,30 @@ def test_out_of_scope_shows_thingiverse_results(monkeypatch):
     assert state["spec"] is None
 
 
+def test_out_of_scope_auto_downloads_without_gallery(monkeypatch, tmp_path):
+    from stl_agent.config import reload_settings, set_setting
+    from stl_agent.sources import thingiverse
+
+    fetched = []
+
+    def fake_fetch(c, log, name=None):
+        fetched.append(c.id)
+        if c.id == 1:
+            raise thingiverse.ThingiverseError("no STL")
+        return str(tmp_path / "horse-statue.stl"), {"success": True, "source": {"other_stl_files": []}}
+
+    set_setting("thingiverse_pick", "auto")
+    reload_settings()
+    monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
+    monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
+    monkeypatch.setattr(thingiverse, "search", lambda term: [candidate(1), candidate(2)])
+    monkeypatch.setattr(app, "run_fetch", fake_fetch)
+    state = app.new_state()
+    _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state, False))
+    assert fetched == [1, 2] and not gallery.visible  # first one failed, second downloaded
+    assert "Horse 2" in chat[-1]["content"] and state["result"]["stl"].endswith("horse-statue.stl")
+
+
 def test_out_of_scope_without_token_explains(monkeypatch):
     from stl_agent.sources import thingiverse
 
@@ -98,7 +122,8 @@ def test_pick_downloads_and_credits(monkeypatch, tmp_path):
     class Evt:  # stands in for gr.SelectData
         index = 1
 
-    chat, state, log, _ = app.on_pick(Evt(), [], state)
+    chat, state, log, gallery = app.on_pick(Evt(), [], state)
+    assert not gallery.visible and state["candidates"] == []  # picked: the gallery goes away
     msg = chat[-1]["content"]
     assert "Horse 2" in msg and "maker" in msg and "CC-BY" in msg and "base.stl" in msg
     assert state["result"]["stl"].endswith("horse-statue.stl")
@@ -320,3 +345,26 @@ def test_test_connection_times_out_quickly(monkeypatch):
     status, *_ = last(app.test_connection("gemini", "gemini-3.8-flash", ""))
     assert used == {"timeout": app.TEST_TIMEOUT, "quick": True}
     assert f"No reply within {app.TEST_TIMEOUT} s" in status and "address and key work" in status
+
+
+def test_pick_mode_saves_and_default_stays_commented():
+    from stl_agent.config import settings
+
+    assert app.load_thingiverse()[0] == "manual"
+    assert app.save_pick("auto").startswith("Saved")
+    s = settings()
+    assert s.thingiverse_pick == "auto" and s.sources["thingiverse_pick"] == s.path.name
+    app.save_pick("manual")  # back to the default: the line is commented out again
+    assert settings().sources["thingiverse_pick"] == "default"
+    assert app.save_pick("sometimes").startswith("Not saved")
+
+
+def test_thingiverse_status_mentions_token(monkeypatch):
+    from stl_agent.sources import thingiverse
+
+    monkeypatch.setattr(app, "load_dotenv", lambda: None)
+    monkeypatch.delenv(thingiverse.TOKEN_VAR, raising=False)
+    assert "is not set" in app.thingiverse_status()
+    monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
+    assert "is set" in app.thingiverse_status()
+

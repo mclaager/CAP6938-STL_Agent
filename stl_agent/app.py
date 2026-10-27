@@ -91,6 +91,21 @@ def gallery_update(candidates: list | None = None):
     return gr.Gallery(value=[(c.thumbnail, c.caption()) for c in candidates], visible=True)
 
 
+def fetch_model(c, state: dict, log) -> str:
+    """Download one Thingiverse model as the result (run_fetch). Returns the chat message; raises on failure."""
+    stl, report = run_fetch(c, log, name=state.get("name") or None)
+    others = report["source"]["other_stl_files"]
+    msg = (f"Downloaded [{c.name}]({c.url}) by {c.author} ({c.license}). Saved as `{Path(stl).name}`"
+           + ("." if report.get("success") else "; the mesh has issues (see the validation report)."))
+    if others:
+        shown = ", ".join(f"`{n}`" for n in others[:5]) + (" and more" if len(others) > 5 else "")
+        msg += f"\n\nThis took the largest STL; the thing also has {shown} on its page."
+    state["conversation"].append({"role": "assistant", "content": f"Downloaded '{c.name}' from Thingiverse."})
+    attribution = f"# Downloaded from Thingiverse, not generated: no CadQuery code.\n# {c.credit()}\n"
+    state["result"] = {"stl": stl, "code": attribution, "report": report}
+    return msg
+
+
 def search_thingiverse(d, state: dict) -> str:
     """Reply for an out-of-scope request: Thingiverse results (stored in state) or the reason there are none."""
     reason = d.scope_reason or "it needs sculpted or organic geometry."
@@ -102,6 +117,19 @@ def search_thingiverse(d, state: dict) -> str:
         return format_decision(d) + f"\n\nThingiverse search failed: {e}"
     if not state["candidates"]:
         return format_decision(d) + f"\n\nThingiverse has nothing for \"{d.search}\" either."
+    if settings().thingiverse_pick == "auto":  # no gallery: take the first result that downloads
+        failed = []
+        for c in state["candidates"]:
+            try:
+                msg = fetch_model(c, state, lambda line: None)
+            except Exception as e:  # try the next result
+                failed.append(f"'{c.name}' ({e})")
+                continue
+            state["candidates"] = []
+            return (f"I can't build this with parametric CAD: {reason}\n\nUsing the first Thingiverse result for "
+                    f"\"{d.search}\" instead (change this under ⚙ Settings). {msg} Check its license before sharing "
+                    "or selling prints.")
+        reason += f"\n\nNo result downloaded ({'; '.join(failed)}), so pick one yourself."
     return (f"I can't build this with parametric CAD: {reason}\n\n"
             f"Here are existing models from Thingiverse for \"{d.search}\". Click one to download it; "
             "check its license before sharing or selling prints.")
@@ -353,22 +381,13 @@ def on_pick(evt: gr.SelectData, chat: list, state: dict):
         return pick_piece(c, chat, state)
     lines: list[str] = []
     try:
-        stl, report = run_fetch(c, lines.append, name=state.get("name") or None)
+        msg = fetch_model(c, state, lines.append)
     except Exception as e:  # network or file errors: show them in the chat
         chat = chat + [{"role": "assistant", "content": f"Download of '{c.name}' failed: {e}"}]
         return chat, state, "\n".join(lines + [f"FAILED: {e}"]), gr.skip()
-
-    others = report["source"]["other_stl_files"]
-    msg = (f"Downloaded [{c.name}]({c.url}) by {c.author} ({c.license}). Saved as `{Path(stl).name}`"
-           + ("." if report.get("success") else "; the mesh has issues (see the validation report)."))
-    if others:
-        shown = ", ".join(f"`{n}`" for n in others[:5]) + (" and more" if len(others) > 5 else "")
-        msg += f"\n\nThis took the largest STL; the thing also has {shown} on its page."
     chat = chat + [{"role": "assistant", "content": msg}]
-    state["conversation"].append({"role": "assistant", "content": f"Downloaded '{c.name}' from Thingiverse."})
-    attribution = f"# Downloaded from Thingiverse, not generated: no CadQuery code.\n# {c.credit()}\n"
-    state["result"] = {"stl": stl, "code": attribution, "report": report}
-    return chat, state, "\n".join(lines), gr.skip()
+    state["candidates"] = []  # done: hide the gallery, so it doesn't look like it wants another pick
+    return chat, state, "\n".join(lines), gallery_update()
 
 
 def show_result(state: dict):
@@ -485,6 +504,39 @@ def save_settings(provider: str, model: str, gate_model: str, base_url: str) -> 
     return "Saved. " + describe_settings()
 
 
+# Thingiverse section of the panel: who picks downloaded models, for a single out-of-scope part (#9) and for
+# each downloaded piece of a combined part (#10).
+# It saves as soon as it changes (nothing to test first, unlike the model settings).
+PICK_CHOICES = [("I pick each model from a gallery", "manual"), ("Use the first suitable result", "auto")]
+
+
+def thingiverse_status() -> str:
+    load_dotenv()  # pick up a token added to .env while the app runs
+    if thingiverse.has_token():
+        return f"`{thingiverse.TOKEN_VAR}` is set."
+    return (f"**`{thingiverse.TOKEN_VAR}` is not set**, so sculpted parts can't be downloaded. Add it to `.env` "
+            "(an App Token from thingiverse.com/apps/create); no restart needed.")
+
+
+def load_thingiverse():
+    """Returns (pick mode, token status) for the panel."""
+    return settings().thingiverse_pick, thingiverse_status()
+
+
+def save_pick(mode: str) -> str:
+    """Save the pick mode; the default value stays commented out in the settings file."""
+    if mode not in dict((v, k) for k, v in PICK_CHOICES):
+        return f"Not saved: unknown choice {mode!r}."
+    try:
+        if mode == defaults()["thingiverse_pick"]:
+            unset_setting("thingiverse_pick")
+        else:
+            set_setting("thingiverse_pick", mode)
+    except ValueError as e:
+        return f"Not saved: {e}"
+    return "Saved. " + thingiverse_status()
+
+
 def _installed(model: str, models: list[str]) -> bool:
     return model in models or f"{model}:latest" in models  # Ollama lists "name" as "name:latest"
 
@@ -572,7 +624,7 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
     state = gr.State(new_state())
 
     # Settings live in a side panel, closed at first; the cog or the panel's edge arrow opens and closes it.
-    with gr.Sidebar(label="Model settings", open=False, position="right", width=360) as settings_panel:
+    with gr.Sidebar(label="Settings", open=False, position="right", width=360) as settings_panel:
         gr.Markdown("## Model settings\nWhich model builds the parts. Saved to the settings file; the next "
                     "request uses it, no restart needed. API keys go in `.env`.")
         provider_in = gr.Dropdown(sorted(known_providers()), label="Provider")
@@ -584,6 +636,11 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
             test_btn = gr.Button("Test connection")
             save_btn = gr.Button("Save", variant="primary")
         settings_md = gr.Markdown()
+
+        gr.Markdown("## Thingiverse\nWho chooses downloaded models, for a sculpted part (a horse statue) and for "
+                    "each piece of a joined part (a cat on a tree). Saved when you change it.")
+        pick_in = gr.Radio(PICK_CHOICES, label="Picking models")
+        pick_md = gr.Markdown()
 
     with gr.Row(equal_height=True):
         with gr.Column(scale=1, elem_id="left-col"):
@@ -638,6 +695,8 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
     provider_in.input(provider_form, inputs=provider_in, outputs=form, **quiet)
     test_btn.click(test_connection, inputs=[provider_in, model_in, url_in], outputs=[settings_md, model_in, gate_in], **quiet)
     save_btn.click(save_settings, inputs=[provider_in, model_in, gate_in, url_in], outputs=settings_md, **quiet)
+    demo.load(load_thingiverse, outputs=[pick_in, pick_md], **quiet)
+    pick_in.input(save_pick, inputs=pick_in, outputs=pick_md, **quiet)
 
 if __name__ == "__main__":
     print(describe_settings())
