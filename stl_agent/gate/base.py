@@ -24,6 +24,7 @@ class Decision:
     assumptions: list[dict] = field(default_factory=list)  # [{"param", "default", "critical", ...}]
     note: str = ""  # e.g. why the gate fell back to proceeding
     name: str = ""  # short file-name slug for the part, e.g. "flange-80mm-6-holes"
+    search: str = ""  # a few words to find an existing model of it on a model site, e.g. "horse statue"
     # Gate-picked library examples (gate_picks setting): None = the gate wasn't asked to pick,
     # [] = it found nothing relevant.
     example_ids: list[str] | None = None
@@ -55,6 +56,7 @@ def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_
     critical = [u for u in unknowns if u.get("critical") is True]
     d = Decision(action=PROCEED, spec=spec, scope=scope, scope_reason=str(report.get("scope_reason") or ""),
                  assumptions=unknowns, name=slugify(str(report.get("name") or "")))
+    d.search = " ".join(str(report.get("search") or "").split()) or d.name.replace("-", " ")
     if "examples" in report:
         picks = report["examples"] if isinstance(report["examples"], list) else []
         d.example_ids = list(dict.fromkeys(str(x).strip() for x in picks if str(x).strip()))

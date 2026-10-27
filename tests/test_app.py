@@ -48,6 +48,65 @@ def test_clarify_then_build(monkeypatch, tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Thingiverse fallback for out-of-scope requests (#9)
+# ---------------------------------------------------------------------------
+HORSE = {"scope": "out_of_scope", "scope_reason": "organic shape", "spec": "horse", "name": "horse-statue",
+         "search": "horse statue"}
+
+
+def candidate(i):
+    from stl_agent.sources.thingiverse import Candidate
+    return Candidate(id=i, name=f"Horse {i}", url=f"https://www.thingiverse.com/thing:{i}",
+                     thumbnail=f"https://cdn.example/{i}.jpg", author="maker", license="CC-BY")
+
+
+def test_out_of_scope_shows_thingiverse_results(monkeypatch):
+    from stl_agent.sources import thingiverse
+
+    terms = []
+    monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
+    monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
+    monkeypatch.setattr(thingiverse, "search", lambda term: terms.append(term) or [candidate(1), candidate(2)])
+    state = app.new_state()
+    _, chat, state, build, gallery = last(app.on_message("a statue of a horse", [], state, False))
+    assert terms == ["horse statue"]
+    assert [c.id for c in state["candidates"]] == [1, 2]
+    assert gallery.visible and "Thingiverse" in chat[-1]["content"]
+    assert state["spec"] is None
+
+
+def test_out_of_scope_without_token_explains(monkeypatch):
+    from stl_agent.sources import thingiverse
+
+    monkeypatch.delenv(thingiverse.TOKEN_VAR, raising=False)
+    monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
+    state = app.new_state()
+    _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state, False))
+    assert "THINGIVERSE_TOKEN" in chat[-1]["content"] and "can't build" in chat[-1]["content"]
+    assert not gallery.visible and state["candidates"] == []
+
+
+def test_pick_downloads_and_credits(monkeypatch, tmp_path):
+    def fake_fetch(c, log, name=None):
+        log("Saved x")
+        return str(tmp_path / "horse-statue.stl"), {"success": True, "source": {"other_stl_files": ["base.stl"]}}
+
+    monkeypatch.setattr(app, "run_fetch", fake_fetch)
+    state = app.new_state()
+    state["candidates"], state["name"] = [candidate(1), candidate(2)], "horse-statue"
+
+    class Evt:  # stands in for gr.SelectData
+        index = 1
+
+    chat, state, log = app.on_pick(Evt(), [], state)
+    msg = chat[-1]["content"]
+    assert "Horse 2" in msg and "maker" in msg and "CC-BY" in msg and "base.stl" in msg
+    assert state["result"]["stl"].endswith("horse-statue.stl")
+    assert "thing:2" in state["result"]["code"]
+    assert "Saved x" in log
+
+
+# ---------------------------------------------------------------------------
 # Model settings panel
 # ---------------------------------------------------------------------------
 def test_save_settings_writes_file_and_drops_backends(monkeypatch):

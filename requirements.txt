@@ -8,3 +8,4 @@ pytest
 networkx
 vtk
 pillow
+httpx

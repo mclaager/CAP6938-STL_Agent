@@ -18,6 +18,7 @@ Read the conversation and reply with ONE JSON object in a ```json block, nothing
   "scope_reason": "one short sentence; empty when in_scope",
   "spec": "complete, self-contained description of the part to build, with every dimension in mm, including everything the user said in later messages",
   "name": "short file name for the part: 2-5 lowercase words joined by hyphens, e.g. flange-80mm-6-holes",
+  "search": "2-4 plain words to find an existing 3D model of this object on a model site, no sizes, e.g. horse statue",
   "unknowns": [
     {"param": "name", "default": "value you would use", "critical": true | false,
      "question": "short question to ask the user about it"}

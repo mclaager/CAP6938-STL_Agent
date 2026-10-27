@@ -4,6 +4,7 @@
 Public entry points (used by the Gradio app):
     run_gate(conversation, rounds_asked) -> gate.Decision   (proceed / clarify / out_of_scope)
     run_pipeline(request, log, name=None) -> (stl_path, final_code, report_dict)
+    run_fetch(candidate, log, name=None) -> (stl_path, report_dict)   (download from Thingiverse, #9)
 
 Settings come from environment variables / `.env` (see config.py). Swap the LLM by passing any
 object with `.complete(system, messages) -> str` (see llm.py); the eval harness can reuse `generate_cad`.
@@ -360,3 +361,25 @@ def run_pipeline(request: str, log, name: str | None = None,
     report["attempt_log"] = [{k: v for k, v in h.items() if k not in ("reply", "reasoning", "feedback")}
                              for h in report["attempt_log"]]
     return str(final_stl), res.code or "", report
+
+
+def run_fetch(candidate, log, name: str | None = None) -> tuple[str, dict]:
+    """Download a Thingiverse candidate (sources.thingiverse.Candidate) into outputs/ and validate it.
+
+    Writes <name>.source.json next to the STL with the author, license and link, so the attribution
+    stays with the file. Downloaded meshes are often not watertight: that is a warning, not a failure.
+    """
+    from .gate import slugify
+    from .sources.thingiverse import download_stl
+
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    stl = unique_stl_path(slugify(name or "") or slugify(candidate.name) or "thingiverse-part")
+    log(f"Downloading '{candidate.name}' from Thingiverse...")
+    _, others = download_stl(candidate.id, stl)
+    log(f"Saved {stl.name}")
+    source = {"site": "thingiverse", **candidate.to_dict(), "other_stl_files": others}
+    stl.with_suffix(".source.json").write_text(json.dumps(source, indent=1))
+    rep = validate_mesh(str(stl))
+    log("Valid mesh." if rep.valid else "Mesh has issues (see report): " + "; ".join(rep.issues))
+    report = {"success": rep.valid, "source": source, "validation": rep.to_dict()}
+    return str(stl), report

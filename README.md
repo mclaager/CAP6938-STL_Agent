@@ -23,6 +23,11 @@ Provider, model and server address can also be set in the app, under "Model sett
 checks them first). `.env` holds only API keys. `pixi run -e cap6938 settings` shows every setting and where
 its value came from.
 
+Requests that can't be built with CAD code (statues, animals, characters) get a Thingiverse search instead,
+if `.env` has a `THINGIVERSE_TOKEN`: register an app at <https://www.thingiverse.com/apps/create> and copy
+its App Token. The results show as thumbnails; clicking one downloads its STL, with the author and license
+shown in the chat and saved next to it (`outputs/<name>.source.json`). Without a token the app just declines.
+
 Without pixi: `pip install -r requirements.txt`, then `python -m stl_agent.app` from the repo root.
 
 Other commands:
@@ -81,7 +86,9 @@ which is much slower. A reply that runs on can take over 5 minutes, so Ollama's 
 2. **Retrieval** (`stl_agent/retrieval.py`): picks similar solved examples from `stl_agent/data/examples.json`.
 3. **Generation and repair** (`stl_agent/pipeline.py`): the LLM writes CadQuery code; it runs in
    the sandbox (`stl_agent/sandbox.py`), the mesh is validated, and errors are fed back for another attempt.
-4. **UI** (`stl_agent/app.py`): Gradio chat with a 3D preview, the generated code, and a validation report.
+4. **Thingiverse fallback** (`stl_agent/sources/thingiverse.py`): for out-of-scope requests, searches with
+   keywords from the gate and downloads the model the user picks.
+5. **UI** (`stl_agent/app.py`): Gradio chat with a 3D preview, the generated code, and a validation report.
 
 Settings (model, attempts, gate behaviour) are in `settings.toml`; the defaults, with a comment for each, are in
 `stl_agent/data/settings.defaults.toml`.

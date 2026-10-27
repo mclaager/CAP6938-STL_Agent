@@ -28,6 +28,9 @@ gate_max_rounds = 2
 # Let the gate pick the RAG examples from a library index (not yet tested on all requests, #20).
 gate_picks = false
 
+# Thingiverse models shown when a request can't be built with code (#9). Needs THINGIVERSE_TOKEN in .env.
+thingiverse_results = 6
+
 # Visual judge for evaluation (#8, eval/judge.py only): "llm".
 judge = "llm"
 

@@ -36,6 +36,12 @@ def test_names_are_slugified():
     assert slugify("An 80mm Flange, 6 holes!") == "an-80mm-flange-6-holes"
 
 
+def test_search_terms_fall_back_to_name():
+    d = decide_from_report({"scope": "out_of_scope", "name": "Horse Statue", "search": "  horse   statue "}, "x", 0)
+    assert d.search == "horse statue"
+    assert decide_from_report({"scope": "out_of_scope", "name": "Horse Statue"}, "x", 0).search == "horse statue"
+
+
 def test_parse_fenced_json():
     assert parse_gate_reply('ok\n```json\n{"scope": "in_scope"}\n```')["scope"] == "in_scope"
 

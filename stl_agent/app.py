@@ -6,6 +6,8 @@ Then open http://127.0.0.1:7860 in the browser.
 Flow: the user chats with the intake gate (`run_gate`), which asks clarifying questions
 or rejects out-of-scope requests. Once it is ready, it shows the spec it will build and the
 "Build it" button runs `run_pipeline` on that spec, streaming the agent log live.
+Requests the gate rules out of scope (sculpted or organic shapes) get a Thingiverse search instead (#9), when
+THINGIVERSE_TOKEN is set: the results show as a gallery, and clicking one downloads it (`run_fetch`).
 """
 
 import hashlib
@@ -23,7 +25,8 @@ import trimesh
 from .config import CACHE_DIR, OUTPUT_DIR, defaults, known_providers, load_dotenv, set_setting, settings, unset_setting
 from .gate import CLARIFY, OUT_OF_SCOPE
 from .llm import PROVIDERS, list_models, make_llm
-from .pipeline import describe_settings, reset_backends, run_gate, run_pipeline
+from .pipeline import describe_settings, reset_backends, run_fetch, run_gate, run_pipeline
+from .sources import thingiverse
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -72,7 +75,31 @@ def make_preview(stl_path: str) -> str:
 def new_state() -> dict:
     # conversation: turns the gate sees; rounds: clarifying rounds asked;
     # spec / name: ready-to-build spec and its file-name slug
-    return {"conversation": [], "rounds": 0, "spec": None, "name": "", "example_ids": None}
+    # candidates: Thingiverse results shown in the gallery (sources.thingiverse.Candidate)
+    return {"conversation": [], "rounds": 0, "spec": None, "name": "", "example_ids": None, "candidates": []}
+
+
+def gallery_update(candidates: list | None = None):
+    """The Thingiverse results gallery: shown with these candidates, or hidden when there are none."""
+    if not candidates:
+        return gr.Gallery(value=None, visible=False)
+    return gr.Gallery(value=[(c.thumbnail, c.caption()) for c in candidates], visible=True)
+
+
+def search_thingiverse(d, state: dict) -> str:
+    """Reply for an out-of-scope request: Thingiverse results (stored in state) or the reason there are none."""
+    reason = d.scope_reason or "it needs sculpted or organic geometry."
+    if not thingiverse.has_token():
+        return format_decision(d) + f"\n\nSet {thingiverse.TOKEN_VAR} in `.env` to search Thingiverse for an existing model instead."
+    try:
+        state["candidates"] = thingiverse.search(d.search)
+    except thingiverse.ThingiverseError as e:
+        return format_decision(d) + f"\n\nThingiverse search failed: {e}"
+    if not state["candidates"]:
+        return format_decision(d) + f"\n\nThingiverse has nothing for \"{d.search}\" either."
+    return (f"I can't build this with parametric CAD: {reason}\n\n"
+            f"Here are existing models from Thingiverse for \"{d.search}\". Click one to download it; "
+            "check its license before sharing or selling prints.")
 
 
 def format_decision(d) -> str:
@@ -104,10 +131,10 @@ def format_decision(d) -> str:
 # state["result"], and `show_result` fills the result panels in a separate, plain step.
 # ---------------------------------------------------------------------------
 def on_message(message: str, chat: list, state: dict, use_cache: bool):
-    """Returns (textbox, chat, state, build_button)."""
+    """Returns (textbox, chat, state, build_button, gallery)."""
     message = (message or "").strip()
     if not message:
-        yield "", chat, state, gr.Button(interactive=state["spec"] is not None)
+        yield "", chat, state, gr.Button(interactive=state["spec"] is not None), gr.skip()
         return
 
     chat = chat + [{"role": "user", "content": message}]
@@ -116,22 +143,29 @@ def on_message(message: str, chat: list, state: dict, use_cache: bool):
         stl, code, report = cached
         state["result"] = {"stl": stl, "code": code, "report": report}
         chat.append({"role": "assistant", "content": "Loaded a cached result (preview on the right)."})
-        yield "", chat, state, gr.Button(interactive=False)
+        yield "", chat, state, gr.Button(interactive=False), gr.skip()
         return
 
     state["conversation"].append({"role": "user", "content": message})
-    state["spec"] = None
-    yield "", chat + [{"role": "assistant", "content": "_Checking your request..._"}], state, gr.Button(interactive=False)
+    state["spec"], state["candidates"] = None, []
+    yield ("", chat + [{"role": "assistant", "content": "_Checking your request..._"}], state,
+           gr.Button(interactive=False), gallery_update())
 
     try:
         d = run_gate(state["conversation"], state["rounds"])
     except Exception as e:  # e.g. quota exhausted: show it in the chat instead of crashing
         state["conversation"].pop()
         chat.append({"role": "assistant", "content": f"Intake check failed: {e}"})
-        yield "", chat, state, gr.Button(interactive=False)
+        yield "", chat, state, gr.Button(interactive=False), gr.skip()
         return
 
-    reply = format_decision(d)
+    if d.action == OUT_OF_SCOPE:
+        if thingiverse.has_token():
+            yield ("", chat + [{"role": "assistant", "content": "_Searching Thingiverse..._"}], state,
+                   gr.Button(interactive=False), gr.skip())
+        reply = search_thingiverse(d, state)
+    else:
+        reply = format_decision(d)
     if d.action == CLARIFY:
         state["rounds"] += 1
     elif d.action != OUT_OF_SCOPE:
@@ -139,7 +173,7 @@ def on_message(message: str, chat: list, state: dict, use_cache: bool):
         state["example_ids"] = d.example_ids
     state["conversation"].append({"role": "assistant", "content": reply})
     chat.append({"role": "assistant", "content": reply})
-    yield "", chat, state, gr.Button(interactive=state["spec"] is not None)
+    yield "", chat, state, gr.Button(interactive=state["spec"] is not None), gallery_update(state["candidates"])
 
 
 def download_button(stl: str | None = None):
@@ -195,6 +229,33 @@ def on_build(chat: list, state: dict):
     yield chat, state, gr.Button(interactive=False), log_text
 
 
+def on_pick(evt: gr.SelectData, chat: list, state: dict):
+    """Download the Thingiverse result clicked in the gallery. Returns (chat, state, log)."""
+    candidates = state.get("candidates") or []
+    if not isinstance(evt.index, int) or not 0 <= evt.index < len(candidates):
+        return chat, state, gr.skip()
+    c = candidates[evt.index]
+    lines: list[str] = []
+    try:
+        stl, report = run_fetch(c, lines.append, name=state.get("name") or None)
+    except Exception as e:  # network or file errors: show them in the chat
+        chat = chat + [{"role": "assistant", "content": f"Download of '{c.name}' failed: {e}"}]
+        return chat, state, "\n".join(lines + [f"FAILED: {e}"])
+
+    others = report["source"]["other_stl_files"]
+    msg = (f"Downloaded [{c.name}]({c.url}) by {c.author} ({c.license}). Saved as `{Path(stl).name}`"
+           + ("." if report.get("success") else "; the mesh has issues (see the validation report)."))
+    if others:
+        shown = ", ".join(f"`{n}`" for n in others[:5]) + (" and more" if len(others) > 5 else "")
+        msg += f"\n\nThis took the largest STL; the thing also has {shown} on its page."
+    chat = chat + [{"role": "assistant", "content": msg}]
+    state["conversation"].append({"role": "assistant", "content": f"Downloaded '{c.name}' from Thingiverse."})
+    attribution = (f"# Downloaded from Thingiverse, not generated: no CadQuery code.\n# {c.name}\n"
+                   f"# by {c.author}, license: {c.license}\n# {c.url}\n")
+    state["result"] = {"stl": stl, "code": attribution, "report": report}
+    return chat, state, "\n".join(lines)
+
+
 def show_result(state: dict):
     """Fill the result panels from a finished build. Returns (state, viewer, download, code, report)."""
     result = state.pop("result", None)
@@ -214,7 +275,7 @@ def on_example(evt: gr.SelectData):
 
 
 def on_reset():
-    return [], new_state(), gr.Button(interactive=False), "", None, download_button(), "", None
+    return [], new_state(), gr.Button(interactive=False), "", None, download_button(), "", None, gallery_update()
 
 
 # ---------------------------------------------------------------------------
@@ -412,6 +473,9 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
     with gr.Row(equal_height=True):
         with gr.Column(scale=1, elem_id="left-col"):
             chat = gr.Chatbot(label="Chat", height=340, examples=[{"text": e} for e in EXAMPLES])
+            # Thingiverse results for out-of-scope requests; hidden until there are some.
+            gallery = gr.Gallery(label="Thingiverse models (click one to download it)", visible=False,
+                                 columns=3, height=260, allow_preview=False)
             msg = gr.Textbox(show_label=False, placeholder="e.g. A 60x40x5mm plate with four 4mm holes...", lines=2)
             with gr.Row():
                 send = gr.Button("Send")
@@ -432,14 +496,17 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
 
     results = [viewer, download, code_box, report_box]
     for trigger in (send.click, msg.submit):
-        trigger(on_message, inputs=[msg, chat, state, use_cache], outputs=[msg, chat, state, build]).then(
+        trigger(on_message, inputs=[msg, chat, state, use_cache], outputs=[msg, chat, state, build, gallery]).then(
             show_result, inputs=state, outputs=[state, *results]
         )
     build.click(clear_result, outputs=results).then(
         on_build, inputs=[chat, state], outputs=[chat, state, build, log_box]
     ).then(show_result, inputs=state, outputs=[state, *results])
+    # on_pick goes first: only the first handler of a chain gets the click (gr.SelectData).
+    gallery.select(on_pick, inputs=[chat, state], outputs=[chat, state, log_box]).then(
+        show_result, inputs=state, outputs=[state, *results])
     chat.example_select(on_example, outputs=msg)
-    reset.click(on_reset, outputs=[chat, state, build, log_box, viewer, download, code_box, report_box])
+    reset.click(on_reset, outputs=[chat, state, build, log_box, viewer, download, code_box, report_box, gallery])
 
     form = [model_in, gate_in, url_in, key_md]
     # Gradio's own progress overlay would cover the fields and show a countdown guessed from the last run;
