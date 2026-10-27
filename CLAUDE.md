@@ -76,7 +76,8 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `retrieval.py` — RAG over `data/examples.json` (each example's request plus its `keywords`: generic
   shape/operation words). Retrievers selected by the `retriever` setting: `tfidf` (default, words) or `tfidf-char`
   (letter chunks, numbers stripped). A local embedding model and a similarity cutoff were tried and removed
-  (no gain; see `eval/results/retrieval-lib26.md`). Keep the app lightweight (#19): no PyTorch.
+  (no gain; see `eval/results/retrieval-lib26.md`). Adding a public dataset (Text-to-CadQuery) as extra examples was
+  also tried and removed (`eval/results/external-rag.md`). Keep the app lightweight (#19): no PyTorch.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
 - `api_check.py` — extra repair feedback when a script fails (`api_hints` setting): reads the script with `ast`
   and checks each CadQuery call it can resolve against the installed CadQuery (`inspect`): missing methods (with
@@ -147,7 +148,7 @@ Elsewhere:
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-hints` (rag plus `api_hints`; the others pin it off, as all
   earlier rows had it off), `rag-k1` / `rag-k5` (1 or 5
-  examples instead of 3), `rag-char` (letter-chunk retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs). Each result row records
+  examples instead of 3), `rag-char` (letter-chunk retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs) and `rag-ext` rows (built-in library plus a Text-to-CadQuery pool, removed: no gain, `eval/results/external-rag.md`). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,
   prompt, render settings), so changing `--judge-model`, `--prompt` or `--px` adds a study beside the old
