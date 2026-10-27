@@ -14,7 +14,7 @@ union/cut, holes, fillets, chamfers, shells, patterns and simple text. Units are
 
 Read the conversation and reply with ONE JSON object in a ```json block, nothing else:
 {
-  "scope": "in_scope" | "simplified" | "out_of_scope",
+  "scope": "in_scope" | "simplified" | "out_of_scope" | "composite",
   "scope_reason": "one short sentence; empty when in_scope",
   "spec": "complete, self-contained description of the part to build, with every dimension in mm, including everything the user said in later messages",
   "name": "short file name for the part: 2-5 lowercase words joined by hyphens, e.g. flange-80mm-6-holes",
@@ -30,8 +30,33 @@ SCOPE
   knobs, hooks, mounts, containers, organizers, simple text plaques.
 - simplified: only buildable as a stylized geometric approximation (a low-poly vase, a simple
   rocket, a chess pawn). The spec must describe that simplified version.
-- out_of_scope: organic or sculpted shapes (people, animals, faces, characters, realistic plants),
-  copies of images or logos, or anything that is not a single physical part.
+- composite: one part made by joining several distinct objects, where at least one of them is
+  organic or sculpted (a cat sitting on a tree, a horse statue on a plinth with a name plate, people
+  on a bench). Sculpted pieces are downloaded as existing models; geometric pieces are built with
+  code. Check composite before out_of_scope: a request that combines objects is composite even when
+  some of them are people or animals. If every piece could be built with code, use in_scope instead:
+  one script is better than joined pieces.
+- out_of_scope: a single organic or sculpted object with nothing to join it to (a person, an animal,
+  a face, a character, a realistic plant), copies of images or logos, or something that is not a
+  physical part at all.
+
+COMPOSITE (only when scope is composite): add a "pieces" list, in build order, the base first:
+  "pieces": [
+    {"id": "tree", "source": "thingiverse", "search": ["oak tree", "tree"], "height_mm": 120,
+     "fallback_spec": "stylized tree: 15 mm cylinder trunk 50 mm tall under a 70 mm sphere canopy"},
+    {"id": "cat", "source": "thingiverse", "search": ["sitting cat", "cat"], "height_mm": 30,
+     "fallback_spec": "stylized sitting cat: ...", "place": {"on": "tree", "relation": "on_top"}},
+    {"id": "plate", "source": "cadquery", "spec": "40x12x3 mm plate with the raised text TOM",
+     "place": {"on": "tree", "relation": "beside", "side": "front"}}
+  ]
+- source: "thingiverse" for organic/sculpted pieces (give "search": 1-3 short phrases, most specific
+  first, and "fallback_spec": a simplified geometric version to build if no model is found), or
+  "cadquery" for geometric pieces (give "spec" with every dimension in mm).
+- height_mm: the piece's height; downloaded models are scaled to it.
+- place (every piece after the first): "on" is an earlier piece's id; "relation" is "on_top" (rests
+  on it), "under" (the other piece rests on this one), "beside" (with "side": left, right, front or
+  back) or "inside"; "align" (on_top only): center, left, right, front or back.
+- spec: describe the whole combination in words.
 
 UNKNOWNS
 List every detail the user did not give that you had to decide. Mark critical=true ONLY when a

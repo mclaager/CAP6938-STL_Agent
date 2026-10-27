@@ -62,14 +62,14 @@ DEFAULTS_PATH = DATA_DIR / "settings.defaults.toml"
 # Schema: every setting and its type. Settings in OPTIONAL may be left unset (TOML has no null).
 TOP_FIELDS = {
     "provider": str, "max_attempts": int, "api_hints": bool, "top_k": int, "retriever": str, "gate": str,
-    "gate_max_rounds": int, "gate_picks": bool, "thingiverse_results": int, "judge": str, "judge_provider": str,
+    "gate_max_rounds": int, "gate_picks": bool, "thingiverse_results": int, "thingiverse_pick": str, "judge": str, "judge_provider": str,
     "judge_threshold": (int, float),
 }
 PROVIDER_FIELDS = {"base_url": str, "model": str, "gate_model": str, "judge_model": str, "rpm": int,
                    "timeout": (int, float)}
 OPTIONAL = {"judge_provider"}
 OPTIONAL_PROVIDER = {"base_url", "gate_model", "judge_model", "rpm", "timeout"}
-_LOWERCASE = {"provider", "retriever", "gate", "judge", "judge_provider"}
+_LOWERCASE = {"provider", "retriever", "gate", "judge", "judge_provider", "thingiverse_pick"}
 
 
 @dataclass
@@ -83,6 +83,7 @@ class Settings:
     gate_max_rounds: int
     gate_picks: bool
     thingiverse_results: int
+    thingiverse_pick: str
     judge: str
     judge_threshold: float
     providers: dict[str, dict]  # name -> {"model": ..., "base_url": ...}; unset keys are missing

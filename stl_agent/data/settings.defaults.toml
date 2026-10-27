@@ -31,6 +31,11 @@ gate_picks = false
 # Thingiverse models shown when a request can't be built with code (#9). Needs THINGIVERSE_TOKEN in .env.
 thingiverse_results = 6
 
+# Who picks downloaded Thingiverse models: "manual" (the user, from a gallery) or "auto". Applies to a single
+# sculpted part (#9; auto takes the first result that downloads) and to each downloaded piece of a combined
+# part (#10; auto takes the first result that allows derivatives and downloads).
+thingiverse_pick = "manual"
+
 # Visual judge for evaluation (#8, eval/judge.py only): "llm".
 judge = "llm"
 
