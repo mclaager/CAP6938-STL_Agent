@@ -81,3 +81,46 @@ def test_pipeline_prefers_gate_picks(tmp_path):
     assert res.retrieved_ids == ["gear_001"]
     res = generate_cad("a hex nut", ScriptedLLM([good]), r, out_dir=tmp_path / "b", example_ids=[])
     assert res.retrieved_ids[0] == "polygon_001"  # no picks: retrieval on the request
+
+
+# ---------------------------------------------------------------------------
+# Composite plans (#10)
+# ---------------------------------------------------------------------------
+TREE = {"id": "Tree", "source": "thingiverse", "search": "oak tree", "height_mm": "120", "fallback_spec": "stylized tree"}
+CAT = {"id": "cat", "source": "thingiverse", "search": ["sitting cat", "cat", "kitten", "kitty"], "height_mm": 30,
+       "place": {"on": "tree", "relation": "on_top", "align": "front"}}
+PLATE = {"id": "plate", "source": "cadquery", "spec": "40x12x3 mm name plate",
+         "place": {"on": "tree", "relation": "beside", "side": "sideways"}}
+
+
+def test_composite_plan_is_parsed():
+    from stl_agent.gate.base import MAX_SEARCHES
+
+    d = decide_from_report({"scope": "composite", "spec": "cat on a tree", "pieces": [TREE, CAT, PLATE]}, "x", 0)
+    assert d.action == PROCEED and d.scope == "composite"
+    tree, cat, plate = d.pieces
+    assert tree["id"] == "tree" and tree["search"] == ["oak tree"] and tree["height_mm"] == 120 and "place" not in tree
+    assert len(cat["search"]) == MAX_SEARCHES and cat["place"] == {"on": "tree", "relation": "on_top",
+                                                                    "side": "right", "align": "front"}
+    assert plate["spec"] and plate["place"]["side"] == "right"  # unknown side -> default
+
+
+def test_composite_drops_bad_pieces():
+    bad = [
+        {**CAT, "id": "dog", "place": {"on": "moon", "relation": "on_top"}},  # target not an earlier piece
+        {**CAT, "id": "bird", "place": {"on": "tree", "relation": "orbiting"}},  # unknown relation
+        {**CAT, "id": "tree"},  # repeated id
+        {"id": "rock", "source": "sculpt"},  # unknown source
+        {"id": "box", "source": "cadquery"},  # no spec
+    ]
+    d = decide_from_report({"scope": "composite", "pieces": [TREE, *bad, CAT]}, "x", 0)
+    assert [p["id"] for p in d.pieces] == ["tree", "cat"]
+    assert "moon" in d.note and "orbiting" in d.note
+
+
+def test_composite_with_one_piece_falls_back():
+    d = decide_from_report({"scope": "composite", "name": "tree", "pieces": [TREE]}, "x", 0)
+    assert d.action == OUT_OF_SCOPE and d.search == "oak tree" and not d.pieces
+    d = decide_from_report({"scope": "composite", "pieces": [{"id": "box", "source": "cadquery", "spec": "a box"}]}, "x", 0)
+    assert d.action == PROCEED and d.scope == "in_scope" and d.spec == "a box" and not d.pieces
+

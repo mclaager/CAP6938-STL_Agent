@@ -21,6 +21,7 @@ pytest = ">=9.1.1, <10"
 networkx = ">=3.7, <4"
 vtk = "*"  # offscreen rendering for the judge (already a CadQuery dependency)
 pillow = "*"
+manifold3d = ">=3.0"  # boolean union when combining pieces (#10)
 httpx = "*"  # Gemini/Ollama client and Thingiverse (already a Gradio dependency)
 
 [feature.cap6938.tasks]

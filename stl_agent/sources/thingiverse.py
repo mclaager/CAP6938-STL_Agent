@@ -46,8 +46,13 @@ class Candidate:
     allows_derivatives: bool = False  # matters when parts are combined (#10): the result is a derivative
     is_ai: bool = False
 
+    def credit(self) -> str:
+        """Attribution line: name, author, license and link."""
+        return f"{self.name} by {self.author} ({self.license}), {self.url}"
+
     def caption(self) -> str:
-        return f"{self.name}, by {self.author} ({self.license}){' [AI-generated]' if self.is_ai else ''}"
+        flags = (" [AI-generated]" if self.is_ai else "") + ("" if self.allows_derivatives else " [no derivatives]")
+        return f"{self.name}, by {self.author} ({self.license}){flags}"
 
     def to_dict(self) -> dict:
         return asdict(self)

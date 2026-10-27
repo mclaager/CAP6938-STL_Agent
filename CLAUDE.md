@@ -46,7 +46,7 @@ Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemin
 `eval/results/`). Ollama's server
 defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
 `OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off), `top_k`, `retriever`, `gate`
-(`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, `thingiverse_results`, and for the visual judge `judge_provider`,
+(`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, `thingiverse_results`, `thingiverse_pick` (`manual`/`auto`), and for the visual judge `judge_provider`,
 `providers.<p>.judge_model` (Gemini default `gemini-3.1-flash-lite`, a different model from the one that built
 most benchmark parts) and `judge_threshold`. The gate uses the build model unless `providers.<p>.gate_model` is
 set (with Gemini, another model has its own daily quota, so gate checks don't use up builds).
@@ -86,6 +86,10 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `gate/` — intake gate run before generation. The LLM reports scope, a filled-in spec and unknown
   parameters (critical or not); fixed rules in `base.decide_from_report` choose proceed / clarify /
   out_of_scope. `llm_gate.py` is the LLM backend, `jev.py` a stub (#12). Each gate check is one LLM request.
+  Scope `composite` (#10, joined objects where one is sculpted) adds a `pieces` plan, checked by
+  `base.parse_pieces`: base first, each piece `cadquery` (spec) or `thingiverse` (1-3 search phrases plus a
+  `fallback_spec`), `height_mm`, and `place` (`on` an earlier piece, relation `on_top`/`under`/`beside`/`inside`).
+  Fewer than 2 valid pieces falls back to `in_scope` or `out_of_scope`.
 - `sources/thingiverse.py` — Thingiverse search and download (#9), plain httpx, Bearer app token
   (`THINGIVERSE_TOKEN`; without it the app declines out-of-scope requests as before). `search(term)` returns
   `Candidate`s (author, license, `allows_derivatives`, thumbnail; NSFW dropped; count from
@@ -94,6 +98,12 @@ pypi deps for non-pixi users, so keep the two in sync.
   `USER_AGENT`. Tests use `httpx.MockTransport` (`client=` argument), never the network.
   `pipeline.run_fetch` saves it to `outputs/<name>.stl` plus `<name>.source.json` (attribution) and runs
   `validate_mesh`. The gate's JSON has a `search` field (keywords) for this.
+- `sources/assembly.py` — combined parts (#10), pure trimesh: `place` applies the gate's relations using
+  bounding boxes, dropping pieces straight down onto the surface below (`surface_heights`, numpy; trimesh's
+  ray module would need rtree) and sinking each `OVERLAP` mm so they fuse; `merge` repairs open meshes and
+  unions with manifold3d, else joins the pieces as overlapping bodies with a note. `pipeline.run_assembly`
+  fetches Thingiverse pieces first (a missing model costs no build requests; none found → `fallback_spec` built
+  with CadQuery), then generates, scales downloaded pieces and stand-ins to `height_mm`, places, merges.
 - `render.py` — STL to one 768x512 PNG (3x2 grid) of six labelled views, offscreen VTK (works headless via EGL):
   - flat, straight-on: front, right, top, bottom (a through-hole shows the white background)
   - angled 3D: iso front, iso back (overall shape, and the back side)
@@ -110,7 +120,9 @@ pypi deps for non-pixi users, so keep the two in sync.
 - `app.py` — Gradio chat front end; uses `run_gate` for intake, then `run_pipeline` on the confirmed
   spec when the user clicks "Build it". An out-of-scope reply searches Thingiverse and shows the results
   in a gallery; clicking one runs `run_fetch` (`on_pick`, first in its event chain since only the first
-  handler gets the click data). A "Model settings" panel picks provider, model, gate model and server
+  handler gets the click data). A composite plan builds with `run_assembly`; with `thingiverse_pick = "manual"`,
+  Build first shows a gallery per Thingiverse piece (`next_pick`, `pick_piece`), and `on_assemble`, chained
+  after `on_pick`, builds once the last piece is picked. A "Model settings" panel picks provider, model, gate model and server
   address: the model dropdown lists the server's chat models (`llm.list_models`); "Test connection" sends one tiny
   request without saving (`make_llm(timeout=90, quick=True)`: no retries, so a busy model fails fast); "Save" writes the settings file (values equal to the default stay commented out) and calls
   `reset_backends()`, so the next request uses them.
@@ -151,7 +163,7 @@ Elsewhere:
 - `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
   colored `<name>.preview.glb` for the viewer (gitignored).
 
-Where planned work goes: part combining in `stl_agent/sources/` (#10), Jev in
+Where planned work goes: Jev in
 `stl_agent/gate/jev.py` and `stl_agent/judge/jev.py` (#12); the gate evaluation set goes in `eval/`.
 
 ## Roadmap
@@ -165,10 +177,10 @@ Done:
 - #20 Retrieval evaluation (offline); retrievers that showed no gain were removed
 - #9 Thingiverse fallback: out-of-scope requests search Thingiverse and download the picked model
   (searching on an explicit user request is not planned)
+- #10 Combined parts: the gate plans pieces (generated or downloaded), placed by relation and merged into one STL
 
 Open work is in GitHub issues, with the original course timeline's target dates where there is one:
 
-- #10 Combine downloaded and generated parts into one STL (weeks 7–8)
 - #11 Final report (weeks 9–10)
 - #12 Jev gate backend and gate evaluation (not from the original proposal; a Jev judge backend could follow)
 - #19 Fully local mode, configurable in the app

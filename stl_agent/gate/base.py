@@ -12,6 +12,13 @@ MAX_ROUNDS = 2  # the usual value; the setting is gate_max_rounds (settings.defa
 MAX_QUESTIONS = 3
 
 PROCEED, CLARIFY, OUT_OF_SCOPE = "proceed", "clarify", "out_of_scope"
+SCOPES = ("in_scope", "simplified", "out_of_scope", "composite")
+
+# Combined parts (#10): the relations and alignments sources.assembly can apply.
+RELATIONS = ("on_top", "under", "beside", "inside")
+SIDES = ("left", "right", "front", "back")
+MAX_PIECES = 5
+MAX_SEARCHES = 3
 
 
 @dataclass
@@ -25,6 +32,8 @@ class Decision:
     note: str = ""  # e.g. why the gate fell back to proceeding
     name: str = ""  # short file-name slug for the part, e.g. "flange-80mm-6-holes"
     search: str = ""  # a few words to find an existing model of it on a model site, e.g. "horse statue"
+    # scope "composite": the pieces to make and join, checked by parse_pieces (first one is the base).
+    pieces: list[dict] = field(default_factory=list)
     # Gate-picked library examples (gate_picks setting): None = the gate wasn't asked to pick,
     # [] = it found nothing relevant.
     example_ids: list[str] | None = None
@@ -45,11 +54,67 @@ def slugify(text: str, max_words: int = 6, max_len: int = 48) -> str:
 
 
 
+def _size(value) -> float | None:
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    return v if 0 < v < 10_000 else None
+
+
+def parse_pieces(raw) -> tuple[list[dict], list[str]]:
+    """The gate's piece plan, checked: (valid pieces, notes on what was dropped). Each piece comes out as
+    {"id", "source": "cadquery" | "thingiverse", "spec" | "search": [...] + "fallback_spec", "height_mm",
+    "place": {"on", "relation", "side", "align"}}; the first piece has no "place"."""
+    pieces, notes, seen = [], [], set()
+    for item in raw if isinstance(raw, list) else []:
+        if not isinstance(item, dict):
+            continue
+        pid = slugify(str(item.get("id") or ""), max_words=4, max_len=24)
+        if not pid or pid in seen:
+            notes.append(f"Dropped a piece with a missing or repeated id ({item.get('id')!r}).")
+            continue
+        source = str(item.get("source") or "").strip().lower()
+        p = {"id": pid, "source": source, "height_mm": _size(item.get("height_mm"))}
+        if source == "cadquery":
+            p["spec"] = str(item.get("spec") or "").strip()
+            if not p["spec"]:
+                notes.append(f"Dropped {pid}: no spec to build it from.")
+                continue
+        elif source == "thingiverse":
+            search = item.get("search") or pid.replace("-", " ")
+            search = [search] if isinstance(search, str) else search if isinstance(search, list) else []
+            p["search"] = [" ".join(str(s).split()) for s in search if str(s).strip()][:MAX_SEARCHES]
+            p["fallback_spec"] = str(item.get("fallback_spec") or "").strip()
+        else:
+            notes.append(f"Dropped {pid}: unknown source {source!r}.")
+            continue
+        if pieces:  # every piece after the base says where it goes
+            where = item.get("place") if isinstance(item.get("place"), dict) else {}
+            on = slugify(str(where.get("on") or ""), max_words=4, max_len=24)
+            relation = str(where.get("relation") or "on_top").strip().lower()
+            if on not in seen:
+                notes.append(f"Dropped {pid}: it goes on {where.get('on')!r}, which is not an earlier piece.")
+                continue
+            if relation not in RELATIONS:
+                notes.append(f"Dropped {pid}: unknown relation {relation!r}.")
+                continue
+            side = str(where.get("side") or "right").strip().lower()
+            align = str(where.get("align") or "center").strip().lower()
+            p["place"] = {"on": on, "relation": relation, "side": side if side in SIDES else "right",
+                          "align": align if align in (*SIDES, "center") else "center"}
+        pieces.append(p)
+        seen.add(pid)
+        if len(pieces) == MAX_PIECES:
+            break
+    return pieces, notes
+
+
 def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_rounds: int | None = None) -> Decision:
     """The decision rules. Kept separate from the LLM call so they can be tested directly."""
     max_rounds = settings().gate_max_rounds if max_rounds is None else max_rounds
     scope = str(report.get("scope", "in_scope")).strip().lower()
-    if scope not in ("in_scope", "simplified", "out_of_scope"):
+    if scope not in SCOPES:
         scope = "in_scope"
     spec = str(report.get("spec") or "").strip() or fallback_spec
     unknowns = [u for u in report.get("unknowns") or [] if isinstance(u, dict)]
@@ -61,7 +126,20 @@ def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_
         picks = report["examples"] if isinstance(report["examples"], list) else []
         d.example_ids = list(dict.fromkeys(str(x).strip() for x in picks if str(x).strip()))
 
-    if scope == "out_of_scope":
+    if scope == "composite":
+        d.pieces, notes = parse_pieces(report.get("pieces"))
+        if len(d.pieces) < 2:  # not an assembly after all: one piece, or nothing usable
+            only = d.pieces[0] if d.pieces else None
+            if only and only["source"] == "cadquery":
+                d.scope, d.spec = "in_scope", only["spec"]
+            else:
+                d.scope = "out_of_scope"
+                d.search = only["search"][0] if only and only["search"] else d.search
+            d.pieces = []
+            notes.append("The piece plan had fewer than 2 usable pieces, so this is not built as a combination.")
+        d.note = " ".join(notes)
+
+    if d.scope == "out_of_scope":
         d.action = OUT_OF_SCOPE
     elif critical and rounds_asked < max_rounds:
         d.action = CLARIFY

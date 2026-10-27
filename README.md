@@ -86,9 +86,13 @@ which is much slower. A reply that runs on can take over 5 minutes, so Ollama's 
 2. **Retrieval** (`stl_agent/retrieval.py`): picks similar solved examples from `stl_agent/data/examples.json`.
 3. **Generation and repair** (`stl_agent/pipeline.py`): the LLM writes CadQuery code; it runs in
    the sandbox (`stl_agent/sandbox.py`), the mesh is validated, and errors are fed back for another attempt.
-4. **Thingiverse fallback** (`stl_agent/sources/thingiverse.py`): for out-of-scope requests, searches with
+4. **Combined parts** (`stl_agent/sources/assembly.py`): for requests like "a cat sitting on a tree", the gate
+   plans pieces, each downloaded from Thingiverse or built with CadQuery, plus where each one goes; they are
+   scaled, placed and merged into one STL. `thingiverse_pick` chooses whether you pick each model or the
+   first suitable result is used.
+5. **Thingiverse fallback** (`stl_agent/sources/thingiverse.py`): for out-of-scope requests, searches with
    keywords from the gate and downloads the model the user picks.
-5. **UI** (`stl_agent/app.py`): Gradio chat with a 3D preview, the generated code, and a validation report.
+6. **UI** (`stl_agent/app.py`): Gradio chat with a 3D preview, the generated code, and a validation report.
 
 Settings (model, attempts, gate behaviour) are in `settings.toml`; the defaults, with a comment for each, are in
 `stl_agent/data/settings.defaults.toml`.
@@ -104,6 +108,6 @@ Settings (model, attempts, gate behaviour) are in `settings.toml`; the defaults,
 ## Roadmap
 
 Done: the generation pipeline with retrieval and intake gate, the evaluation benchmark with RAG ablation,
-the visual judge, and the Thingiverse fallback. Open work is tracked in [GitHub issues](../../issues):
-combining parts, the final report, a Jev gate backend, a fully local mode, the size-check fix, a stronger
+the visual judge, the Thingiverse fallback, and combined parts. Open work is tracked in
+[GitHub issues](../../issues): the final report, a Jev gate backend, a fully local mode, the size-check fix, a stronger
 judge model, and whether retrieved examples make the model skip requested features.
