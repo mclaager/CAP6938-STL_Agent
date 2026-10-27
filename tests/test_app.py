@@ -99,14 +99,15 @@ def test_out_of_scope_auto_downloads_without_gallery(monkeypatch, tmp_path):
     assert "Horse 2" in chat[-1]["content"] and state["result"]["stl"].endswith("horse-statue.stl")
 
 
-def test_out_of_scope_without_token_explains(monkeypatch):
+def test_out_of_scope_without_token_declines_as_before(monkeypatch):
     from stl_agent.sources import thingiverse
 
     monkeypatch.delenv(thingiverse.TOKEN_VAR, raising=False)
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
     state = app.new_state()
     _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state, False))
-    assert "THINGIVERSE_TOKEN" in chat[-1]["content"] and "can't build" in chat[-1]["content"]
+    d = decide_from_report(HORSE, "x", 0)
+    assert chat[-1]["content"] == app.format_decision(d)  # the plain decline, nothing about Thingiverse
     assert not gallery.visible and state["candidates"] == []
 
 

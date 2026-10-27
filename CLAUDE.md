@@ -91,7 +91,8 @@ pypi deps for non-pixi users, so keep the two in sync.
   `fallback_spec`), `height_mm`, and `place` (`on` an earlier piece, relation `on_top`/`under`/`beside`/`inside`).
   Fewer than 2 valid pieces falls back to `in_scope` or `out_of_scope`.
 - `sources/thingiverse.py` — Thingiverse search and download (#9), plain httpx, Bearer app token
-  (`THINGIVERSE_TOKEN`; without it the app declines out-of-scope requests as before). `search(term)` returns
+  (`THINGIVERSE_TOKEN`, optional: without it `pipeline.run_gate` turns plans with Thingiverse pieces into
+  `out_of_scope`, so the app declines them as before #9/#10). `search(term)` returns
   `Candidate`s (author, license, `allows_derivatives`, thumbnail; NSFW dropped; count from
   `thingiverse_results`); `download_stl` takes the thing's largest STL via `download_url` (302 to the
   CDN). Cloudflare 403s default User-Agents (curl, httpx) on both API and CDN, so the client sends

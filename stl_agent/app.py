@@ -109,8 +109,8 @@ def fetch_model(c, state: dict, log) -> str:
 def search_thingiverse(d, state: dict) -> str:
     """Reply for an out-of-scope request: Thingiverse results (stored in state) or the reason there are none."""
     reason = d.scope_reason or "it needs sculpted or organic geometry."
-    if not thingiverse.has_token():
-        return format_decision(d) + f"\n\nSet {thingiverse.TOKEN_VAR} in `.env` to search Thingiverse for an existing model instead."
+    if not thingiverse.has_token():  # Thingiverse is optional: decline as before
+        return format_decision(d)
     try:
         state["candidates"] = thingiverse.search(d.search)
     except thingiverse.ThingiverseError as e:
@@ -514,7 +514,7 @@ def thingiverse_status() -> str:
     load_dotenv()  # pick up a token added to .env while the app runs
     if thingiverse.has_token():
         return f"`{thingiverse.TOKEN_VAR}` is set."
-    return (f"**`{thingiverse.TOKEN_VAR}` is not set**, so sculpted parts can't be downloaded. Add it to `.env` "
+    return (f"**`{thingiverse.TOKEN_VAR}` is not set**, so Thingiverse is off: sculpted parts are declined. Add it to `.env` "
             "(an App Token from thingiverse.com/apps/create); no restart needed.")
 
 

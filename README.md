@@ -26,7 +26,8 @@ its value came from.
 Requests that can't be built with CAD code (statues, animals, characters) get a Thingiverse search instead,
 if `.env` has a `THINGIVERSE_TOKEN`: register an app at <https://www.thingiverse.com/apps/create> and copy
 its App Token. The results show as thumbnails; clicking one downloads its STL, with the author and license
-shown in the chat and saved next to it (`outputs/<name>.source.json`). Without a token the app just declines.
+shown in the chat and saved next to it (`outputs/<name>.source.json`). Thingiverse is optional: without a token, the app
+declines sculpted parts, and parts that would join them with others, as it did before.
 
 Without pixi: `pip install -r requirements.txt`, then `python -m stl_agent.app` from the repo root.
 

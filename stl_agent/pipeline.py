@@ -318,7 +318,10 @@ def get_llm():
 
 
 def run_gate(conversation: list[dict], rounds_asked: int = 0):
-    """Intake check before generation (see gate.py). Returns a gate.Decision."""
+    """Intake check before generation (see gate.py). Returns a gate.Decision.
+
+    Thingiverse is optional: without THINGIVERSE_TOKEN, a plan that needs a downloaded piece is declined as
+    out of scope, as before #9/#10 (no piece plan, no clarifying questions about a part that can't be built)."""
     global _gate
     if _gate is None:
         from .gate import make_gate
@@ -328,7 +331,20 @@ def run_gate(conversation: list[dict], rounds_asked: int = 0):
         # A separate gate model (e.g. Gemini's) has its own free-tier quota, so gate checks don't use up builds.
         llm = make_llm(model=cfg["gate_model"]) if cfg["gate_model"] != cfg["model"] else get_llm()
         _gate = make_gate(llm, library=library)
-    return _gate.decide(conversation, rounds_asked)
+    return without_downloads_unless_token(_gate.decide(conversation, rounds_asked))
+
+
+def without_downloads_unless_token(d):
+    """Turn a plan with Thingiverse pieces into a plain out-of-scope decision when there is no token."""
+    from .config import load_dotenv
+    from .gate import OUT_OF_SCOPE
+    from .sources import thingiverse
+
+    load_dotenv()  # a token added to .env while the app runs counts
+    if thingiverse.has_token() or not any(p["source"] == "thingiverse" for p in d.pieces):
+        return d
+    d.action, d.scope, d.pieces, d.questions = OUT_OF_SCOPE, "out_of_scope", [], []
+    return d
 
 
 def unique_stl_path(name: str, folder: Path | None = None) -> Path:
