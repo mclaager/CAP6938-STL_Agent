@@ -190,3 +190,5 @@ Open work is in GitHub issues, with the original course timeline's target dates 
 - #23 Size check rejects correct parts when the model's own BBOX estimate is wrong
 - #28 Compare a stronger judge model on the hand-labelled parts
 - #29 Test whether RAG makes the model copy the retrieved example instead of building every requested feature
+- #35 Run the visual judge during builds (orientation of downloads, wrong-shape repair), as a user toggle
+- #36 Edit a built part (transform, change the previous script, or rebuild from scratch)
