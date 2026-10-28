@@ -41,6 +41,7 @@ pixi run -e cap6938 bench report             # results tables
 pixi run -e cap6938 judge run --gen-model gemini-3.5-flash-lite   # visual judge over benchmark parts
 pixi run -e cap6938 judge sheet              # review page: eval/renders/index.html
 pixi run -e cap6938 retrieval-eval           # offline retrieval scores (no API calls)
+pixi run -e cap6938 references               # check the benchmark's reference solutions build
 ```
 
 ## Run it locally (no API key)
@@ -85,7 +86,7 @@ which is much slower. A reply that runs on can take over 5 minutes, so Ollama's 
 1. **Intake gate** (`stl_agent/gate/`): checks whether the request is in scope and whether any
    critical detail is missing; asks up to 3 questions, then shows the spec it will build.
 2. **Retrieval** (`stl_agent/retrieval.py`): picks similar solved examples from `stl_agent/data/examples.json`.
-3. **Generation and repair** (`stl_agent/pipeline.py`): the LLM writes CadQuery code; it runs in
+3. **Generation and repair** (`stl_agent/generate.py`): the LLM writes CadQuery code; it runs in
    the sandbox (`stl_agent/sandbox.py`), the mesh is validated, and errors are fed back for another attempt.
 4. **Combined parts** (`stl_agent/sources/assembly.py`): for requests like "a cat sitting on a tree", the gate
    plans pieces, each downloaded from Thingiverse or built with CadQuery, plus where each one goes; they are

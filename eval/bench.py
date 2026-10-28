@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from stl_agent.config import EXAMPLES_PATH, OUTPUT_DIR, ROOT, add_set_argument, override_settings, settings
-from stl_agent.pipeline import generate_cad
+from stl_agent.generate import generate_cad
 
 EVAL_DIR = Path(__file__).parent
 CASES_PATH = EVAL_DIR / "cases.json"

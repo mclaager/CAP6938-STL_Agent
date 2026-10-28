@@ -152,7 +152,7 @@ def test_old_environment_variables_are_ignored(monkeypatch):
 
 def test_generate_cad_reads_max_attempts_from_settings(write_settings, tmp_path):
     from stl_agent.llm import ScriptedLLM
-    from stl_agent.pipeline import generate_cad
+    from stl_agent.generate import generate_cad
     from stl_agent.retrieval import make_retriever
 
     write_settings("max_attempts = 2\n")

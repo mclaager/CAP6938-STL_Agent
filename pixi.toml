@@ -18,7 +18,7 @@ scikit-learn = "*"
 anthropic = "*"
 gradio = ">=4.0"
 pytest = ">=9.1.1, <10"
-networkx = ">=3.7, <4"
+networkx = ">=3.7, <4"  # trimesh mesh.split (connected bodies in sandbox.validate_mesh)
 vtk = "*"  # offscreen rendering for the judge (already a CadQuery dependency)
 pillow = "*"
 manifold3d = ">=3.0"  # boolean union when combining pieces (#10)
@@ -31,6 +31,8 @@ test = "python -m pytest -q"
 bench = "python -m eval.bench"
 judge = "python -m eval.judge"
 retrieval-eval = "python -m eval.retrieval"
+references = "python -m eval.references"
+gate-specs = "python -m eval.gate_specs"
 settings = "python -m stl_agent.config"
 
 [feature.cap6938.dependencies]

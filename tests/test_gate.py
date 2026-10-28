@@ -72,7 +72,7 @@ def test_no_examples_field_means_gate_did_not_pick():
 
 def test_pipeline_prefers_gate_picks(tmp_path):
     from stl_agent.llm import ScriptedLLM
-    from stl_agent.pipeline import generate_cad
+    from stl_agent.generate import generate_cad
     from stl_agent.retrieval import TfidfRetriever
 
     good = "PLAN:\n- x\nBBOX: 1, 1, 1\n```python\nimport cadquery as cq\nshow_object(cq.Workplane().box(1, 1, 1))\n```"

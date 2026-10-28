@@ -76,7 +76,7 @@ def test_failed_run_feedback_includes_hints():
 
 def test_attempt_log_keeps_reply_reasoning_and_feedback(tmp_path):
     from stl_agent.llm import ScriptedLLM
-    from stl_agent.pipeline import generate_cad
+    from stl_agent.generate import generate_cad
     from stl_agent.retrieval import make_retriever
 
     reply = "PLAN:\n- cube\nBBOX: 10, 10, 10\n```python\nimport cadquery as cq\nresult = cq.Workplane().{}\nshow_object(result)\n```"
