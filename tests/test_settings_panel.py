@@ -157,3 +157,14 @@ def test_thingiverse_status_mentions_token(monkeypatch):
     assert "is not set" in panel.thingiverse_status()
     monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
     assert "is set" in panel.thingiverse_status()
+
+
+def test_size_feedback_saves_and_default_stays_commented():
+    from stl_agent.config import settings
+
+    assert settings().size_feedback == "measured"
+    assert panel.save_size_feedback("fix") == "Saved."
+    assert settings().size_feedback == "fix" and settings().sources["size_feedback"] == settings().path.name
+    panel.save_size_feedback("measured")
+    assert settings().sources["size_feedback"] == "default"
+    assert panel.save_size_feedback("never").startswith("Not saved")

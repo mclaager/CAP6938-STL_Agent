@@ -31,16 +31,19 @@ RESULTS_DIR = EVAL_DIR / "results"
 
 # name -> generate_cad keyword arguments
 CONFIGS = {
-    # "rag" is pinned to no API hints, as all rows recorded before the api_hints setting were; "rag-hints" adds them.
-    "rag": dict(use_rag=True, top_k=3, api_hints=False),  # pinned, whatever the app default is
-    "rag-hints": dict(use_rag=True, top_k=3, api_hints=True),
-    "norag": dict(use_rag=False, api_hints=False),
-    "rag-k1": dict(use_rag=True, top_k=1, api_hints=False),  # top-k ablation (#7): 1 and 5 examples vs the default 3
-    "rag-k5": dict(use_rag=True, top_k=5, api_hints=False),
+    # Every config is pinned to the settings all earlier rows were recorded with, whatever the app default is:
+    # no API hints and the general size-failure message (size_feedback "fix"). "rag-hints" adds API hints;
+    # "rag-size" uses the size-failure message the app has used since #23.
+    "rag": dict(use_rag=True, top_k=3, api_hints=False, size_feedback="fix"),
+    "rag-hints": dict(use_rag=True, top_k=3, api_hints=True, size_feedback="fix"),
+    "rag-size": dict(use_rag=True, top_k=3, api_hints=False, size_feedback="measured"),
+    "norag": dict(use_rag=False, api_hints=False, size_feedback="fix"),
+    "rag-k1": dict(use_rag=True, top_k=1, api_hints=False, size_feedback="fix"),  # top-k ablation (#7): 1 and 5 examples vs the default 3
+    "rag-k5": dict(use_rag=True, top_k=5, api_hints=False, size_feedback="fix"),
     # "retriever" is a stl_agent.retrieval kind, default "tfidf". Older results also contain
     # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag) and rag-ext (built-in library
     # plus a Text-to-CadQuery pool, removed: no gain, see eval/results/external-rag.md).
-    "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char", api_hints=False),
+    "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char", api_hints=False, size_feedback="fix"),
 }
 
 

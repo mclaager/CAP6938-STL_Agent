@@ -90,6 +90,29 @@ def build_repair_message(feedback: str) -> str:
     )
 
 
+def size_only_failure(val: ValidationReport, claimed) -> bool:
+    """The part is one sound solid and failed only the check against the model's own BBOX line."""
+    return bool(claimed) and val.bbox_ok is False and val.watertight and val.n_components == 1 and val.volume_mm3 > 0
+
+
+def build_size_message(val: ValidationReport, claimed, mode: str) -> str | None:
+    """Repair message for a size-only failure (#23), by the `size_feedback` setting; None for "fix" (the
+    general message). The BBOX line is the model's own estimate, so either it or the script can be wrong.
+    "measured" also gives the part's size: most correct parts then pass, but the model sometimes copies the
+    size into BBOX, so some wrong ones pass too; "ask" leaves it out (eval/results/size-check.md)."""
+    if mode not in ("ask", "measured"):
+        return None
+    fmt = lambda b: " x ".join(f"{x:g}" for x in b)  # noqa: E731
+    size = (f"the part measures {fmt(val.bbox_mm)} mm, your BBOX says {fmt(claimed)} mm (axes in any order)"
+            if mode == "measured" else f"({fmt(claimed)} mm)")
+    sep = ": " if mode == "measured" else " "
+    return (f"The script ran and built one watertight solid, but its size does not match your BBOX line{sep}{size}.\n\n"
+            "Either the script or the BBOX line is wrong. Work out from the request what the finished part's overall "
+            "size should be. If the script already builds what the request asks for, reply with the same script "
+            "unchanged and a corrected BBOX. "
+            "Otherwise fix the script. Reply with PLAN, BBOX and the complete script in the same format.")
+
+
 # ---------------------------------------------------------------------------
 # 2. Response parsing
 # ---------------------------------------------------------------------------
@@ -168,13 +191,15 @@ def generate_cad(
     top_k: int | None = None,
     use_rag: bool = True,
     api_hints: bool | None = None,
+    size_feedback: str | None = None,
     example_ids: list[str] | None = None,
     exec_timeout: float = 60.0,
 ) -> GenResult:
-    """Run the full generate -> execute -> validate -> repair loop. `max_attempts` / `top_k` / `api_hints` left
-    as None come from the current settings."""
+    """Run the full generate -> execute -> validate -> repair loop. `max_attempts` / `top_k` / `api_hints` /
+    `size_feedback` left as None come from the current settings."""
     max_attempts = max_attempts or settings().max_attempts
     api_hints = settings().api_hints if api_hints is None else api_hints
+    size_feedback = size_feedback or settings().size_feedback
     top_k = settings().top_k if top_k is None else top_k
     t0 = time.time()
     out_dir = Path(out_dir) if out_dir else OUTPUT_DIR / "runs" / time.strftime("run_%Y%m%d_%H%M%S")
@@ -257,7 +282,8 @@ def generate_cad(
             break
 
         log("Mesh failed validation: " + "; ".join(val.issues))
-        rec["feedback"] = build_repair_message(feedback_for_llm(ex, val))
+        size_msg = build_size_message(val, parsed.bbox, size_feedback) if size_only_failure(val, parsed.bbox) else None
+        rec["feedback"] = size_msg or build_repair_message(feedback_for_llm(ex, val))
         messages.append({"role": "user", "content": rec["feedback"]})
 
     if not res.success and best is not None and not res.unsupported:
