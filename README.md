@@ -113,4 +113,5 @@ Done: the generation pipeline with retrieval and intake gate, the evaluation ben
 the visual judge, the Thingiverse fallback, combined parts, and a fully local mode (Ollama). Open work is tracked in
 [GitHub issues](../../issues): the final report, a Jev gate backend, the size-check fix, a stronger
 judge model, whether retrieved examples make the model skip requested features, running the visual judge during
-builds (optional), and editing a built part instead of rebuilding it.
+builds (optional), editing a built part instead of rebuilding it, and for combined parts: checking that downloaded
+models are the right object, showing each piece, and copies of a piece.
