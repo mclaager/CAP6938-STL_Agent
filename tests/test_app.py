@@ -31,11 +31,11 @@ def test_clarify_then_build(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "run_pipeline", fake_pipeline)
     state = app.new_state()
 
-    chat = last(app.on_message("phone stand", [], state, False))[1]
+    chat = last(app.on_message("phone stand", [], state))[1]
     assert "Phone width?" in chat[-1]["content"]
     assert state["rounds"] == 1 and state["spec"] is None
 
-    chat = last(app.on_message("80mm", chat, state, False))[1]
+    chat = last(app.on_message("80mm", chat, state))[1]
     assert "stand 80mm" in chat[-1]["content"]
     assert state["spec"] == "stand 80mm" and state["name"] == "phone-stand"
 
@@ -68,7 +68,7 @@ def test_out_of_scope_shows_thingiverse_results(monkeypatch):
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
     monkeypatch.setattr(thingiverse, "search", lambda term: terms.append(term) or [candidate(1), candidate(2)])
     state = app.new_state()
-    _, chat, state, build, gallery = last(app.on_message("a statue of a horse", [], state, False))
+    _, chat, state, build, gallery = last(app.on_message("a statue of a horse", [], state))
     assert terms == ["horse statue"]
     assert [c.id for c in state["candidates"]] == [1, 2]
     assert gallery.visible and "Thingiverse" in chat[-1]["content"]
@@ -94,7 +94,7 @@ def test_out_of_scope_auto_downloads_without_gallery(monkeypatch, tmp_path):
     monkeypatch.setattr(thingiverse, "search", lambda term: [candidate(1), candidate(2)])
     monkeypatch.setattr(app, "run_fetch", fake_fetch)
     state = app.new_state()
-    _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state, False))
+    _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state))
     assert fetched == [1, 2] and not gallery.visible  # first one failed, second downloaded
     assert "Horse 2" in chat[-1]["content"] and state["result"]["stl"].endswith("horse-statue.stl")
 
@@ -105,7 +105,7 @@ def test_out_of_scope_without_token_declines_as_before(monkeypatch):
     monkeypatch.delenv(thingiverse.TOKEN_VAR, raising=False)
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
     state = app.new_state()
-    _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state, False))
+    _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state))
     d = decide_from_report(HORSE, "x", 0)
     assert chat[-1]["content"] == app.format_decision(d)  # the plain decline, nothing about Thingiverse
     assert not gallery.visible and state["candidates"] == []
@@ -166,7 +166,7 @@ def composite(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(COMPOSITE, "x", rounds))
     monkeypatch.setattr(app, "run_assembly", fake_assembly)
     state = app.new_state()
-    chat = last(app.on_message("a cat on a tree with a name plate", [], state, False))[1]
+    chat = last(app.on_message("a cat on a tree with a name plate", [], state))[1]
     return dict(state=state, chat=chat, calls=calls, results=results)
 
 

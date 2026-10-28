@@ -13,8 +13,6 @@ thingiverse_pick = "manual", Build first shows a gallery per downloaded piece fo
 The settings panel (⚙) is in settings_panel.py.
 """
 
-import hashlib
-import json
 import queue
 import threading
 from pathlib import Path
@@ -23,7 +21,7 @@ import gradio as gr
 import numpy as np
 import trimesh
 
-from .config import CACHE_DIR, OUTPUT_DIR, settings
+from .config import OUTPUT_DIR, settings
 from .gate import CLARIFY, OUT_OF_SCOPE
 from .pipeline import describe_settings, run_assembly, run_fetch, run_gate, run_pipeline
 from .settings_panel import build_panel
@@ -38,23 +36,6 @@ EXAMPLES = [
     "A hollow open-top box, 50x30x20mm, with 2mm walls",
     "A statue of a horse",
 ]
-
-
-def cache_key(request: str) -> str:
-    """Stable across runs (unlike hash()); use the same function when saving demo results."""
-    return hashlib.md5(request.strip().lower().encode()).hexdigest()[:12]
-
-
-def load_cached(request: str):
-    """Offline fallback: demo_cache/<cache_key>/ holding model.stl, code.py and report.json."""
-    folder = CACHE_DIR / cache_key(request)
-    if (folder / "model.stl").exists():
-        return (
-            str(folder / "model.stl"),
-            (folder / "code.py").read_text(),
-            json.loads((folder / "report.json").read_text()),
-        )
-    return None
 
 
 PREVIEW_COLOR = (70, 130, 200, 255)  # RGBA; STL has no color of its own
@@ -180,7 +161,7 @@ def format_decision(d) -> str:
 # so the streaming handlers only update the chat and log, put any finished result in
 # state["result"], and `show_result` fills the result panels in a separate, plain step.
 # ---------------------------------------------------------------------------
-def on_message(message: str, chat: list, state: dict, use_cache: bool):
+def on_message(message: str, chat: list, state: dict):
     """Returns (textbox, chat, state, build_button, gallery)."""
     message = (message or "").strip()
     if not message:
@@ -188,13 +169,6 @@ def on_message(message: str, chat: list, state: dict, use_cache: bool):
         return
 
     chat = chat + [{"role": "user", "content": message}]
-
-    if use_cache and not state["conversation"] and (cached := load_cached(message)):
-        stl, code, report = cached
-        state["result"] = {"stl": stl, "code": code, "report": report}
-        chat.append({"role": "assistant", "content": "Loaded a cached result (preview on the right)."})
-        yield "", chat, state, gr.Button(interactive=False), gr.skip()
-        return
 
     state["conversation"].append({"role": "user", "content": message})
     state.update(spec=None, candidates=[], pieces=[], picks={}, picking=None, assemble=False)
@@ -466,7 +440,6 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
                 send = gr.Button("Send")
                 build = gr.Button("Build it", variant="primary", interactive=False)
                 reset = gr.Button("New part")
-            use_cache = gr.Checkbox(label="Use cached demo results if available (offline fallback)", value=False)
             log_box = gr.Textbox(label="Agent log", lines=4, max_lines=4, interactive=False, elem_id="log-box")
 
         with gr.Column(scale=1):
@@ -481,7 +454,7 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
 
     results = [viewer, download, code_box, report_box]
     for trigger in (send.click, msg.submit):
-        trigger(on_message, inputs=[msg, chat, state, use_cache], outputs=[msg, chat, state, build, gallery]).then(
+        trigger(on_message, inputs=[msg, chat, state], outputs=[msg, chat, state, build, gallery]).then(
             show_result, inputs=state, outputs=[state, *results]
         )
     build.click(clear_result, outputs=results).then(

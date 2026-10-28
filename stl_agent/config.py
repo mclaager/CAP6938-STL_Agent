@@ -38,7 +38,6 @@ DATA_DIR = PACKAGE_DIR / "data"
 EXAMPLES_PATH = DATA_DIR / "examples.json"
 FONT_DIR = DATA_DIR / "fonts"  # bundled Liberation Sans (SIL OFL, see fonts/LICENSE)
 OUTPUT_DIR = ROOT / "outputs"
-CACHE_DIR = ROOT / "demo_cache"  # optional offline demo results, see app.load_cached
 
 
 def load_dotenv(path: Path = ROOT / ".env") -> None:
