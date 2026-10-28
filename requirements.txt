@@ -4,8 +4,8 @@ numpy
 scikit-learn
 anthropic
 gradio>=4.0
-pytest
-networkx
+pytest>=9.1.1,<10
+networkx>=3.7,<4
 vtk
 pillow
 httpx

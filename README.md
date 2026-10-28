@@ -41,6 +41,7 @@ pixi run -e cap6938 bench report             # results tables
 pixi run -e cap6938 judge run --gen-model gemini-3.5-flash-lite   # visual judge over benchmark parts
 pixi run -e cap6938 judge sheet              # review page: eval/renders/index.html
 pixi run -e cap6938 retrieval-eval           # offline retrieval scores (no API calls)
+pixi run -e cap6938 references               # check the benchmark's reference solutions build
 ```
 
 ## Run it locally (no API key)

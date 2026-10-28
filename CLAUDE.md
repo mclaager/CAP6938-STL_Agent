@@ -17,6 +17,8 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 bench run [--model M] [--category simple] [--budget 18]` — benchmark (#7);
   `pixi run -e cap6938 bench report` prints markdown tables from `eval/results/`
 - `pixi run -e cap6938 retrieval-eval` — offline retrieval scores (no LLM requests, seconds)
+- `pixi run -e cap6938 references` — build every reference solution and check it against `eval/cases.json`
+- `pixi run -e cap6938 gate-specs` — save the gate's specs for the casual retrieval queries (one gate request each)
 - `pixi run -e cap6938 judge run --gen-model M [--config rag norag]` — visual judge over benchmark parts (#8);
   `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`)
 
@@ -59,7 +61,7 @@ and waits out short rate-limit replies instead of failing.
 `gemini-3.5-flash-lite` has a much larger daily quota (about 500) but is a weaker coder; see `bench report`.
 
 Add dependencies to `pixi.toml` under the `cap6938` feature. `requirements.txt` mirrors the
-pypi deps for non-pixi users, so keep the two in sync.
+pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list the same packages.
 
 ## Layout
 
