@@ -33,6 +33,7 @@ judge = "python -m eval.judge"
 retrieval-eval = "python -m eval.retrieval"
 references = "python -m eval.references"
 gate-specs = "python -m eval.gate_specs"
+size-check = "python -m eval.size_check"
 settings = "python -m stl_agent.config"
 
 [feature.cap6938.dependencies]
