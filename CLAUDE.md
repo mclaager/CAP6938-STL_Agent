@@ -65,8 +65,10 @@ pypi deps for non-pixi users, so keep the two in sync.
 
 `stl_agent/` is the Python package:
 
-- `pipeline.py` — prompts, response parsing, and the generate → execute → validate → repair loop
-  (`generate_cad`). App entry points `run_gate(conversation, rounds)` and `run_pipeline(request, log, name)`.
+- `generate.py` — prompts, response parsing, and the generate → execute → validate → repair loop
+  (`generate_cad`, `GenResult`). No caching or saving: the benchmark calls it directly.
+- `pipeline.py` — the app's entry points: `run_gate(conversation, rounds)`, `run_pipeline(request, log, name)`,
+  `run_fetch`, `run_assembly`, with the LLM, gate and retriever cached until `reset_backends()`.
 - `config.py` — paths, `.env` loading (API keys), and settings: `Settings`, `settings()`, the settings file
   (create, validate, `set_setting` / `unset_setting`), `--set` overrides. Defaults in `data/settings.defaults.toml`.
 - `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`. Every backend

@@ -89,7 +89,7 @@ class FakeGen:
         self.folder, self.size, self.calls, self.success = folder, size, [], True
 
     def __call__(self, request, log, **kw):
-        from stl_agent.pipeline import GenResult
+        from stl_agent.generate import GenResult
 
         self.calls.append(request)
         path = self.folder / f"gen{len(self.calls)}.stl"
