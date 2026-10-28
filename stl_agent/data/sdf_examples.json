@@ -1,0 +1,145 @@
+[
+ {
+  "id": "sdf_snowman",
+  "cls": "characters",
+  "keywords": "snowman stacked balls figure character hat carrot nose",
+  "request": "A snowman about 60 mm tall: three stacked balls, a top hat and a carrot nose.",
+  "code": "from sdf import *\n\nbase_r, middle_r, head_r = 14, 10, 7\noverlap = 3  # each ball sinks into the one below, so they join\n\nz_base = base_r - 2  # sits 2 mm into the ground plane: a flat footprint after the cut below\nz_middle = z_base + base_r + middle_r - overlap\nz_head = z_middle + middle_r + head_r - overlap\n\nbody = union(\n    sphere(base_r).translate((0, 0, z_base)),\n    sphere(middle_r).translate((0, 0, z_middle)).k(3),\n    sphere(head_r).translate((0, 0, z_head)).k(2),\n)\nhat = (capped_cylinder((0, 0, 0), (0, 0, 1.5), 7.5)                  # brim\n       | capped_cylinder((0, 0, 1.5), (0, 0, 8), 5)).translate((0, 0, z_head + head_r - 2))\nnose = capped_cone((0, 0, 0), (7, 0, 0), 1.5, 0.3).translate((head_r - 1, 0, z_head))\nsnowman = body | hat | nose.k(0.5)\n\nground = box(200, center=(0, 0, -100))  # everything below z = 0\nresult = snowman - ground\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   28.0,
+   28.0,
+   60.0
+  ],
+  "volume_mm3": 17470.3
+ },
+ {
+  "id": "sdf_mushroom",
+  "cls": "plants",
+  "keywords": "mushroom toadstool cap stem fungus dome",
+  "request": "A mushroom 40 mm tall with a domed cap 40 mm across on a thick stem.",
+  "code": "from sdf import *\n\ncap_r, cap_h = 20, 12          # cap radius and height of the dome\nstem_r_bottom, stem_r_top = 7, 5\nstem_h = 30\n\nstem = capped_cone((0, 0, 0), (0, 0, stem_h), stem_r_bottom, stem_r_top)\n# Dome: a flattened ellipsoid with its lower half cut off, slightly hollowed underneath.\ndome = ellipsoid((cap_r, cap_r, cap_h)) - box((3 * cap_r, 3 * cap_r, cap_h), center=(0, 0, -cap_h / 2))\ngills = ellipsoid((cap_r - 3, cap_r - 3, 3))\ncap = (dome - gills.k(2)).translate((0, 0, stem_h - 2))\n\nresult = stem | cap.k(2)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   40.0,
+   40.0,
+   40.0
+  ],
+  "volume_mm3": 11661.86
+ },
+ {
+  "id": "sdf_pine_tree",
+  "cls": "plants",
+  "keywords": "pine tree fir christmas tree cones layers trunk",
+  "request": "A stylised pine tree 70 mm tall: three stacked cone layers on a short trunk.",
+  "code": "from sdf import *\n\ntrunk_r, trunk_h = 4, 12\nlayers = [  # (bottom z, height, bottom radius) from the bottom up\n    (10, 26, 22),\n    (26, 24, 17),\n    (41, 29, 12),\n]\n\ntrunk = capped_cylinder((0, 0, 0), (0, 0, trunk_h), trunk_r)\ntree = trunk\nfor z, h, r in layers:\n    tree = tree | capped_cone((0, 0, z), (0, 0, z + h), r, 0.5).k(1.5)\n\nresult = tree\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   43.0,
+   43.0,
+   70.0
+  ],
+  "volume_mm3": 24694.7
+ },
+ {
+  "id": "sdf_fish",
+  "cls": "animals",
+  "keywords": "fish tail fin body swimming sea animal flat base",
+  "request": "A fish about 60 mm long with a forked tail and a dorsal fin, on a flat base so it stands up.",
+  "code": "from sdf import *\n\nbody_len, body_h, body_w = 22, 12, 7    # ellipsoid radii (half sizes): x along the fish, z up\nz = body_h - 1                            # body centre height; the belly sinks 1 mm below z = 0\n\nbody = ellipsoid((body_len, body_w, body_h)).translate((0, 0, z))\n# Tail: two thin lobes angled up and down behind the body.\nlobe = ellipsoid((8, 1.5, 4))\ntail = (lobe.rotate(0.6, Y).translate((-body_len - 4, 0, z + 4))\n        | lobe.rotate(-0.6, Y).translate((-body_len - 4, 0, z - 4)))\ndorsal = ellipsoid((9, 1.2, 5)).rotate(0.3, Y).translate((-2, 0, z + body_h))\neye = sphere(1.5)\neyes = eye.translate((body_len - 6, body_w - 1.5, z + 3)) | eye.translate((body_len - 6, -body_w + 1.5, z + 3))\n\nfish = body | tail.k(3) | dorsal.k(2)\nfish = fish - eyes\nresult = fish - box(200, center=(0, 0, -100))  # flat base at z = 0\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   55.0,
+   14.0,
+   28.5
+  ],
+  "volume_mm3": 8249.16
+ },
+ {
+  "id": "sdf_pear",
+  "cls": "food",
+  "keywords": "pear fruit stalk food round bottom narrow top",
+  "request": "A pear 55 mm tall with a short stalk.",
+  "code": "from sdf import *\n\nbottom_r, top_r = 17, 10\nbottom_z = bottom_r - 2        # sinks 2 mm into the base for a flat footprint\ntop_z = bottom_z + 20\n\n# Two spheres blended with a large radius give the pear's waist.\nfruit = sphere(bottom_r).translate((0, 0, bottom_z)) | sphere(top_r).translate((0, 0, top_z)).k(14)\nstalk = capsule((0, 0, top_z + top_r - 2), (2, 0, top_z + top_r + 8), 1.2)\n\nresult = (fruit | stalk.k(1.5)) - box(200, center=(0, 0, -100))\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   34.0,
+   34.0,
+   54.0
+  ],
+  "volume_mm3": 26301.02
+ },
+ {
+  "id": "sdf_teddy_bear",
+  "cls": "characters",
+  "keywords": "teddy bear toy sitting arms legs ears snout character",
+  "request": "A sitting teddy bear about 50 mm tall.",
+  "code": "from sdf import *\n\nbody = ellipsoid((13, 11, 15)).translate((0, 0, 14))\nhead = sphere(10).translate((0, 0, 36))\nsnout = ellipsoid((5, 5, 4)).translate((8, 0, 34))\near = sphere(4)\nleg = capsule((0, 0, 0), (12, 0, 0), 5)         # legs stick forward from the hips\narm = capsule((0, 0, 0), (5, 0, -12), 4)        # arms hang down along the front of the body\neye = sphere(1.3)\n\nhalf = union(                                   # one side (+Y); mirrored below\n    ear.translate((0, 8, 44)),\n    leg.translate((2, 7, 5)),\n    arm.translate((3, 11, 24)),\n)\nbear = union(body, head.k(4), snout.k(2), half.k(3), half.mirror(Y).k(3))\nbear = bear - eye.translate((8, 4, 39)) - eye.translate((8, -4, 39))\n\nresult = bear - box(200, center=(0, 0, -100))\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   32.0,
+   30.0,
+   48.0
+  ],
+  "volume_mm3": 17562.36
+ },
+ {
+  "id": "sdf_bunny",
+  "cls": "animals",
+  "keywords": "bunny rabbit long ears sitting animal tail",
+  "request": "A sitting rabbit 50 mm tall with long upright ears.",
+  "code": "import math\nfrom sdf import *\n\nbody = ellipsoid((14, 11, 13)).translate((-2, 0, 11))\nhead = ellipsoid((8, 7, 7)).translate((10, 0, 26))\nhaunch = ellipsoid((8, 4, 7)).translate((-4, 8, 8))\nfoot = ellipsoid((7, 3, 2.5)).translate((4, 8, 2))\near = ellipsoid((3, 1.5, 10)).rotate(math.radians(-10), Y)  # lean back a little\ntail = sphere(4).translate((-16, 0, 10))\neye = sphere(1.2)\n\nhalf = union(haunch, foot.k(2), ear.translate((7, 3.5, 38)))\nrabbit = union(body, head.k(5), half.k(3), half.mirror(Y).k(3), tail.k(2))\nrabbit = rabbit - eye.translate((16, 3.5, 28)) - eye.translate((16, -3.5, 28))\n\nresult = rabbit - box(200, center=(0, 0, -100))\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   38.0,
+   24.5,
+   48.0
+  ],
+  "volume_mm3": 11590.82
+ },
+ {
+  "id": "sdf_penguin",
+  "cls": "animals",
+  "keywords": "penguin bird standing flippers beak feet",
+  "request": "A standing penguin 55 mm tall with flippers, a beak and flat feet.",
+  "code": "import math\nfrom sdf import *\n\nbody = ellipsoid((13, 12, 20)).translate((0, 0, 20))\nhead = sphere(9).translate((1, 0, 42))\nbeak = capped_cone((0, 0, 0), (7, 0, 0), 2.5, 0.4).translate((8, 0, 41))\nflipper = ellipsoid((4, 1.5, 12)).rotate(math.radians(-15), X)   # tilt the bottom outward\nfoot = ellipsoid((6, 3.5, 1.5)).translate((6, 5, 1.5))\neye = sphere(1.2)\n\nhalf = union(flipper.translate((0, 12, 24)), foot)\npenguin = union(body, head.k(6), beak.k(1), half.k(2), half.mirror(Y).k(2))\npenguin = penguin - eye.translate((8, 4, 45)) - eye.translate((8, -4, 45))\n\nresult = penguin - box(200, center=(0, 0, -100))\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   28.0,
+   31.0,
+   51.0
+  ],
+  "volume_mm3": 16611.89
+ },
+ {
+  "id": "sdf_ladybug",
+  "cls": "animals",
+  "keywords": "ladybug beetle insect dome shell spots head bug",
+  "request": "A ladybug 40 mm long: a domed shell with a centre line and round spots, and a small head.",
+  "code": "from sdf import *\n\nshell_len, shell_w, shell_h = 16, 13, 11       # ellipsoid radii\ndome = ellipsoid((shell_len, shell_w, shell_h)) - box(100, center=(0, 0, -50))  # top half only\nhead = ellipsoid((6, 7, 5)).translate((shell_len, 0, 2))\n# Centre line: a 1 mm deep groove, the dome's outer skin where it crosses a thin slab.\nskin = ellipsoid((shell_len, shell_w, shell_h)).shell(2)\ncentre_line = skin & box((2 * shell_len, 1.2, 2 * shell_h), center=(-4, 0, shell_h))\n# Spots: shallow dents, 3 mm balls with their centres just under the surface.\nspot = sphere(3)\nspots = union(*[spot.translate((x, y, z)) for x, y, z in\n                [(5, 6, 8), (-6, 7, 7), (5, -6, 8), (-6, -7, 7)]])\n\nresult = (dome | head.k(2)) - centre_line - spots.k(0.5) - box(200, center=(0, 0, -100))\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   38.0,
+   26.0,
+   11.0
+  ],
+  "volume_mm3": 4896.98
+ },
+ {
+  "id": "sdf_cactus",
+  "cls": "plants",
+  "keywords": "cactus potted plant arms pot succulent desert",
+  "request": "A cactus with two arms growing out of a round pot, 65 mm tall in total.",
+  "code": "from sdf import *\n\npot_r_bottom, pot_r_top, pot_h = 13, 16, 18\npot = capped_cone((0, 0, 0), (0, 0, pot_h), pot_r_bottom, pot_r_top)\nsoil_z = pot_h - 1\n\nstem = capsule((0, 0, soil_z), (0, 0, 60), 7)\n# Each arm: out sideways, then up.\narm_r = 4.5\nleft = capsule((0, 0, 30), (-14, 0, 30), arm_r) | capsule((-14, 0, 30), (-14, 0, 44), arm_r).k(3)\nright = capsule((0, 0, 38), (12, 0, 38), arm_r) | capsule((12, 0, 38), (12, 0, 50), arm_r).k(3)\n\ncactus = stem | left.k(3) | right.k(3)\nresult = pot | cactus.k(1)\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   36.5,
+   31.5,
+   67.0
+  ],
+  "volume_mm3": 22348.96
+ },
+ {
+  "id": "sdf_pumpkin",
+  "cls": "food",
+  "keywords": "pumpkin squash ribbed fruit lobes stem halloween",
+  "request": "A ribbed pumpkin 60 mm across with a curved stem.",
+  "code": "import math\nfrom sdf import *\n\nradius, height = 30, 20        # overall half width and half height\nlobes = 8\nlobe = ellipsoid((radius * 0.55, radius * 0.45, height))\n# Lobes in a ring, each pushed out from the centre and turned to face outward, blended together.\nring = [lobe.translate((radius * 0.45, 0, 0)).rotate(2 * math.pi * i / lobes, Z) for i in range(lobes)]\nbody = union(*ring, k=4).translate((0, 0, height - 1))\nstem = (capsule((0, 0, 0), (0, 0, 8), 3) | capsule((0, 0, 8), (4, 0, 12), 2.5).k(2)).translate((0, 0, 2 * height - 3))\n\nresult = (body | stem.k(2)) - box(200, center=(0, 0, -100))\nshow_object(result)\n",
+  "expected_bbox_mm": [
+   60.0,
+   60.0,
+   51.5
+  ],
+  "volume_mm3": 81434.02
+ }
+]

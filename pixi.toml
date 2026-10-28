@@ -27,6 +27,7 @@ httpx = "*"  # Gemini/Ollama client and Thingiverse (already a Gradio dependency
 [feature.cap6938.tasks]
 app = "python -m stl_agent.app"
 examples = "python -m scripts.make_examples"
+sdf-examples = "python -m scripts.make_sdf_examples"
 test = "python -m pytest -q"
 bench = "python -m eval.bench"
 judge = "python -m eval.judge"
