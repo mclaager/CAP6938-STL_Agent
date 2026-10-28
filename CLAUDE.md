@@ -190,12 +190,12 @@ Done:
 - #9 Thingiverse fallback: out-of-scope requests search Thingiverse and download the picked model
   (searching on an explicit user request is not planned)
 - #10 Combined parts: the gate plans pieces (generated or downloaded), placed by relation and merged into one STL
+- #19 Fully local mode: Ollama provider, chosen in the app's settings panel (`eval/results/judge-local-gemma4-12b.md`)
 
 Open work is in GitHub issues, with the original course timeline's target dates where there is one:
 
 - #11 Final report (weeks 9–10)
 - #12 Jev gate backend and gate evaluation (not from the original proposal; a Jev judge backend could follow)
-- #19 Fully local mode, configurable in the app
 - #23 Size check rejects correct parts when the model's own BBOX estimate is wrong
 - #28 Compare a stronger judge model on the hand-labelled parts
 - #29 Test whether RAG makes the model copy the retrieved example instead of building every requested feature
