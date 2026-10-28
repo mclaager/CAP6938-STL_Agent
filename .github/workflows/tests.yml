@@ -1,0 +1,21 @@
+# Runs the test suite (offline: no LLM requests, no network) on every PR and on pushes to main.
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.11.2
+        with:
+          pixi-version: v0.66.0
+          environments: cap6938
+          cache: true
+          locked: true
+      - run: pixi run -e cap6938 test
