@@ -188,7 +188,7 @@ def run_assembly(pieces: list[dict], log, name: str | None = None,
 
     picks = picks or {}
     plan = [dict(p) for p in pieces]
-    folder = OUTPUT_DIR / time.strftime("assembly_%Y%m%d_%H%M%S")
+    folder = OUTPUT_DIR / "runs" / time.strftime("assembly_%Y%m%d_%H%M%S")
     folder.mkdir(parents=True, exist_ok=True)
     rows = {p["id"]: {"id": p["id"], "source": p["source"]} for p in plan}
     paths: dict[str, Path] = {}

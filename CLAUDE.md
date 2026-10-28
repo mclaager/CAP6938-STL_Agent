@@ -168,8 +168,10 @@ Elsewhere:
   MRR and latency per retriever, against hand-labelled relevant examples (original 19 cases only).
 - `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness, retrieval (all offline).
 - `scripts/` — maintenance scripts (`make_examples.py`).
-- `outputs/` — per-run folders plus each finished part as `<name>.stl` (name from the gate) and a
-  colored `<name>.preview.glb` for the viewer (gitignored).
+- `outputs/` (gitignored) — finished parts at the top: `<name>.stl` (name from the gate), a colored
+  `<name>.preview.glb` for the viewer, and `<name>.source.json` for downloads. Working folders (each attempt's
+  script and STL, `report.json`) go in `outputs/runs/` (`run_<time>`, `assembly_<time>`); benchmark runs in
+  `outputs/bench/`.
 
 Where planned work goes: Jev in
 `stl_agent/gate/jev.py` and `stl_agent/judge/jev.py` (#12); the gate evaluation set goes in `eval/`.

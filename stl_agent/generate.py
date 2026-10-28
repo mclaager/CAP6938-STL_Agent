@@ -177,7 +177,7 @@ def generate_cad(
     api_hints = settings().api_hints if api_hints is None else api_hints
     top_k = settings().top_k if top_k is None else top_k
     t0 = time.time()
-    out_dir = Path(out_dir) if out_dir else OUTPUT_DIR / time.strftime("run_%Y%m%d_%H%M%S")
+    out_dir = Path(out_dir) if out_dir else OUTPUT_DIR / "runs" / time.strftime("run_%Y%m%d_%H%M%S")
     out_dir.mkdir(parents=True, exist_ok=True)
     res = GenResult(success=False)
 
