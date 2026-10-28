@@ -19,6 +19,8 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 retrieval-eval` — offline retrieval scores (no LLM requests, seconds)
 - `pixi run -e cap6938 references` — build every reference solution and check it against `eval/cases.json`
 - `pixi run -e cap6938 gate-specs` — save the gate's specs for the casual retrieval queries (one gate request each)
+- `pixi run -e cap6938 size-check replay --model M [--variant claim blind] [--budget 100]` — replay size-only
+  rejections with each repair message (#23); `size-check report` prints the table
 - `pixi run -e cap6938 judge run --gen-model M [--config rag norag]` — visual judge over benchmark parts (#8);
   `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`)
 
@@ -47,7 +49,8 @@ Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemin
 `GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default `gemma4:12b`, the best of three local models tried, see
 `eval/results/`). Ollama's server
 defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
-`OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off), `top_k`, `retriever`, `gate`
+`OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off),
+`size_feedback` (repair message when only the size is off: `measured` default, `ask`, `fix`; also in the settings panel), `top_k`, `retriever`, `gate`
 (`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, `thingiverse_results`, `thingiverse_pick` (`manual`/`auto`), and for the visual judge `judge_provider`,
 `providers.<p>.judge_model` (Gemini default `gemini-3.1-flash-lite`, a different model from the one that built
 most benchmark parts) and `judge_threshold`. The gate uses the build model unless `providers.<p>.gate_model` is
@@ -154,7 +157,8 @@ Elsewhere:
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-hints` (rag plus `api_hints`; the others pin it off, as all
   earlier rows had it off), `rag-k1` / `rag-k5` (1 or 5
-  examples instead of 3), `rag-char` (letter-chunk retriever). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs) and `rag-ext` rows (built-in library plus a Text-to-CadQuery pool, removed: no gain, `eval/results/external-rag.md`). Each result row records
+  examples instead of 3), `rag-char` (letter-chunk retriever), `rag-size` (the size-failure message shipped with #23; the other
+  configs are pinned to the old one, `size_feedback = "fix"`, so earlier rows stay comparable). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs) and `rag-ext` rows (built-in library plus a Text-to-CadQuery pool, removed: no gain, `eval/results/external-rag.md`). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,
   prompt, render settings), so changing `--judge-model`, `--prompt` or `--px` adds a study beside the old
@@ -166,6 +170,11 @@ Elsewhere:
 - `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size
   (`python -m eval.references`; also run by the tests). Add one for every new case with an expected bbox,
   so the case is known to be buildable and its bbox is right. Never shown to the model.
+- `eval/size_check.py` — size-check replay (#23): rebuilds saved benchmark conversations up to a size-only
+  rejection, sends each repair message variant (one request, or two for `blend`), runs the reply and records
+  whether the part is accepted and at the right size. Results in `eval/results/size-check/<model>.jsonl`,
+  write-up in `eval/results/size-check.md`. Its message texts are frozen; `tests/test_size_check.py` checks the
+  shipped ones in `generate.build_size_message` still match.
 - `eval/retrieval.py` + `eval/retrieval_labels.json` — offline retrieval evaluation (#20): hit@1, recall@3,
   MRR and latency per retriever, against hand-labelled relevant examples (original 19 cases only).
 - `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness, retrieval (all offline).
@@ -191,12 +200,13 @@ Done:
   (searching on an explicit user request is not planned)
 - #10 Combined parts: the gate plans pieces (generated or downloaded), placed by relation and merged into one STL
 - #19 Fully local mode: Ollama provider, chosen in the app's settings panel (`eval/results/judge-local-gemma4-12b.md`)
+- #23 Size check: a size-only failure says the script or the model's BBOX estimate may be wrong, with the measured
+  size (`size_feedback`, `eval/results/size-check.md`)
 
 Open work is in GitHub issues, with the original course timeline's target dates where there is one:
 
 - #11 Final report (weeks 9–10)
 - #12 Jev gate backend and gate evaluation (not from the original proposal; a Jev judge backend could follow)
-- #23 Size check rejects correct parts when the model's own BBOX estimate is wrong
 - #28 Compare a stronger judge model on the hand-labelled parts
 - #29 Test whether RAG makes the model copy the retrieved example instead of building every requested feature
 - #35 Run the visual judge during builds (orientation of downloads, wrong-shape repair), as a user toggle
@@ -204,3 +214,4 @@ Open work is in GitHub issues, with the original course timeline's target dates 
 - #39 Check that a downloaded model is the requested object (name/tag check on search results)
 - #40 Show each piece of a combined part in the UI (per-piece code and STL downloads)
 - #41 Copies of a piece in a combined part (`copy_of`, spread placement, distinct models when asked)
+- #42 Build organic shapes with SDF modeling (own small library meshed by manifold3d, `organic_builder` setting)
