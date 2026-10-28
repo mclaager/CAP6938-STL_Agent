@@ -1,0 +1,29 @@
+{
+ "about": "Organic objects for SDF modeling (#42). No expected bounding box: parts are scored by the visual judge (eval/judge.py) against the request. 'subject' names the object (the SDF examples must not include it, tests/test_sdf.py); 'search' is what the thingiverse config searches for. Requests read like the gate's organic_spec: what the object looks like and how big it is.",
+ "cases": [
+  {"id": "o01", "category": "organic", "expect": "build", "subject": "cat", "search": "sitting cat",
+   "request": "A sitting cat about 50 mm tall, tail curled around its front paws, ears pointing up."},
+  {"id": "o02", "category": "organic", "expect": "build", "subject": "horse", "search": "horse figurine",
+   "request": "A standing horse figurine, 60 mm tall, four legs, long neck and head raised, a tail hanging down."},
+  {"id": "o03", "category": "organic", "expect": "build", "subject": "frog", "search": "frog",
+   "request": "A frog sitting on its folded back legs, about 40 mm long, with big bulging eyes on top of its head."},
+  {"id": "o04", "category": "organic", "expect": "build", "subject": "tulip", "search": "tulip flower",
+   "request": "A tulip flower 80 mm tall: a cup-shaped bloom of petals on a straight stem with two long leaves, on a small round base."},
+  {"id": "o05", "category": "organic", "expect": "build", "subject": "octopus", "search": "octopus",
+   "request": "A cartoon octopus 50 mm tall: a round head and eight curling tentacles spread around it on the ground."},
+  {"id": "o06", "category": "organic", "expect": "build", "subject": "owl", "search": "owl figurine",
+   "request": "An owl figurine 50 mm tall: an egg-shaped body, a round face with two large eyes and a small beak, ear tufts, wings folded at the sides."},
+  {"id": "o07", "category": "organic", "expect": "build", "subject": "rubber duck", "search": "rubber duck",
+   "request": "A rubber duck, 45 mm tall, with a flat bottom so it stands."},
+  {"id": "o08", "category": "organic", "expect": "build", "subject": "dinosaur", "search": "brontosaurus",
+   "request": "A long-necked dinosaur (brontosaurus) 80 mm long: a heavy body on four pillar legs, a long neck with a small head, and a long tail."},
+  {"id": "o09", "category": "organic", "expect": "build", "subject": "hand", "search": "hand sculpture",
+   "request": "A human hand, palm open with fingers spread, standing upright on its wrist, 90 mm tall."},
+  {"id": "o10", "category": "organic", "expect": "build", "subject": "apple", "search": "apple fruit",
+   "request": "An apple 50 mm wide with a short stem and one leaf."},
+  {"id": "o11", "category": "organic", "expect": "build", "subject": "dolphin", "search": "dolphin",
+   "request": "A dolphin leaping in an arc, 70 mm long, with a dorsal fin, flippers and a tail fluke, the tail touching a small round base."},
+  {"id": "o12", "category": "organic", "expect": "build", "subject": "turtle", "search": "turtle",
+   "request": "A turtle 60 mm long: a domed shell, four stubby legs, a head poking out the front and a short tail."}
+ ]
+}

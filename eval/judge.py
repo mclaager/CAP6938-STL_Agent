@@ -22,7 +22,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from eval.bench import RESULTS_DIR, CountingLLM, _lib_key, library_id, load_cases, read_results
+from eval.bench import RESULTS_DIR, CountingLLM, _lib_key, all_cases, library_for, load_cases, read_results
 from stl_agent.config import OUTPUT_DIR, ROOT, add_set_argument, override_settings, settings
 from stl_agent.render import RENDER_VERSION, png_bytes, render_grid
 
@@ -105,13 +105,15 @@ def ensure_render(stl: Path, out: Path, px: int) -> bytes:
     return out.read_bytes()
 
 
-def bench_rows(gen_model: str, configs: list[str] | None, case_ids: list[str] | None, library: str) -> list[dict]:
-    """Latest benchmark row per (case, config, rep) for this library (no-RAG rows from any library)."""
+def bench_rows(gen_model: str, configs: list[str] | None, case_ids: list[str] | None,
+               library: str | None = None) -> list[dict]:
+    """Latest benchmark row per (case, config, rep) for this library (no-RAG rows from any library). `library`
+    None: each config's current library (the SDF one for SDF configs)."""
     latest = {}
     for r in read_results(RESULTS_DIR / f"{gen_model}.jsonl"):
         if configs and r["config"] not in configs or case_ids and r["case"] not in case_ids:
             continue
-        if _lib_key(r["config"], r.get("library") or "lib9") not in ("any", library):
+        if _lib_key(r["config"], r.get("library") or "lib9") not in ("any", library or library_for(r["config"])):
             continue
         latest[(r["case"], r["config"], r.get("rep", 0))] = r
     return list(latest.values())
@@ -181,8 +183,8 @@ def judge_bench_row(s: Session, row: dict, case: dict) -> str:
 
 
 def cmd_run(args, s: Session) -> None:
-    cases = {c["id"]: c for c in load_cases()}
-    rows = bench_rows(args.gen_model, args.config, args.cases, args.library or library_id())
+    cases = {c["id"]: c for c in all_cases()}
+    rows = bench_rows(args.gen_model, args.config, args.cases, args.library)
     if args.reps is not None:
         rows = [r for r in rows if r.get("rep", 0) in args.reps]
     if not rows:
@@ -281,7 +283,7 @@ def cmd_calibrate(args, s: Session) -> None:
             break
     labels = load_labels()
     if labels and not s.stopped:  # labelled benchmark parts that haven't been judged yet
-        cases = {c["id"]: c for c in load_cases()}
+        cases = {c["id"]: c for c in all_cases()}
         for pid in labels:
             if s.stopped or s.is_done(pid) or label_pass(labels[pid]) is None:
                 continue
@@ -455,7 +457,7 @@ paint();
 def write_sheet(path: Path, threshold: float, render: str | None = None) -> Path:
     """Static review page next to the renders: every judged part and reference, with label buttons.
     `render`: only rows with this render setting (e.g. "v2-256px"); None shows all."""
-    cases = {c["id"]: c for c in load_cases()}
+    cases = {c["id"]: c for c in all_cases()}
     rows = []
     for f in sorted(JUDGE_DIR.glob("*.jsonl")):
         rows += read_results(f)

@@ -19,3 +19,7 @@ info/
 # Generated output
 outputs/
 *.stl
+
+# Renders of downloaded Thingiverse models (#42 comparison): third-party models, many licensed NC/ND, so not
+# committed. Recreated locally by `judge run` from outputs/bench/.
+eval/renders/*/*/*/thingiverse/
