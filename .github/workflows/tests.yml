@@ -18,4 +18,7 @@ jobs:
           environments: cap6938
           cache: true
           locked: true
-      - run: pixi run -e cap6938 test
+      # The judge's renders use VTK, which crashes on a runner with no display or GPU: give it Mesa's
+      # software OpenGL and a virtual display.
+      - run: sudo apt-get update && sudo apt-get install -y xvfb libgl1 libegl1 libgl1-mesa-dri
+      - run: xvfb-run -a pixi run -e cap6938 test
