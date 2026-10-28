@@ -110,7 +110,10 @@ Settings (model, attempts, gate behaviour) are in `settings.toml`; the defaults,
 ## Roadmap
 
 Done: the generation pipeline with retrieval and intake gate, the evaluation benchmark with RAG ablation,
-the visual judge, the Thingiverse fallback, and combined parts. Open work is tracked in
-[GitHub issues](../../issues): the final report, a Jev gate backend, a fully local mode, the size-check fix, a stronger
+the visual judge, the Thingiverse fallback, combined parts, a fully local mode (Ollama), and a better repair message
+when only a part's size is off. Open work is tracked in
+[GitHub issues](../../issues): the final report, a Jev gate backend, a stronger
 judge model, whether retrieved examples make the model skip requested features, running the visual judge during
-builds (optional), and editing a built part instead of rebuilding it.
+builds (optional), editing a built part instead of rebuilding it, and for combined parts: checking that downloaded
+models are the right object, showing each piece, and copies of a piece; and building organic shapes with signed
+distance functions instead of downloading them.

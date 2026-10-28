@@ -13,6 +13,12 @@ max_attempts = 4
 # local-model run (rag vs rag-hints in eval/results/), it gave no more correct parts.
 api_hints = false
 
+# Repair message when a part fails only the size check (#23). The check compares the part with the model's own
+# BBOX estimate, so either can be wrong. "measured": say so, with the part's measured size, and let the model
+# decide; "ask": the same without the measured size (fewer wrong-size parts get through, but fewer correct ones
+# too); "fix": the general "fix the script" message used before #23. See eval/results/size-check.md.
+size_feedback = "measured"
+
 # Examples from the few-shot library put in each prompt (RAG). 0 for none.
 top_k = 3
 

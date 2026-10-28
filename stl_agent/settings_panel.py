@@ -1,4 +1,4 @@
-"""The app's settings panel (the ⚙ sidebar): model settings and Thingiverse picking.
+"""The app's settings panel (the ⚙ sidebar): model settings, Thingiverse picking and the size-check message.
 
 Model settings: provider, model, gate model and server address, saved to the settings file. Fields hold the
 current value; an empty field (or the default value) leaves the setting at its default. "Test connection"
@@ -121,18 +121,33 @@ def load_thingiverse():
     return settings().thingiverse_pick, thingiverse_status()
 
 
-def save_pick(mode: str) -> str:
-    """Save the pick mode; the default value stays commented out in the settings file."""
-    if mode not in dict((v, k) for k, v in PICK_CHOICES):
-        return f"Not saved: unknown choice {mode!r}."
+def save_choice(key: str, choices: list[tuple[str, str]], value: str) -> str:
+    """Save a radio-button setting; the default value stays commented out in the settings file."""
+    if value not in dict((v, k) for k, v in choices):
+        return f"Not saved: unknown choice {value!r}."
     try:
-        if mode == defaults()["thingiverse_pick"]:
-            unset_setting("thingiverse_pick")
+        if value == defaults()[key]:
+            unset_setting(key)
         else:
-            set_setting("thingiverse_pick", mode)
+            set_setting(key, value)
     except ValueError as e:
         return f"Not saved: {e}"
-    return "Saved. " + thingiverse_status()
+    return "Saved."
+
+
+def save_pick(mode: str) -> str:
+    out = save_choice("thingiverse_pick", PICK_CHOICES, mode)
+    return out + " " + thingiverse_status() if out == "Saved." else out
+
+
+# Builds section: the repair message when a part fails only the size check (#23, eval/results/size-check.md).
+SIZE_CHOICES = [("Ask whether the script or its size estimate is wrong, with the measured size", "measured"),
+                ("Ask without the measured size (fewer wrong-size parts pass, fewer right ones too)", "ask"),
+                ("Always ask for a fixed script (before #23)", "fix")]
+
+
+def save_size_feedback(mode: str) -> str:
+    return save_choice("size_feedback", SIZE_CHOICES, mode)
 
 
 def _installed(model: str, models: list[str]) -> bool:
@@ -204,6 +219,11 @@ def build_panel(demo: gr.Blocks, cog: gr.Button) -> gr.Sidebar:
         pick_in = gr.Radio(PICK_CHOICES, label="Picking models")
         pick_md = gr.Markdown()
 
+        gr.Markdown("## Builds\nEach part is checked against the size the model said it would be. When that is "
+                    "the only problem, either the script or the model's estimate is wrong. Saved when you change it.")
+        size_in = gr.Radio(SIZE_CHOICES, label="When only the size is off")
+        size_md = gr.Markdown()
+
     form = [model_in, gate_in, url_in, key_md]
     # Gradio's own progress overlay would cover the fields and show a countdown guessed from the last run;
     # test_connection writes its own "Testing..." line instead.
@@ -220,4 +240,6 @@ def build_panel(demo: gr.Blocks, cog: gr.Button) -> gr.Sidebar:
     save_btn.click(save_settings, inputs=[provider_in, model_in, gate_in, url_in], outputs=settings_md, **quiet)
     demo.load(load_thingiverse, outputs=[pick_in, pick_md], **quiet)
     pick_in.input(save_pick, inputs=pick_in, outputs=pick_md, **quiet)
+    demo.load(lambda: settings().size_feedback, outputs=size_in, **quiet)
+    size_in.input(save_size_feedback, inputs=size_in, outputs=size_md, **quiet)
     return panel
