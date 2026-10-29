@@ -105,12 +105,14 @@ Transforms (each returns a new shape):
   .mirror(Y)     reflected copy; build one side, then side | side.mirror(Y) for a left-right pair
   .elongate((x, y, z))  stretch through the middle    .shell(t)  hollow skin t thick
   .dilate(r)  grow by r
+  .on_ground(sink=1.5)  stand it on z = 0 with a small flat footprint (always the last step)
 There is no text, no sweep along a curve, no mesh import, no surface noise.
 
 SCRIPT RULES
 - Start with `from sdf import *`. Only `math` and `numpy as np` may also be imported. No file I/O.
-- Z is up. The object stands on z = 0: let the lowest parts sink a little below it, then cut everything
-  below with `- box(200, center=(0, 0, -100))` for a flat base it can be printed on.
+- Z is up. Build the object wherever is convenient, then finish with `result = shape.on_ground()`: it moves
+  the shape so its lowest point is 1.5 mm below z = 0 and cuts off what is below, a flat footprint to
+  print on. Never cut at z = 0 yourself: a shape built around the origin would lose its lower half.
 - Put the main sizes in named variables at the top (mm). Build the large volumes first, then attached
   features, then cuts (eyes, mouth) last.
 - Everything must touch: the final shape must be one connected solid. Overlap joined parts by a few mm.

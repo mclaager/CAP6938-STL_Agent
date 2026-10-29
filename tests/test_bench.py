@@ -127,7 +127,10 @@ def test_organic_suite_runs_sdf_and_thingiverse_configs(tmp_path, monkeypatch):
     s = bench.run(cases, ["sdf", "thingiverse"], llm, "m", None, results, budget=4, max_attempts=1, log=lambda m: None)
     assert s.ran == 2 and s.requests == 1  # the download costs no LLM request
     sdf_row, tv_row = bench.read_results(results)
-    assert sdf_row["built"] and sdf_row["library"] == bench.library_id(SDF_EXAMPLES_PATH)
+    assert sdf_row["built"] and sdf_row["library"] == f"{bench.library_id(SDF_EXAMPLES_PATH)}+{bench.sdf_prompt_id()}"
+    # SDF rows without examples still depend on the SDF prompt (#47), unlike CadQuery no-RAG rows
+    assert bench._lib_key("sdf-norag", bench.library_for("sdf-norag")) == f"norag+{bench.sdf_prompt_id()}"
+    assert bench._lib_key("sdf-norag", "lib26-cdabac") != bench._lib_key("sdf-norag", bench.library_for("sdf-norag"))
     assert all(i.startswith("sdf_") for i in sdf_row["retrieved"])
     assert tv_row["built"] and tv_row["requests"] == 0 and bench._lib_key("thingiverse", tv_row["library"]) == "any"
     assert {c["id"] for c in bench.all_cases()} >= {"s01", "o01"}

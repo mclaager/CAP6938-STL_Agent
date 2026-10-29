@@ -21,7 +21,7 @@ EX = [
 base_r, middle_r, head_r = 14, 10, 7
 overlap = 3  # each ball sinks into the one below, so they join
 
-z_base = base_r - 2  # sits 2 mm into the ground plane: a flat footprint after the cut below
+z_base = 0  # built around the origin; on_ground() below stands it on z = 0
 z_middle = z_base + base_r + middle_r - overlap
 z_head = z_middle + middle_r + head_r - overlap
 
@@ -35,8 +35,7 @@ hat = (capped_cylinder((0, 0, 0), (0, 0, 1.5), 7.5)                  # brim
 nose = capped_cone((0, 0, 0), (7, 0, 0), 1.5, 0.3).translate((head_r - 1, 0, z_head))
 snowman = body | hat | nose.k(0.5)
 
-ground = box(200, center=(0, 0, -100))  # everything below z = 0
-result = snowman - ground
+result = snowman.on_ground()  # lowest point 1.5 mm below z = 0, cut flat there
 show_object(result)
 '''),
  dict(id="sdf_mushroom", cls="plants",
@@ -54,7 +53,7 @@ dome = ellipsoid((cap_r, cap_r, cap_h)) - box((3 * cap_r, 3 * cap_r, cap_h), cen
 gills = ellipsoid((cap_r - 3, cap_r - 3, 3))
 cap = (dome - gills.k(2)).translate((0, 0, stem_h - 2))
 
-result = stem | cap.k(2)
+result = (stem | cap.k(2)).on_ground()
 show_object(result)
 '''),
  dict(id="sdf_pine_tree", cls="plants",
@@ -74,7 +73,7 @@ tree = trunk
 for z, h, r in layers:
     tree = tree | capped_cone((0, 0, z), (0, 0, z + h), r, 0.5).k(1.5)
 
-result = tree
+result = tree.on_ground()
 show_object(result)
 '''),
  dict(id="sdf_fish", cls="animals",
@@ -83,7 +82,7 @@ show_object(result)
   code='''from sdf import *
 
 body_len, body_h, body_w = 22, 12, 7    # ellipsoid radii (half sizes): x along the fish, z up
-z = body_h - 1                            # body centre height; the belly sinks 1 mm below z = 0
+z = body_h                                # body centre height
 
 body = ellipsoid((body_len, body_w, body_h)).translate((0, 0, z))
 # Tail: two thin lobes angled up and down behind the body.
@@ -96,7 +95,7 @@ eyes = eye.translate((body_len - 6, body_w - 1.5, z + 3)) | eye.translate((body_
 
 fish = body | tail.k(3) | dorsal.k(2)
 fish = fish - eyes
-result = fish - box(200, center=(0, 0, -100))  # flat base at z = 0
+result = fish.on_ground(sink=1)  # flat belly on z = 0
 show_object(result)
 '''),
  dict(id="sdf_pear", cls="food",
@@ -105,14 +104,14 @@ show_object(result)
   code='''from sdf import *
 
 bottom_r, top_r = 17, 10
-bottom_z = bottom_r - 2        # sinks 2 mm into the base for a flat footprint
+bottom_z = bottom_r
 top_z = bottom_z + 20
 
 # Two spheres blended with a large radius give the pear's waist.
 fruit = sphere(bottom_r).translate((0, 0, bottom_z)) | sphere(top_r).translate((0, 0, top_z)).k(14)
 stalk = capsule((0, 0, top_z + top_r - 2), (2, 0, top_z + top_r + 8), 1.2)
 
-result = (fruit | stalk.k(1.5)) - box(200, center=(0, 0, -100))
+result = (fruit | stalk.k(1.5)).on_ground(sink=2)
 show_object(result)
 '''),
  dict(id="sdf_teddy_bear", cls="characters",
@@ -136,7 +135,7 @@ half = union(                                   # one side (+Y); mirrored below
 bear = union(body, head.k(4), snout.k(2), half.k(3), half.mirror(Y).k(3))
 bear = bear - eye.translate((8, 4, 39)) - eye.translate((8, -4, 39))
 
-result = bear - box(200, center=(0, 0, -100))
+result = bear.on_ground()
 show_object(result)
 '''),
  dict(id="sdf_bunny", cls="animals",
@@ -157,7 +156,7 @@ half = union(haunch, foot.k(2), ear.translate((7, 3.5, 38)))
 rabbit = union(body, head.k(5), half.k(3), half.mirror(Y).k(3), tail.k(2))
 rabbit = rabbit - eye.translate((16, 3.5, 28)) - eye.translate((16, -3.5, 28))
 
-result = rabbit - box(200, center=(0, 0, -100))
+result = rabbit.on_ground()
 show_object(result)
 '''),
  dict(id="sdf_penguin", cls="animals",
@@ -177,7 +176,7 @@ half = union(flipper.translate((0, 12, 24)), foot)
 penguin = union(body, head.k(6), beak.k(1), half.k(2), half.mirror(Y).k(2))
 penguin = penguin - eye.translate((8, 4, 45)) - eye.translate((8, -4, 45))
 
-result = penguin - box(200, center=(0, 0, -100))
+result = penguin.on_ground()
 show_object(result)
 '''),
  dict(id="sdf_ladybug", cls="animals",
@@ -196,7 +195,7 @@ spot = sphere(3)
 spots = union(*[spot.translate((x, y, z)) for x, y, z in
                 [(5, 6, 8), (-6, 7, 7), (5, -6, 8), (-6, -7, 7)]])
 
-result = (dome | head.k(2)) - centre_line - spots.k(0.5) - box(200, center=(0, 0, -100))
+result = ((dome | head.k(2)) - centre_line - spots.k(0.5)).on_ground()
 show_object(result)
 '''),
  dict(id="sdf_cactus", cls="plants",
@@ -215,7 +214,7 @@ left = capsule((0, 0, 30), (-14, 0, 30), arm_r) | capsule((-14, 0, 30), (-14, 0,
 right = capsule((0, 0, 38), (12, 0, 38), arm_r) | capsule((12, 0, 38), (12, 0, 50), arm_r).k(3)
 
 cactus = stem | left.k(3) | right.k(3)
-result = pot | cactus.k(1)
+result = (pot | cactus.k(1)).on_ground()
 show_object(result)
 '''),
  dict(id="sdf_pumpkin", cls="food",
@@ -232,7 +231,7 @@ ring = [lobe.translate((radius * 0.45, 0, 0)).rotate(2 * math.pi * i / lobes, Z)
 body = union(*ring, k=4).translate((0, 0, height - 1))
 stem = (capsule((0, 0, 0), (0, 0, 8), 3) | capsule((0, 0, 8), (4, 0, 12), 2.5).k(2)).translate((0, 0, 2 * height - 3))
 
-result = (body | stem.k(2)) - box(200, center=(0, 0, -100))
+result = (body | stem.k(2)).on_ground()
 show_object(result)
 '''),
 ]

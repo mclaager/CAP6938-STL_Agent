@@ -46,6 +46,12 @@ _RUNNER = textwrap.dedent(
     language = sys.argv[6] if len(sys.argv) > 6 else "cadquery"
     package_root = sys.argv[7] if len(sys.argv) > 7 else None
 
+    # One OpenBLAS thread, set before numpy loads: OpenBLAS starts a thread per CPU, each reserving a large
+    # buffer that counts against the cap below; on a 20-CPU machine meshing an SDF part then crashed (-11).
+    # Our matrices are 3x3, so the threads never helped.
+    import os
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+
     # Memory cap (POSIX only; silently skipped on Windows).
     # RLIMIT_DATA, not RLIMIT_AS: OpenCascade spawns one worker thread per CPU for booleans, and
     # their reserved (mostly unused) address space blows through an AS cap, hanging hole()/cut().
