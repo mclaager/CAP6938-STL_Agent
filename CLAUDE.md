@@ -109,7 +109,9 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   point off that grid is evaluated alone, so a wrong grid is correct but ~10x slower (a test checks). Where two
   parts just touch, an STL reader merges two vertices into a non-watertight pinch, so it retries on a shifted grid.
   `.on_ground(sink)` measures the lowest point (`lowest_z`), moves the shape so it is `sink` mm below z = 0 and cuts
-  there (#47: cutting at z = 0 without lifting first halved shapes built around the origin); every example ends with it.
+  there (#47: cutting at z = 0 without lifting first halved shapes built around the origin). The sandbox applies it to
+  every finished shape (`sdf.stand`, skipped when the script already called it), so scripts and examples don't call
+  it: they stay valid fogleman/sdf code, which the fine-tuning data needs (#46).
 - `api_check.py` — extra repair feedback when a script fails (`api_hints` setting): reads the script with `ast`
   and checks each CadQuery call it can resolve against the installed CadQuery (`inspect`): missing methods (with
   close real names), arguments that don't fit the signature, a tuple where a number goes. Only used after a
@@ -257,5 +259,6 @@ Open work is in GitHub issues, with the original course timeline's target dates 
 - #40 Show each piece of a combined part in the UI (per-piece code and STL downloads)
 - #41 Copies of a piece in a combined part (`copy_of`, spread placement, distinct models when asked)
 - #42 Build organic shapes with SDF modeling (own small library meshed by manifold3d, `organic_builder` setting)
-- #46 Fine-tune a small local model on verified CadQuery builds (teacher runs filtered by the mesh checks; no code using our own `sdf.py`)
+- #46 Fine-tune a small local model on verified builds (teacher runs filtered by the mesh checks and the judge); SDF code only
+  within the subset of `sdf.py` that runs unchanged on the public fogleman/sdf
 - #47 SDF prompt: the flat-base rule cuts objects in half (lift onto z = 0 first, then trim)

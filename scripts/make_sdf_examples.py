@@ -21,7 +21,7 @@ EX = [
 base_r, middle_r, head_r = 14, 10, 7
 overlap = 3  # each ball sinks into the one below, so they join
 
-z_base = 0  # built around the origin; on_ground() below stands it on z = 0
+z_base = 0  # built around the origin; it is stood on z = 0 after the script
 z_middle = z_base + base_r + middle_r - overlap
 z_head = z_middle + middle_r + head_r - overlap
 
@@ -35,7 +35,7 @@ hat = (capped_cylinder((0, 0, 0), (0, 0, 1.5), 7.5)                  # brim
 nose = capped_cone((0, 0, 0), (7, 0, 0), 1.5, 0.3).translate((head_r - 1, 0, z_head))
 snowman = body | hat | nose.k(0.5)
 
-result = snowman.on_ground()  # lowest point 1.5 mm below z = 0, cut flat there
+result = snowman
 show_object(result)
 '''),
  dict(id="sdf_mushroom", cls="plants",
@@ -53,7 +53,7 @@ dome = ellipsoid((cap_r, cap_r, cap_h)) - box((3 * cap_r, 3 * cap_r, cap_h), cen
 gills = ellipsoid((cap_r - 3, cap_r - 3, 3))
 cap = (dome - gills.k(2)).translate((0, 0, stem_h - 2))
 
-result = (stem | cap.k(2)).on_ground()
+result = (stem | cap.k(2))
 show_object(result)
 '''),
  dict(id="sdf_pine_tree", cls="plants",
@@ -73,7 +73,7 @@ tree = trunk
 for z, h, r in layers:
     tree = tree | capped_cone((0, 0, z), (0, 0, z + h), r, 0.5).k(1.5)
 
-result = tree.on_ground()
+result = tree
 show_object(result)
 '''),
  dict(id="sdf_fish", cls="animals",
@@ -95,7 +95,7 @@ eyes = eye.translate((body_len - 6, body_w - 1.5, z + 3)) | eye.translate((body_
 
 fish = body | tail.k(3) | dorsal.k(2)
 fish = fish - eyes
-result = fish.on_ground(sink=1)  # flat belly on z = 0
+result = fish
 show_object(result)
 '''),
  dict(id="sdf_pear", cls="food",
@@ -111,7 +111,7 @@ top_z = bottom_z + 20
 fruit = sphere(bottom_r).translate((0, 0, bottom_z)) | sphere(top_r).translate((0, 0, top_z)).k(14)
 stalk = capsule((0, 0, top_z + top_r - 2), (2, 0, top_z + top_r + 8), 1.2)
 
-result = (fruit | stalk.k(1.5)).on_ground(sink=2)
+result = (fruit | stalk.k(1.5))
 show_object(result)
 '''),
  dict(id="sdf_teddy_bear", cls="characters",
@@ -135,7 +135,7 @@ half = union(                                   # one side (+Y); mirrored below
 bear = union(body, head.k(4), snout.k(2), half.k(3), half.mirror(Y).k(3))
 bear = bear - eye.translate((8, 4, 39)) - eye.translate((8, -4, 39))
 
-result = bear.on_ground()
+result = bear
 show_object(result)
 '''),
  dict(id="sdf_bunny", cls="animals",
@@ -156,7 +156,7 @@ half = union(haunch, foot.k(2), ear.translate((7, 3.5, 38)))
 rabbit = union(body, head.k(5), half.k(3), half.mirror(Y).k(3), tail.k(2))
 rabbit = rabbit - eye.translate((16, 3.5, 28)) - eye.translate((16, -3.5, 28))
 
-result = rabbit.on_ground()
+result = rabbit
 show_object(result)
 '''),
  dict(id="sdf_penguin", cls="animals",
@@ -176,7 +176,7 @@ half = union(flipper.translate((0, 12, 24)), foot)
 penguin = union(body, head.k(6), beak.k(1), half.k(2), half.mirror(Y).k(2))
 penguin = penguin - eye.translate((8, 4, 45)) - eye.translate((8, -4, 45))
 
-result = penguin.on_ground()
+result = penguin
 show_object(result)
 '''),
  dict(id="sdf_ladybug", cls="animals",
@@ -195,7 +195,7 @@ spot = sphere(3)
 spots = union(*[spot.translate((x, y, z)) for x, y, z in
                 [(5, 6, 8), (-6, 7, 7), (5, -6, 8), (-6, -7, 7)]])
 
-result = ((dome | head.k(2)) - centre_line - spots.k(0.5)).on_ground()
+result = ((dome | head.k(2)) - centre_line - spots.k(0.5))
 show_object(result)
 '''),
  dict(id="sdf_cactus", cls="plants",
@@ -214,7 +214,7 @@ left = capsule((0, 0, 30), (-14, 0, 30), arm_r) | capsule((-14, 0, 30), (-14, 0,
 right = capsule((0, 0, 38), (12, 0, 38), arm_r) | capsule((12, 0, 38), (12, 0, 50), arm_r).k(3)
 
 cactus = stem | left.k(3) | right.k(3)
-result = (pot | cactus.k(1)).on_ground()
+result = (pot | cactus.k(1))
 show_object(result)
 '''),
  dict(id="sdf_pumpkin", cls="food",
@@ -231,7 +231,7 @@ ring = [lobe.translate((radius * 0.45, 0, 0)).rotate(2 * math.pi * i / lobes, Z)
 body = union(*ring, k=4).translate((0, 0, height - 1))
 stem = (capsule((0, 0, 0), (0, 0, 8), 3) | capsule((0, 0, 8), (4, 0, 12), 2.5).k(2)).translate((0, 0, 2 * height - 3))
 
-result = (body | stem.k(2)).on_ground()
+result = (body | stem.k(2))
 show_object(result)
 '''),
 ]

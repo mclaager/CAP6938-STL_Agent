@@ -132,7 +132,7 @@ def test_organic_suite_runs_sdf_and_thingiverse_configs(tmp_path, monkeypatch):
     monkeypatch.setattr(tv, "search", lambda term, **kw: [Candidate(id=1, name="cat", url="u", thumbnail="", author="a",
                                                                license="CC-BY")])
     monkeypatch.setattr(tv, "download_stl", fake_download)
-    ball = "BBOX: 20, 20, 20\n```python\nfrom sdf import *\nshow_object(sphere(10))\n```"
+    ball = "BBOX: 20, 20, 18.5\n```python\nfrom sdf import *\nshow_object(sphere(10))\n```"  # stood on z = 0
     llm = ScriptedLLM([ball])
     results = tmp_path / "r.jsonl"
     s = bench.run(cases, ["sdf", "thingiverse"], llm, "m", None, results, budget=4, max_attempts=1, log=lambda m: None)

@@ -100,11 +100,28 @@ def test_sandbox_runs_sdf_scripts():
 
     ok = run_cadquery("from sdf import *\nshow_object(sphere(10) | capsule((0,0,0), (20,0,0), 4).k(3))\n",
                       language="sdf")
-    assert ok.success and validate_mesh(ok.stl_path).bbox_mm == pytest.approx([34, 20, 20], abs=0.1)
+    # stood on z = 0 by the sandbox: 1.5 mm of the 20 mm height is cut off below the ground
+    assert ok.success and validate_mesh(ok.stl_path).bbox_mm == pytest.approx([34, 20, 18.5], abs=0.1)
     typo = run_cadquery("show_object(spheer(10))\n", language="sdf")
     assert not typo.success and "line 1" in typo.traceback and "spheer" in typo.traceback
     wrong = run_cadquery("import cadquery as cq\nshow_object(cq.Workplane().box(1, 1, 1))\n", language="sdf")
     assert not wrong.success and "sdf shape" in wrong.error_msg
+
+
+@pytest.mark.parametrize("script, height", [
+    ("show_object(sphere(10).translate((0, 0, 40)))", 18.5),   # grounded by the sandbox, wherever it was built
+    ("show_object(sphere(10).on_ground(sink=4))", 16),          # the script grounded it itself: not again
+])
+def test_sandbox_stands_sdf_shapes_on_the_ground_once(script, height):
+    """Scripts don't need .on_ground() (ours only), so they stay valid fogleman/sdf code (#46)."""
+    from stl_agent.sandbox import run_cadquery, validate_mesh
+
+    r = run_cadquery("from sdf import *\n" + script + "\n", language="sdf")
+    v = validate_mesh(r.stl_path)
+    assert r.success and v.watertight and v.bbox_mm[2] == pytest.approx(height, abs=0.1)
+    import trimesh
+
+    assert trimesh.load(r.stl_path).bounds[0][2] == pytest.approx(0, abs=0.05)
 
 
 def test_generate_cad_uses_the_sdf_prompt_and_runner(tmp_path):
@@ -113,7 +130,7 @@ def test_generate_cad_uses_the_sdf_prompt_and_runner(tmp_path):
     from stl_agent.llm import ScriptedLLM
     from stl_agent.retrieval import make_retriever
 
-    llm = ScriptedLLM(["PLAN:\n- a ball\nBBOX: 20, 20, 20\n```python\nfrom sdf import *\nshow_object(sphere(10))\n```"])
+    llm = ScriptedLLM(["PLAN:\n- a ball\nBBOX: 20, 20, 18.5\n```python\nfrom sdf import *\nshow_object(sphere(10))\n```"])
     systems = []
     complete = llm.complete
     llm.complete = lambda system, messages: systems.append(system) or complete(system, messages)
@@ -138,7 +155,7 @@ def test_example_library_matches_its_script_and_every_example_builds():
     for e in saved:  # in-process (no sandbox) to keep the test quick
         shown = []
         exec(e["code"].replace("from sdf import *", "from stl_agent.sdf import *"), {"show_object": shown.append})
-        m = sdf.to_mesh(shown[-1])  # the app's resolution: thin parts (the snowman's nose) open up when coarser
+        m = sdf.to_mesh(sdf.stand(shown[-1]))  # as the sandbox does; the app's resolution: thin parts (the snowman's nose) open up when coarser
         assert m.is_watertight and len(m.split(only_watertight=False)) == 1, e["id"]
         assert m.bounds[0][2] == pytest.approx(0, abs=0.5), e["id"]  # stands on z = 0
         assert sorted(m.extents) == pytest.approx(sorted(e["expected_bbox_mm"]), abs=0.6), e["id"]
