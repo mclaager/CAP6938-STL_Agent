@@ -2,8 +2,9 @@
 # the project root instead (created on first run as a copy of this file with every line commented out).
 # Adding a setting: add it here with a comment, and to the schema in stl_agent/config.py.
 
-# LLM provider for builds and the intake gate: "anthropic", "gemini" or "ollama" (local, no key).
-provider = "anthropic"
+# LLM provider for builds and the intake gate: "gemini" (free tier), "anthropic" (paid API) or "ollama" (local, no key).
+# Gemini is the default so nothing spends paid API credit unless a settings file or --set asks for it.
+provider = "gemini"
 
 # Generation + repair attempts per build. Each attempt is one LLM request.
 max_attempts = 4

@@ -50,8 +50,8 @@ Rules for code:
   change (which env var has the key). A new OpenAI-compatible provider (Groq, OpenRouter, LM Studio) is one
   `PROVIDERS` entry plus a `[providers.<name>]` table in the defaults file.
 
-Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemini` (free tier, needs
-`GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default `gemma4:12b`, the best of three local models tried, see
+Providers (`provider`): `gemini` (default; free tier, needs `GEMINI_API_KEY`), `anthropic` (paid, needs `ANTHROPIC_API_KEY`; only when asked for, so nothing spends credit by accident)
+or `ollama` (local models, no key, no quota; default `gemma4:12b`, the best of three local models tried, see
 `eval/results/`). Ollama's server
 defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
 `OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off),
