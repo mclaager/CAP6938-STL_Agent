@@ -122,6 +122,7 @@ When fixing an error, change only what is needed and reply in the same format.
 """
 
 LANGUAGES = {"cadquery": SYSTEM_PROMPT, "sdf": SYSTEM_PROMPT_SDF}
+CODE_NAMES = {"cadquery": "CadQuery code", "sdf": "an SDF script"}  # for the log
 
 
 def format_examples(examples: list[dict]) -> str:
@@ -290,7 +291,7 @@ def generate_cad(
 
     for attempt in range(1, max_attempts + 1):
         res.attempts = attempt
-        log(f"Attempt {attempt}/{max_attempts}: asking the model for CadQuery code...")
+        log(f"Attempt {attempt}/{max_attempts}: asking the model for {CODE_NAMES[language]}...")
         reply = llm.complete(system, messages)
         messages.append({"role": "assistant", "content": reply})
         parsed = parse_response(reply)

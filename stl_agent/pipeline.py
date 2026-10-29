@@ -127,7 +127,7 @@ def run_pipeline(request: str, log, name: str | None = None, example_ids: list[s
     shutil.copy(res.stl_path, final_stl)
     log(f"Saved {final_stl.name}")
     log("Done." if res.success else "Done (with warnings; see report).")
-    return str(final_stl), res.code or "", _panel_report(res)
+    return str(final_stl), res.code or "", {**_panel_report(res), "language": language}
 
 
 def _generate(request: str, log, language: str = "cadquery", **kw) -> GenResult:

@@ -98,8 +98,11 @@ def test_generate_cad_uses_the_sdf_prompt_and_runner(tmp_path):
     systems = []
     complete = llm.complete
     llm.complete = lambda system, messages: systems.append(system) or complete(system, messages)
-    res = generate_cad("a ball", llm, make_retriever(path=SDF_EXAMPLES_PATH), out_dir=tmp_path, language="sdf")
+    log = []
+    res = generate_cad("a ball", llm, make_retriever(path=SDF_EXAMPLES_PATH), out_dir=tmp_path, language="sdf",
+                       log=log.append)
     assert res.success and systems == [SYSTEM_PROMPT_SDF]
+    assert any("SDF script" in line for line in log) and not any("CadQuery" in line for line in log)
     assert all(i.startswith("sdf_") for i in res.retrieved_ids)
 
 
@@ -287,3 +290,15 @@ def test_app_sculpts_an_organic_object_and_falls_back_to_thingiverse(sculpt, mon
     chat, state, _, log, gallery = list(app.on_build(chat, state))[-1]
     assert builds == ["sdf", "sdf"] and gallery.visible and [c.id for c in state["candidates"]] == [1]
     assert "Thingiverse" in chat[-1]["content"] and "Sculpting failed" in log
+
+
+def test_code_panel_names_the_kind_of_code(monkeypatch):
+    from stl_agent import app
+
+    assert app.code_label({"language": "sdf"}) == "SDF script (sculpted)"
+    assert app.code_label({"language": "cadquery"}) == app.code_label({}) == "CadQuery"
+    assert app.code_label({"pieces": [{}]}).startswith("Code for each") and "downloaded" in app.code_label({"source": {}})
+    state = {"result": {"stl": "x.stl", "code": "from sdf import *", "report": {"language": "sdf"}}}
+    monkeypatch.setattr(app, "make_preview", lambda stl: stl)
+    _, _, _, code, _ = app.show_result(state)
+    assert code.label == "SDF script (sculpted)" and code.value == "from sdf import *"
