@@ -90,8 +90,43 @@ the 12 downloads: 4 CC BY-SA, 3 CC BY-NC-ND, 2 CC BY-NC-SA, 1 CC BY-NC, 1 CC BY,
   harsh on details like finger counts. Its scores rank the three configs close together, while to the eye a
   correct Thingiverse download is far more detailed than any sculpted part.
 
+## After the flat-base fix (#47, 2026-10-28)
+The prompt now ends every script with `result = shape.on_ground()`, which measures the lowest point, lifts the
+shape to 1.5 mm below z = 0 and trims there; the SDF examples use it too (library lib11-69660d). Same model,
+attempts, judge, prompt v2 and renders v2; one run per case. Rows record the SDF prompt version
+(`lib11-69660d+sdfp-a4ea4e`, `norag+sdfp-a4ea4e`). 67 build requests, 24 judge requests.
+
+| config | built | pass | mean score |
+|---|---|---|---|
+| sdf, before | 9 / 12 | 8 / 12 | 0.57 |
+| sdf, after | 11 / 12 | 10 / 12 | 0.70 |
+| sdf-norag, before | 10 / 12 | 7 / 12 | 0.49 |
+| sdf-norag, after | 8 / 12 | 6 / 12 | 0.51 |
+
+| case | sdf before | sdf after | sdf-norag before | sdf-norag after |
+|---|---|---|---|---|
+| o01 cat | 0.56 | 0.44 | 0.00 | 0.11 |
+| o02 horse | 0.44 | 0.44 | 0.00 | 0.00 |
+| o03 frog | 0.89 | 1.00 | 0.89 | 0.89 |
+| o04 tulip | 0.67 | 0.78 | 0.56 | 0.56 |
+| o05 octopus | 0.56 | 0.78 | 0.89 | 1.00 |
+| o06 owl | 0.89 | 0.78 | 0.78 | 0.89 |
+| o07 rubber duck | 0.78 | 0.78 | 0.00 | 0.33 |
+| o08 brontosaurus | 0.44 | 0.89 | 0.78 | 0.11 |
+| o09 hand | 0.22 | 0.67 | 0.56 | 0.44 |
+| o10 apple | 0.67 | 0.78 | 0.33 | 1.00 |
+| o11 dolphin | 0.00 | 0.56 | 0.33 | 0.22 |
+| o12 turtle | 0.78 | 0.56 | 0.78 | 0.56 |
+
+- **Both apples are whole now** (round body with a small flat footprint, stem and leaf); before, both were
+  hemispheres. The no-examples apple went from 0.33 to 1.00. The sdf apple's 0.78 is for a dimple the model
+  modelled into the bottom, not a cut.
+- **Overall: better with examples, unchanged without.** With examples, built 9 → 11 and pass 8 → 10. Without, the
+  totals moved by one or two parts in each direction, and the per-case swings (brontosaurus 0.78 → 0.11, apple
+  0.33 → 1.00) are the run-to-run noise noted below, not the rule: only the apples were affected by the cut.
+- **No new failure from the helper:** no script misused `on_ground` or still cut at z = 0 by hand.
+
 ## Next
-- Fix the flat-base rule in `SYSTEM_PROMPT_SDF` (lift first, then trim), then rerun.
 - Repeat runs (one run per case is noisy; most per-case differences above are within that noise).
 - Disconnected parts are the most common build failure. The repair message could say which parts float, using
   the mesh's bodies.

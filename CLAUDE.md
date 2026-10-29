@@ -97,6 +97,7 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   also tried and removed (`eval/results/external-rag.md`). Keep the app lightweight (#19): no PyTorch.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
   `language="sdf"` runs an SDF script instead: `import sdf` / `from sdf import *` resolve to `stl_agent.sdf`.
+  The child runs OpenBLAS on one thread: a thread per CPU reserved enough memory to crash meshing under the 2 GB cap.
 - `sdf.py` — signed distance function modeling for organic shapes (#42). fogleman/sdf's names and operators
   (`sphere`, `capsule`, `a | b`, `.k(r)` blends, `.translate`, `.orient`, `.mirror`...) on our own small library
   (fogleman/sdf is not on PyPI and pulls in four more packages). `to_mesh` uses manifold3d's `level_set` (always
@@ -104,6 +105,8 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   on the grid level_set samples (each axis split into floor(length / edge) cells, measured, not documented); a
   point off that grid is evaluated alone, so a wrong grid is correct but ~10x slower (a test checks). Where two
   parts just touch, an STL reader merges two vertices into a non-watertight pinch, so it retries on a shifted grid.
+  `.on_ground(sink)` measures the lowest point (`lowest_z`), moves the shape so it is `sink` mm below z = 0 and cuts
+  there (#47: cutting at z = 0 without lifting first halved shapes built around the origin); every example ends with it.
 - `api_check.py` — extra repair feedback when a script fails (`api_hints` setting): reads the script with `ast`
   and checks each CadQuery call it can resolve against the installed CadQuery (`inspect`): missing methods (with
   close real names), arguments that don't fit the signature, a tuple where a number goes. Only used after a
@@ -178,11 +181,11 @@ Elsewhere:
   `--budget` requests, so a full run can be spread over several days of free-tier quota.
   `organic_cases.json` (#42, `--suite organic`): organic requests with no expected size, scored by the visual
   judge; configs `sdf` / `sdf-norag` (SDF scripts with or without the SDF examples; rows record the SDF library's
-  id) and `thingiverse` (the first Thingiverse model that downloads for the case's `search`, no LLM requests).
+  id plus the SDF prompt version, `+sdfp-<hash>`, so a prompt change re-runs both) and `thingiverse` (the first Thingiverse model that downloads for the case's `search`, no LLM requests).
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-hints` (rag plus `api_hints`; the others pin it off, as all
   earlier rows had it off), `rag-k1` / `rag-k5` (1 or 5
-  examples instead of 3), `rag-char` (letter-chunk retriever), `rag-size` (the size-failure message shipped with #23; the other
+  examples instead of 3), `rag-char` (letter-chunk retriever), `rag-features` (rag plus `generate.FEATURE_NOTE`: build every requested feature even if the examples lack it, #29), `rag-size` (the size-failure message shipped with #23; the other
   configs are pinned to the old one, `size_feedback = "fix"`, so earlier rows stay comparable). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs) and `rag-ext` rows (built-in library plus a Text-to-CadQuery pool, removed: no gain, `eval/results/external-rag.md`). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,

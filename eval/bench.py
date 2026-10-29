@@ -52,6 +52,8 @@ CONFIGS = {
     # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag) and rag-ext (built-in library
     # plus a Text-to-CadQuery pool, removed: no gain, see eval/results/external-rag.md).
     "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char", api_hints=False, size_feedback="fix"),
+    # #29: rag plus a line asking for every requested feature even if the examples lack it (generate.FEATURE_NOTE).
+    "rag-features": dict(use_rag=True, top_k=3, api_hints=False, size_feedback="fix", feature_note=True),
     # Organic cases (#42): SDF scripts with the SDF example library ("sdf" retriever), or without examples.
     "sdf": dict(language="sdf", use_rag=True, top_k=3, retriever="sdf", size_feedback="measured"),
     "sdf-norag": dict(language="sdf", use_rag=False, size_feedback="measured"),
@@ -67,14 +69,29 @@ def library_id(path: Path = EXAMPLES_PATH) -> str:
     return f"lib{len(json.loads(data))}-{hashlib.sha1(data).hexdigest()[:6]}"
 
 
+def sdf_prompt_id() -> str:
+    """Names the SDF system prompt version, e.g. "sdfp-1a2b3c" (#47 changed it). Rows from before this existed
+    have none."""
+    from stl_agent.generate import SYSTEM_PROMPT_SDF
+
+    return "sdfp-" + hashlib.sha1(SYSTEM_PROMPT_SDF.encode()).hexdigest()[:6]
+
+
 def library_for(config: str) -> str:
-    """The example library a config retrieves from: the SDF one for SDF configs."""
-    return library_id(SDF_EXAMPLES_PATH) if CONFIGS.get(config, {}).get("retriever") == "sdf" else library_id()
+    """The example library a config retrieves from: the SDF one for SDF configs, plus the SDF prompt version
+    ("lib11-5cd03c+sdfp-1a2b3c", or "norag+sdfp-1a2b3c" without examples)."""
+    cfg = CONFIGS.get(config, {})
+    if cfg.get("language") == "sdf":
+        lib = library_id(SDF_EXAMPLES_PATH) if cfg.get("use_rag", True) else "norag"
+        return f"{lib}+{sdf_prompt_id()}"
+    return library_id()
 
 
 def _lib_key(config: str, library: str) -> str:
-    """no-RAG and download configs ignore the library."""
+    """no-RAG and download configs ignore the library, except SDF ones: their key holds the prompt version."""
     cfg = CONFIGS.get(config, {})
+    if cfg.get("language") == "sdf":
+        return library
     return "any" if not cfg.get("use_rag", True) or cfg.get("download") else library
 
 BBOX_REL_TOL, BBOX_ABS_TOL = 0.03, 1.0  # per dimension: within 3% or 1 mm, whichever is larger
