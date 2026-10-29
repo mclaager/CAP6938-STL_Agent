@@ -241,3 +241,4 @@ Open work is in GitHub issues, with the original course timeline's target dates 
 - #41 Copies of a piece in a combined part (`copy_of`, spread placement, distinct models when asked)
 - #42 Build organic shapes with SDF modeling (own small library meshed by manifold3d, `organic_builder` setting)
 - #46 Fine-tune a small local model on verified CadQuery builds (teacher runs filtered by the mesh checks; no code using our own `sdf.py`)
+- #47 SDF prompt: the flat-base rule cuts objects in half (lift onto z = 0 first, then trim)
