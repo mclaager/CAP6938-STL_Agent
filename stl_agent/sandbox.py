@@ -112,7 +112,7 @@ _RUNNER = textwrap.dedent(
             raise ValueError("No shape produced: call show_object(shape) or assign the final shape to a variable named `result`.")
         if not isinstance(obj, sdf.SDF3):
             raise TypeError(f"show_object needs an sdf shape (sphere, capsule, ... joined with | - &), got {type(obj).__name__}.")
-        sdf.save(obj, stl_path)
+        sdf.save(sdf.stand(obj), stl_path)  # on z = 0 (#47); scripts don't do it, so they stay fogleman/sdf (#46)
 
     try:
         if language == "sdf":

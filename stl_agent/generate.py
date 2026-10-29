@@ -102,19 +102,20 @@ Combining:
 Transforms (each returns a new shape):
   .translate((x, y, z))   .rotate(angle, axis)  angle in RADIANS (math.radians), axis X, Y, Z or a vector
   .orient(axis)  turn the shape's +Z toward axis      .scale(s) or .scale((sx, sy, sz))
-  .mirror(Y)     reflected copy; build one side, then side | side.mirror(Y) for a left-right pair
   .elongate((x, y, z))  stretch through the middle    .shell(t)  hollow skin t thick
   .dilate(r)  grow by r
-  .on_ground(sink=1.5)  stand it on z = 0 with a small flat footprint (always the last step)
 There is no text, no sweep along a curve, no mesh import, no surface noise.
 
 SCRIPT RULES
 - Start with `from sdf import *`. Only `math` and `numpy as np` may also be imported. No file I/O.
-- Z is up. Build the object wherever is convenient, then finish with `result = shape.on_ground()`: it moves
-  the shape so its lowest point is 1.5 mm below z = 0 and cuts off what is below, a flat footprint to
-  print on. Never cut at z = 0 yourself: a shape built around the origin would lose its lower half.
+- Z is up. Build the object wherever is convenient. After the script, the finished shape is stood on
+  z = 0 automatically: moved so its lowest point is 1.5 mm below z = 0 and cut flat there, a small
+  footprint to print on. Never cut at z = 0 yourself: a shape built around the origin would lose its
+  lower half.
 - Put the main sizes in named variables at the top (mm). Build the large volumes first, then attached
   features, then cuts (eyes, mouth) last.
+- Left-right pairs (ears, arms, legs, eyes): write a function of the side, `def side(s):` with s = 1 or -1,
+  multiplying each y position (and each tilt about X) by s, then join side(1) and side(-1).
 - Everything must touch: the final shape must be one connected solid. Overlap joined parts by a few mm.
 - Features thinner than 2 mm will not print; make tails, ears, legs and stems at least 2-3 mm thick.
 - Pass the final shape to `show_object(result)`.

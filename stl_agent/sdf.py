@@ -42,6 +42,7 @@ class SDF3:
 
     def __init__(self, f, lo, hi, k: float | None = None):
         self.f, self.lo, self.hi, self._k = f, _vec(lo), _vec(hi), k
+        self.grounded = False
 
     def __call__(self, p) -> np.ndarray:
         return self.f(np.asarray(p, dtype=float).reshape(-1, 3))
@@ -134,7 +135,15 @@ class SDF3:
         lo, hi = moved.lo, moved.hi
         ground = box(a=(lo[0] - 1, lo[1] - 1, lo[2] - 1), b=(hi[0] + 1, hi[1] + 1, 0))
         cut = difference(moved, ground)
-        return SDF3(cut.f, (lo[0], lo[1], 0), hi, self._k)
+        out = SDF3(cut.f, (lo[0], lo[1], 0), hi, self._k)
+        out.grounded = True  # the sandbox grounds every shape that isn't already
+        return out
+
+
+def stand(shape: SDF3) -> SDF3:
+    """The finished shape stood on z = 0, as the sandbox does after every script (#47, #46): `.on_ground()` unless
+    the script already called it. Not for scripts, which stay valid fogleman/sdf code."""
+    return shape if shape.grounded else shape.on_ground()
 
 
 def _rotation(axis: np.ndarray, angle: float) -> np.ndarray:
