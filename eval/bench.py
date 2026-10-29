@@ -52,6 +52,8 @@ CONFIGS = {
     # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag) and rag-ext (built-in library
     # plus a Text-to-CadQuery pool, removed: no gain, see eval/results/external-rag.md).
     "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char", api_hints=False, size_feedback="fix"),
+    # #29: rag plus a line asking for every requested feature even if the examples lack it (generate.FEATURE_NOTE).
+    "rag-features": dict(use_rag=True, top_k=3, api_hints=False, size_feedback="fix", feature_note=True),
     # Organic cases (#42): SDF scripts with the SDF example library ("sdf" retriever), or without examples.
     "sdf": dict(language="sdf", use_rag=True, top_k=3, retriever="sdf", size_feedback="measured"),
     "sdf-norag": dict(language="sdf", use_rag=False, size_feedback="measured"),

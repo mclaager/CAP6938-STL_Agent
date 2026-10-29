@@ -56,6 +56,17 @@ def test_norag_prompt_has_no_empty_examples_header(tmp_path, monkeypatch):
     assert "solved examples" not in first and first.endswith("Request: block a")
 
 
+def test_rag_features_adds_the_feature_note_only_there(tmp_path, monkeypatch):
+    from stl_agent.generate import FEATURE_NOTE
+
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    llm = ScriptedLLM([GOOD, GOOD])
+    bench.run(CASES[:1], ["rag", "rag-features"], llm, "m", ExampleRetriever.from_file(), tmp_path / "r.jsonl",
+              budget=2, max_attempts=1, log=lambda m: None)
+    plain, noted = (call[0]["content"] for call in llm.calls)
+    assert FEATURE_NOTE not in plain and noted.endswith(FEATURE_NOTE + "Request: block a")
+
+
 def test_retry_delay_parsing():
     from stl_agent.llm import MAX_QUOTA_WAIT, _retry_delay
 

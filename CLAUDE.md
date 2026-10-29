@@ -185,7 +185,7 @@ Elsewhere:
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-hints` (rag plus `api_hints`; the others pin it off, as all
   earlier rows had it off), `rag-k1` / `rag-k5` (1 or 5
-  examples instead of 3), `rag-char` (letter-chunk retriever), `rag-size` (the size-failure message shipped with #23; the other
+  examples instead of 3), `rag-char` (letter-chunk retriever), `rag-features` (rag plus `generate.FEATURE_NOTE`: build every requested feature even if the examples lack it, #29), `rag-size` (the size-failure message shipped with #23; the other
   configs are pinned to the old one, `size_feedback = "fix"`, so earlier rows stay comparable). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs) and `rag-ext` rows (built-in library plus a Text-to-CadQuery pool, removed: no gain, `eval/results/external-rag.md`). Each result row records
   the example-library version (`library`); no-RAG rows are shared across library versions.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,
