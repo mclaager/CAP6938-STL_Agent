@@ -27,6 +27,9 @@ Run commands from the repo root (modules are run with `python -m`, no install st
   `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`)
 
 - `pixi run -e cap6938 settings` — every setting, its current value and where it came from
+- Fine-tuning (#46): `pixi run -e cap6938 ft-requests --target 600` (part requests from the `provider` model),
+  `ft-collect --budget 300 [--max-usd 8] [--effort low]` (teacher builds, keeps valid right-size conversations; Claude cost shown as it runs), `ft-export` (train/val files), then
+  `pixi run -e finetune ft-train [--base unsloth/Qwen3.5-4B] [--gguf q4_k_m]` in the separate PyTorch environment
 
 Settings live in `settings.toml` in the repo root (gitignored, per user; another file with `CAD_SETTINGS`).
 On first run it is created from the built-in defaults, `stl_agent/data/settings.defaults.toml`, with every
@@ -47,8 +50,8 @@ Rules for code:
   change (which env var has the key). A new OpenAI-compatible provider (Groq, OpenRouter, LM Studio) is one
   `PROVIDERS` entry plus a `[providers.<name>]` table in the defaults file.
 
-Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemini` (free tier, needs
-`GEMINI_API_KEY`) or `ollama` (local models, no key, no quota; default `gemma4:12b`, the best of three local models tried, see
+Providers (`provider`): `gemini` (default; free tier, needs `GEMINI_API_KEY`), `anthropic` (paid, needs `ANTHROPIC_API_KEY`; only when asked for, so nothing spends credit by accident)
+or `ollama` (local models, no key, no quota; default `gemma4:12b`, the best of three local models tried, see
 `eval/results/`). Ollama's server
 defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
 `OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off),
@@ -209,6 +212,14 @@ Elsewhere:
 - `eval/retrieval.py` + `eval/retrieval_labels.json` — offline retrieval evaluation (#20): hit@1, recall@3,
   MRR and latency per retriever, against hand-labelled relevant examples (original 19 cases only).
 - `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness, retrieval (all offline).
+- `finetune/` — fine-tuning a small local model on teacher builds (#46). `make_requests.py`: a large model writes
+  part requests by area and category; TF-IDF near copies of benchmark cases, library examples or earlier requests
+  are dropped. `collect.py`: runs each through `generate_cad` (settings pinned in `GEN_KW`) and keeps the exact
+  conversation, failed attempts and repairs included, when the part is valid and at the request's size; every run
+  goes to `data/runs.jsonl`, kept ones to `data/conversations.jsonl` (both committed). `export.py`: train/val chat
+  files, split by request id. `train.py`: Unsloth QLoRA, loss on assistant turns only, optional GGUF + Modelfile for
+  Ollama; runs only in the `finetune` pixi environment (PyTorch, CUDA), never imported by the app. Outputs in
+  `finetune/runs/` (gitignored). The GPU is shared with Ollama: stop local models before training.
 - `scripts/` — maintenance scripts (`make_examples.py`, `make_sdf_examples.py`).
 - `outputs/` (gitignored) — finished parts at the top: `<name>.stl` (name from the gate), a colored
   `<name>.preview.glb` for the viewer, and `<name>.source.json` for downloads. Working folders (each attempt's

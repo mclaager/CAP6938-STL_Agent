@@ -140,6 +140,141 @@ environments:
     options:
       pypi-prerelease-mode: if-necessary-or-explicit
     packages: {}
+  finetune:
+    channels:
+    - url: https://conda.anaconda.org/conda-forge/
+    indexes:
+    - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
+    packages:
+      linux-64:
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_10.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.46.1-default_hbd61a6d_103.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.9.0-hd2095e1_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libgcc-16.2.0-ha9f2e26_7.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libgomp-16.2.0-he0feb66_7.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/liblzma-5.8.3-hb03c661_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libnsl-2.0.1-hb9d3cd8_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libpython-3.12.16-ha57cdbe_0_cpython.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libsqlite-3.54.1-h0737f62_101.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libuuid-2.42.4-hcfc3c73_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libxcrypt-4.4.38-h280c20c_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.3.2-h25fd6f3_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.6-hdb14827_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.5-h781a0a9_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.12.16-h5f976f7_0_cpython.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/readline-8.3-hd6e31c0_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_h1df4ec4_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_7.conda
+      - pypi: https://files.pythonhosted.org/packages/8a/4c/34f0450479d01195027260da68d8a3880683f1640c3ca5adf64acb3185f1/accelerate-1.15.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/71/43/1947f06babed6b3f1d7f38b0c767f52df66bfb2bc10b468c4a7de9eceff2/aiohappyeyeballs-2.7.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/da/e4/aa172eb534b7f02f1f8ff1c3213347eaf3cf218db91a727c6863c22f1035/aiohttp-3.14.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/fb/76/641ae371508676492379f16e2fa48f4e2c11741bd63c48be4b12a6b09cba/aiosignal-1.4.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/99/91/8acff4f5e50511b911bbccb72b8628a49c68ce14148cd9f6431094859a90/annotated_types-0.8.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a5/6e/e4e8b75716dbe5e50964f070266e06f4e6806ce051bfb97f52ee162b9310/bitsandbytes-0.50.2-py3-none-manylinux_2_24_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7f/c5/38806a25ab5e65fc178f39affeda20858efafede2fce1ffc2556cfc9fe73/charset_normalizer-3.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/f8/332443cf969734551891cdbd93657eaeaf747ac2b7dd73feb3422701b02b/cuda_bindings-13.4.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/8e/93/f0904fa7d954ecc4c0db17c8d63d185d442dd59fc6757f1d1f448c59c256/cuda_pathfinder-1.8.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d1/c7/a79086a62c98befcdb8349656c6f114e2db3b8b2422f6e25c97a7f2a9a3c/cuda_toolkit-13.0.3.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/df/5f/62fdb048f84d19e2123b6bbd722fe09c8c79b4964c50094d1e979db808e2/cut_cross_entropy-25.1.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/65/99/00f3196036501b53032c4b1ab8337a0b978dee832ed276dae3815df4e8b5/datasets-4.8.5-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e1/e9/4328c781bc64f8b74363f66674c00e65021e9a857fb9cb4882ed447956cd/diffusers-0.42.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/1e/77/dc8c558f7593132cf8fefec57c4f60c83b16941c574ac5f619abb3ae7933/dill-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a7/5f/ed01f9a3cdffbd5a008556fc7b2a08ddb1cc6ace7effa7340604b1d16699/docstring_parser-0.18.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e0/1b/5e74289a1878e666bb4b65fe5805a04cafcac2aa5f519ef1ead67ef91c56/filelock-4.2.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/6a/bd/d91c5e39f490a49df14320f4e8c80161cfcce09f1e2cde1edd16a551abb3/frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/e6/ab/fb21f4c939bb440104cc2b396d3be1d9b7a9fd3c6c2a53d98c45b3d7c954/fsspec-2026.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/d6/d8/f87ea6f42456254b48915970ed98e993110521e9263472840174d32c880d/hf_transfer-0.1.9-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/91/99/105c23da56161acdc4e5b3022ae6d225ab54269a44eb7303f41e3a7be09e/hf_xet-1.7.1-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/fc/16/963096d224b80909432dc16561a615fd33d2d13beef3ce4c63fa25e40867/huggingface_hub-1.33.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/65/b6/495438ad95e0102aff8f6786b5474202f38cd5d4700d03a72b77977dec10/importlib_metadata-10.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ae/39/e689b616c4279a821d5842a8a85c1874540f8d58e35028df93f2182120c2/json5-0.17.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/4f/a7/aeedb5140afa41fc74c225e9184ab96723a6e873b6ee1c9fede7283456d8/markupsafe-3.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/4a/cc/aa1a47f8c92280d37498a5ea56a2a36606d034383e3e6472d64cbb56cf85/msgspec-0.22.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/43/50/6bd8600b4843f0a9d939e0cc0f4160f4c727bd6c69e4f7e294a1caa93db8/multidict-7.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/71/70/38998b950a97ea279e6bd657575d22d1a2047256caf707d9a10fbce4f065/multiprocess-0.70.19-py312-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7e/cd/fe58041e9011f307c490e3e17dd48cc516448f7c698a3f2d9d9d65d7e6a8/networkx-3.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/43/a3/c799c62e19c337e6d3770b08e475887fb30ce8477d3c09efca6b2f0228a6/numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/3b/cd/154ca20c38269e05eff77c1464e6c1da89f50a6390b565e9d82e06bc11e1/nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/33/6d/737d164b4837a9bbd202f5ae3078975f0525a55730fe871d8ed4e3b952b0/nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/c3/68/483a78f5e8f31b08fb1bb671559968c0ca3a065ac7acabfc7cee55214fd6/nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/2e/24/d1558f3b68b1d26e706813b1d10aa1d785e4698c425af8db8edc3dced472/nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/5c/ba/791cffd048fe5b044e620df55267e3e95c0e6e07d50b41e377c03dfc910f/nvidia_cudnn_cu13-9.24.0.43-py3-none-manylinux_2_27_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/a8/2f/7b57e29836ea8714f81e9898409196f47d772d5ddedddf1592eadb8ab743/nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/3f/70/4f193de89a48b71714e74602ee14d04e4019ad36a5a9f20c425776e72cd6/nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/a5/9f/be0a41ca4a4917abf5cb9ae0daff1a6060cc5de950aec0396de9f3b52bc5/nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/5f/67/cba3777620cdacb99102da4042883709c41c709f4b6323c10781a9c3aa34/nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/fa/18/623c77619c31d62efd55302939756966f3ecc8d724a14dab2b75f1508850/nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/34/7d/2661f2fb3ac4302f3a246f5fc030213ac60c1fe0bce84f9783dbd831dbb7/nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/3f/34/c500f90c7ae641b8e0f98965b36b8a7ac79cc8b296e8d251fe3eb592ee54/nvidia_nccl_cu13-2.30.7-py3-none-manylinux_2_18_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/1d/6b/eef7a9e32872b8f41e145bf10cddc9af26e153c338852811fe9a9baddf9e/nvidia_nvjitlink-13.4.92-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/3c/35/a9bf80a609e74e3b000fef598933235c908fcefcef9026042b8e6dfde2a9/nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/f3/d86c845465a2723ad7e1e5c36dcd75ddb82898b3f53be47ebd429fb2fa5d/nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c5/a6/dc89cdd95e12093bc813e9b814a09f1a056be3e1304edaef9bf9dbee108a/pandas-3.1.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/70/0b/59441cdbfdd342ed03c08af90a2fe16173f0cd48ab219f523b39ca059a79/peft-0.21.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e6/99/fdf65cc539e266ab93546c261bdf98411fe165c6e4e13f9dbf597097192b/pillow-13.0.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/85/9f/83a07b6ec0e043c050cfdd35fb0cf1b7897b91d554d6eea293740309afe7/propcache-0.5.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/db/f3/3996583dd2906297a637af12114deddf7658af6e683fedb83be061983fb5/protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/b5/70/5d8df3b09e25bce090399cf48e452d25c935ab72dad19406c77f4e828045/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/88/e4/9cd356d906e71bd79b0c3fc5c9a54e01a0020dcf14c152ccfbcb503c7298/pyarrow-26.0.0-cp312-cp312-manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/35/ea/a56b9fe5066f3537b7882f77e9c5dfb26d8c2eefdaed9b5fc73d57b4dc22/pydantic-2.14.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/90/24/48cd98388e4ac2c08d0800af36d15413db15e20387f1038123a2c86cb2f6/pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5a/17/cebee01d1c0c1441174cf0456ddc91b280d79acb65340c05e41d77866ee8/python_dateutil-3.0.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8b/9d/b3589d3877982d4f2329302ef98a8026e7f4443c765c46cfecc8858c6b4b/pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/26/83/d2fbd2e4e3afb1167daa825187d196f313cbaa1a4768f311fb041bb0e3d2/regex-2026.9.29-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/28/50/f203ff3a3ddfe19308efc83c5a3a29ed02bf786732ec35e68bf9162f3365/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/b6/2d/37e3da037318a70066ded0d51bc2a7f35491ae6338dd993d5eb1503fc3b5/sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/ef/55/6dc6d6bb953bdfc52519a0059592c52b6e3b8ad51cf8256dffceb55b0610/setuptools-84.2.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a9/18/489c97b834dfff9cf2fc2507cede4bcd4b11e67f84bc462acd1992496f86/structlog-26.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/3a/40/6706b82693715581457c6d5423eaa7faae576bb0526c5738a57085eb4449/tokenizers-0.23.3-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/ba/fd/c470857d0dfc5d4c94430658b3eed60fd5292b0bf596a8aae7b9fd66d674/torch-2.14.1-cp312-cp312-manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/19/55/ed9ad98f0f09d5a1124d09830043d13a39e63539f9590d2bdb6d71cbc4a4/torchao-0.18.0-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/92/74/699d28bed7453dbe40b09d37aab8f6cd75f19a77a77d5ab4588a4f3239e7/torchvision-0.29.2-py3-none-manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e8/d0/c502b60d684adbd98a8dc7d5bb866842772b816ac4354e4608be240041ae/transformers-5.17.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c1/09/b7012e5bfae67640f268aa584caa80fe1674f6b0da949046b679972c33e3/triton-3.8.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/12/27/a699471afa0ebc08ef9c86d5b2f9aca2f53fa3ee6b87ad88017000b128ef/trl-1.15.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8f/eb/461d5f167b6f5c7d97696f397c82f82e3480e003fce3f0a1cd1dd26e2eb2/typeguard-4.6.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/07/ea/2e31b67051e91a133189e9c000c222502ddc6969856416de0d095de4c0b0/typer-0.27.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/23/d9/ea12ca0392c9eaeff7421efcc665f350dbc2ef30a113ee13c7afea21cf37/tyro-1.0.16-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/45/1e/6bc2275efbf65085a5b0b853c40b20a56f4e1bd30cabe324f9b2f50d9513/unsloth-2026.10.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b8/be/ebfbe13da09354bcd966d87955aa9ed990545756140f976770444c0ecc3c/unsloth_zoo-2026.10.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2e/29/69cfbb602cd91690c55d38ba9fe53e6a7e76a6fa647bf38f19c138d25449/wheel-0.48.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a4/85/6d71f9b16f2ac647877e66ed4af723b3fbd477806ab8b8a89d39a362b85f/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/b2/c6/3a85fc0b821ed2dfcf6fb7cfdf07e0b261ada40374583a50abb3480f2863/xxhash-4.0.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/bc/7b/ca212cbe170ac8b96e45317ecbcf9c3c3ecf0cdec98d5b088a9c4088929b/yarl-1.25.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/b8/44/7bd2007260da11cccca29ba2d4c345f1287aa663db38ee7cefeabf6386a5/zipp-4.1.2-py3-none-any.whl
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
@@ -155,6 +290,83 @@ packages:
   purls: []
   size: 28948
   timestamp: 1770939786096
+- pypi: https://files.pythonhosted.org/packages/8a/4c/34f0450479d01195027260da68d8a3880683f1640c3ca5adf64acb3185f1/accelerate-1.15.0-py3-none-any.whl
+  name: accelerate
+  version: 1.15.0
+  sha256: 97eacca0b73e45cb867dbf8c5d5d4dc32219544300e0c8992c7334dc2ef33cec
+  requires_dist:
+  - numpy>=1.17
+  - packaging>=20.0
+  - psutil
+  - pyyaml
+  - torch>=2.0.0
+  - huggingface-hub>=0.21.0
+  - safetensors>=0.4.3
+  - ruff==0.13.1 ; extra == 'quality'
+  - pytest>=7.2.0 ; extra == 'test-prod'
+  - pytest-xdist ; extra == 'test-prod'
+  - pytest-subtests ; extra == 'test-prod'
+  - parameterized ; extra == 'test-prod'
+  - pytest-order ; extra == 'test-prod'
+  - datasets ; extra == 'test-dev'
+  - diffusers ; extra == 'test-dev'
+  - evaluate ; extra == 'test-dev'
+  - peft ; extra == 'test-dev'
+  - torchdata>=0.8.0 ; extra == 'test-dev'
+  - torchpippy>=0.2.0 ; extra == 'test-dev'
+  - transformers ; extra == 'test-dev'
+  - scipy ; extra == 'test-dev'
+  - scikit-learn ; extra == 'test-dev'
+  - tqdm ; extra == 'test-dev'
+  - bitsandbytes ; extra == 'test-dev'
+  - timm ; extra == 'test-dev'
+  - pytest>=7.2.0 ; extra == 'testing'
+  - pytest-xdist ; extra == 'testing'
+  - pytest-subtests ; extra == 'testing'
+  - parameterized ; extra == 'testing'
+  - pytest-order ; extra == 'testing'
+  - datasets ; extra == 'testing'
+  - diffusers ; extra == 'testing'
+  - evaluate ; extra == 'testing'
+  - peft ; extra == 'testing'
+  - torchdata>=0.8.0 ; extra == 'testing'
+  - torchpippy>=0.2.0 ; extra == 'testing'
+  - transformers ; extra == 'testing'
+  - scipy ; extra == 'testing'
+  - scikit-learn ; extra == 'testing'
+  - tqdm ; extra == 'testing'
+  - bitsandbytes ; extra == 'testing'
+  - timm ; extra == 'testing'
+  - deepspeed ; extra == 'deepspeed'
+  - rich ; extra == 'rich'
+  - torchao ; extra == 'test-fp8'
+  - wandb ; extra == 'test-trackers'
+  - tensorboard ; extra == 'test-trackers'
+  - dvclive ; extra == 'test-trackers'
+  - matplotlib ; extra == 'test-trackers'
+  - swanlab[dashboard] ; extra == 'test-trackers'
+  - trackio ; extra == 'test-trackers'
+  - ruff==0.13.1 ; extra == 'dev'
+  - pytest>=7.2.0 ; extra == 'dev'
+  - pytest-xdist ; extra == 'dev'
+  - pytest-subtests ; extra == 'dev'
+  - parameterized ; extra == 'dev'
+  - pytest-order ; extra == 'dev'
+  - datasets ; extra == 'dev'
+  - diffusers ; extra == 'dev'
+  - evaluate ; extra == 'dev'
+  - peft ; extra == 'dev'
+  - torchdata>=0.8.0 ; extra == 'dev'
+  - torchpippy>=0.2.0 ; extra == 'dev'
+  - transformers ; extra == 'dev'
+  - scipy ; extra == 'dev'
+  - scikit-learn ; extra == 'dev'
+  - tqdm ; extra == 'dev'
+  - bitsandbytes ; extra == 'dev'
+  - timm ; extra == 'dev'
+  - rich ; extra == 'dev'
+  - sagemaker ; extra == 'sagemaker'
+  requires_python: '>=3.10.0'
 - pypi: https://files.pythonhosted.org/packages/71/43/1947f06babed6b3f1d7f38b0c767f52df66bfb2bc10b468c4a7de9eceff2/aiohappyeyeballs-2.7.1-py3-none-any.whl
   name: aiohappyeyeballs
   version: 2.7.1
@@ -235,6 +447,28 @@ packages:
   version: 26.1.0
   sha256: c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/a5/6e/e4e8b75716dbe5e50964f070266e06f4e6806ce051bfb97f52ee162b9310/bitsandbytes-0.50.2-py3-none-manylinux_2_24_x86_64.whl
+  name: bitsandbytes
+  version: 0.50.2
+  sha256: 55348a9a4a21bfd99cf8c7b32fe67b4030ae5c2a05738e03c1747f65fa6ec283
+  requires_dist:
+  - torch>=2.4,<3
+  - numpy>=1.17
+  - packaging>=20.9
+  - pandas ; extra == 'benchmark'
+  - matplotlib ; extra == 'benchmark'
+  - hf-doc-builder==0.5.0 ; extra == 'docs'
+  - bitsandbytes[test] ; extra == 'dev'
+  - build>=1.0.0,<2 ; extra == 'dev'
+  - ruff~=0.14.3 ; extra == 'dev'
+  - pre-commit>=3.5.0,<4 ; extra == 'dev'
+  - wheel>=0.42,<1 ; extra == 'dev'
+  - einops~=0.8.0 ; extra == 'test'
+  - lion-pytorch==0.2.3 ; extra == 'test'
+  - pytest~=8.3 ; extra == 'test'
+  - scipy>=1.11.4,<2 ; extra == 'test'
+  - transformers>=4.30.1,<5 ; extra == 'test'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/03/a7/03aa61fbc3c5cbf99b44d158665f9b0dd3d8059be16c460208d9e385c837/brotli-1.2.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: brotli
   version: 1.2.0
@@ -259,6 +493,15 @@ packages:
   purls: []
   size: 129191
   timestamp: 1792347285941
+- conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
+  sha256: 95619b9c1184be7175392eeb0ee7eeb5ccf25d280951f4225f2d62e725790be3
+  md5: 3fd02989038a1e1cee627c14c2d73f29
+  depends:
+  - __unix
+  license: ISC
+  purls: []
+  size: 130057
+  timestamp: 1792772446739
 - pypi: https://files.pythonhosted.org/packages/42/3c/57a6c1683576c9a626207399972c2e83420dc6f87c239446190021d649db/cadquery-2.8.0-py3-none-any.whl
   name: cadquery
   version: 2.8.0
@@ -306,6 +549,16 @@ packages:
   version: 2026.10.19
   sha256: 42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b
   requires_python: '>=3.7'
+- pypi: https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl
+  name: certifi
+  version: 2026.10.23
+  sha256: e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1
+  requires_python: '>=3.7'
+- pypi: https://files.pythonhosted.org/packages/7f/c5/38806a25ab5e65fc178f39affeda20858efafede2fce1ffc2556cfc9fe73/charset_normalizer-3.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: charset-normalizer
+  version: 3.5.2
+  sha256: 3d31298449090ab8d47b7b1b2a555ff73cac7ed438a08b7ac160980c7ebed649
+  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl
   name: click
   version: 8.5.0
@@ -343,6 +596,108 @@ packages:
   - pytest-xdist ; extra == 'test-no-images'
   - wurlitzer ; extra == 'test-no-images'
   requires_python: '>=3.12'
+- pypi: https://files.pythonhosted.org/packages/c2/f8/332443cf969734551891cdbd93657eaeaf747ac2b7dd73feb3422701b02b/cuda_bindings-13.4.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+  name: cuda-bindings
+  version: 13.4.4
+  sha256: 433efa31e33c2868621b5f6036bd3bf5de9c45c5546cb1361a5f6ff3415b8bb5
+  requires_dist:
+  - cuda-pathfinder>=1.4.2
+  - cuda-toolkit[nvfatbin,nvjitlink,nvrtc,nvvm]==13.* ; extra == 'all'
+  - cuda-toolkit[cufile]==13.* ; sys_platform == 'linux' and extra == 'all'
+  - cuda-toolkit==13.* ; extra == 'all'
+  - nvidia-cudla==13.* ; platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/8e/93/f0904fa7d954ecc4c0db17c8d63d185d442dd59fc6757f1d1f448c59c256/cuda_pathfinder-1.8.4-py3-none-any.whl
+  name: cuda-pathfinder
+  version: 1.8.4
+  sha256: 85a4e708c725d603f576042ef32781a3d1737c51e84c35fe361d2680191af65a
+  requires_python: '>=3.11'
+- pypi: https://files.pythonhosted.org/packages/d1/c7/a79086a62c98befcdb8349656c6f114e2db3b8b2422f6e25c97a7f2a9a3c/cuda_toolkit-13.0.3.0-py2.py3-none-any.whl
+  name: cuda-toolkit
+  version: 13.0.3.0
+  sha256: d693caaa261214ddd7dbb60d68e71cbed884e68c2be7509778f3051da0b91c3f
+  requires_dist:
+  - nvidia-cublas==13.1.1.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-cccl==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-crt==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-culibos==13.0.85.* ; (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-cupti==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-cuxxfilt==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-nvcc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-nvrtc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-opencl==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-profiler-api==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-runtime==13.0.96.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-sanitizer-api==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cufft==12.0.0.61.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cufile==1.15.1.6.* ; (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-curand==10.4.0.35.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cusolver==12.0.4.66.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cusparse==12.6.3.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-npp==13.0.1.2.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvfatbin==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvjpeg==13.0.1.86.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvml-dev==13.0.87.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvptxcompiler==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvtx==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-nvvm==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'all') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'all') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'all')
+  - nvidia-cuda-cccl==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cccl') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cccl') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cccl')
+  - nvidia-cuda-crt==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'crt') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'crt') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'crt')
+  - nvidia-cublas==13.1.1.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cublas') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cublas') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cublas')
+  - nvidia-cuda-nvrtc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cublas') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cublas') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cublas')
+  - nvidia-cuda-runtime==13.0.96.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cudart') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cudart') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cudart')
+  - nvidia-cufft==12.0.0.61.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cufft') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cufft') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cufft')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cufft') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cufft') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cufft')
+  - nvidia-cufile==1.15.1.6.* ; (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cufile') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cufile')
+  - nvidia-cuda-culibos==13.0.85.* ; (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'culibos') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'culibos')
+  - nvidia-cuda-cupti==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cupti') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cupti') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cupti')
+  - nvidia-curand==10.4.0.35.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'curand') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'curand') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'curand')
+  - nvidia-cublas==13.1.1.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusolver') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusolver') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusolver')
+  - nvidia-cusolver==12.0.4.66.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusolver') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusolver') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusolver')
+  - nvidia-cusparse==12.6.3.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusolver') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusolver') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusolver')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusolver') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusolver') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusolver')
+  - nvidia-cusparse==12.6.3.3.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusparse') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusparse') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusparse')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cusparse') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cusparse') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cusparse')
+  - nvidia-cuda-cuxxfilt==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cuxxfilt') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'cuxxfilt') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cuxxfilt')
+  - nvidia-npp==13.0.1.2.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'npp') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'npp') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'npp')
+  - nvidia-cuda-crt==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvcc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvcc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvcc')
+  - nvidia-cuda-nvcc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvcc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvcc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvcc')
+  - nvidia-cuda-runtime==13.0.96.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvcc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvcc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvcc')
+  - nvidia-nvvm==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvcc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvcc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvcc')
+  - nvidia-nvfatbin==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvfatbin') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvfatbin') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvfatbin')
+  - nvidia-nvjitlink>=13.0.88,<14 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvjitlink') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvjitlink') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvjitlink')
+  - nvidia-nvjpeg==13.0.1.86.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvjpeg') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvjpeg') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvjpeg')
+  - nvidia-nvml-dev==13.0.87.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvml') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvml') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvml')
+  - nvidia-nvptxcompiler==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvptxcompiler') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvptxcompiler') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvptxcompiler')
+  - nvidia-cuda-nvrtc==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvrtc') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvrtc') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvrtc')
+  - nvidia-nvtx==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvtx') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvtx') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvtx')
+  - nvidia-nvvm==13.0.88.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'nvvm') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'nvvm') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'nvvm')
+  - nvidia-cuda-opencl==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'opencl') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'opencl')
+  - nvidia-cuda-profiler-api==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'profiler') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'profiler') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'profiler')
+  - nvidia-cuda-sanitizer-api==13.0.85.* ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'sanitizer') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'sanitizer') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'sanitizer')
+- pypi: https://files.pythonhosted.org/packages/df/5f/62fdb048f84d19e2123b6bbd722fe09c8c79b4964c50094d1e979db808e2/cut_cross_entropy-25.1.1-py3-none-any.whl
+  name: cut-cross-entropy
+  version: 25.1.1
+  sha256: e46f26d348f6a67927d17e65c5a212e795be13dcad5b10a77a200d6b8102d9d1
+  requires_dist:
+  - torch
+  - triton ; sys_platform == 'linux'
+  - pytest ; extra == 'test'
+  - transformers>=4.44.2 ; extra == 'transformers'
+  - cut-cross-entropy[transformers] ; extra == 'all'
+  - deepspeed>=0.15.1 ; sys_platform != 'darwin' and extra == 'all'
+  - accelerate>=0.34.2 ; extra == 'all'
+  - datasets>=3.1.0 ; extra == 'all'
+  - huggingface-hub>=0.26.2 ; extra == 'all'
+  - pandas ; extra == 'all'
+  - fire ; extra == 'all'
+  - tqdm ; extra == 'all'
+  - cut-cross-entropy[all,test] ; extra == 'dev'
+  - build ; extra == 'dev'
+  - twine ; extra == 'dev'
+  - pre-commit ; extra == 'dev'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl
   name: cycler
   version: 0.12.1
@@ -356,6 +711,249 @@ packages:
   - pytest-cov ; extra == 'tests'
   - pytest-xdist ; extra == 'tests'
   requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/65/99/00f3196036501b53032c4b1ab8337a0b978dee832ed276dae3815df4e8b5/datasets-4.8.5-py3-none-any.whl
+  name: datasets
+  version: 4.8.5
+  sha256: 5079900781719c0e063a8efdd2cd95a31ad0c63209178669cd23cf1b926149ff
+  requires_dist:
+  - filelock
+  - numpy>=1.17
+  - pyarrow>=21.0.0
+  - dill>=0.3.0,<0.4.2
+  - pandas
+  - requests>=2.32.2
+  - httpx<1.0.0
+  - tqdm>=4.66.3
+  - xxhash
+  - multiprocess<0.70.20
+  - fsspec[http]>=2023.1.0,<=2026.2.0
+  - huggingface-hub>=0.25.0,<2.0
+  - packaging
+  - pyyaml>=5.1
+  - torchcodec>=0.6.0 ; extra == 'audio'
+  - torch>=2.8.0 ; extra == 'audio'
+  - pillow>=9.4.0 ; extra == 'vision'
+  - tensorflow>=2.6.0 ; extra == 'tensorflow'
+  - tensorflow>=2.6.0 ; extra == 'tensorflow-gpu'
+  - torch ; extra == 'torch'
+  - jax>=0.3.14 ; extra == 'jax'
+  - jaxlib>=0.3.14 ; extra == 'jax'
+  - numba>=0.56.4 ; python_full_version < '3.14' and extra == 'dev'
+  - absl-py ; extra == 'dev'
+  - decorator ; extra == 'dev'
+  - joblib<1.3.0 ; extra == 'dev'
+  - joblibspark ; python_full_version < '3.14' and extra == 'dev'
+  - pytest ; extra == 'dev'
+  - pytest-datadir ; extra == 'dev'
+  - pytest-xdist ; extra == 'dev'
+  - aiohttp ; extra == 'dev'
+  - elasticsearch>=7.17.12,<8.0.0 ; extra == 'dev'
+  - faiss-cpu>=1.8.0.post1 ; extra == 'dev'
+  - h5py ; extra == 'dev'
+  - pylance ; extra == 'dev'
+  - jax>=0.3.14 ; sys_platform != 'win32' and extra == 'dev'
+  - jaxlib>=0.3.14 ; sys_platform != 'win32' and extra == 'dev'
+  - lz4 ; python_full_version < '3.14' and extra == 'dev'
+  - moto[server] ; extra == 'dev'
+  - pyspark>=3.4 ; extra == 'dev'
+  - py7zr ; extra == 'dev'
+  - rarfile>=4.0 ; extra == 'dev'
+  - sqlalchemy ; extra == 'dev'
+  - protobuf<4.0.0 ; extra == 'dev'
+  - tensorflow>=2.6.0 ; python_full_version < '3.10' and sys_platform != 'win32' and extra == 'dev'
+  - tensorflow>=2.16.0 ; python_full_version >= '3.10' and python_full_version < '3.14' and sys_platform != 'win32' and extra == 'dev'
+  - tiktoken ; extra == 'dev'
+  - torch>=2.8.0 ; extra == 'dev'
+  - torchdata ; extra == 'dev'
+  - transformers>=4.42.0 ; extra == 'dev'
+  - zstandard ; extra == 'dev'
+  - polars[timezone]>=0.20.0 ; extra == 'dev'
+  - pillow>=9.4.0 ; extra == 'dev'
+  - torchcodec>=0.7.0 ; python_full_version < '3.14' and extra == 'dev'
+  - nibabel>=5.3.1 ; extra == 'dev'
+  - ruff>=0.3.0 ; extra == 'dev'
+  - transformers ; extra == 'dev'
+  - torch ; extra == 'dev'
+  - tensorflow>=2.6.0 ; extra == 'dev'
+  - numba>=0.56.4 ; python_full_version < '3.14' and extra == 'tests'
+  - absl-py ; extra == 'tests'
+  - decorator ; extra == 'tests'
+  - joblib<1.3.0 ; extra == 'tests'
+  - joblibspark ; python_full_version < '3.14' and extra == 'tests'
+  - pytest ; extra == 'tests'
+  - pytest-datadir ; extra == 'tests'
+  - pytest-xdist ; extra == 'tests'
+  - aiohttp ; extra == 'tests'
+  - elasticsearch>=7.17.12,<8.0.0 ; extra == 'tests'
+  - faiss-cpu>=1.8.0.post1 ; extra == 'tests'
+  - h5py ; extra == 'tests'
+  - pylance ; extra == 'tests'
+  - jax>=0.3.14 ; sys_platform != 'win32' and extra == 'tests'
+  - jaxlib>=0.3.14 ; sys_platform != 'win32' and extra == 'tests'
+  - lz4 ; python_full_version < '3.14' and extra == 'tests'
+  - moto[server] ; extra == 'tests'
+  - pyspark>=3.4 ; extra == 'tests'
+  - py7zr ; extra == 'tests'
+  - rarfile>=4.0 ; extra == 'tests'
+  - sqlalchemy ; extra == 'tests'
+  - protobuf<4.0.0 ; extra == 'tests'
+  - tensorflow>=2.6.0 ; python_full_version < '3.10' and sys_platform != 'win32' and extra == 'tests'
+  - tensorflow>=2.16.0 ; python_full_version >= '3.10' and python_full_version < '3.14' and sys_platform != 'win32' and extra == 'tests'
+  - tiktoken ; extra == 'tests'
+  - torch>=2.8.0 ; extra == 'tests'
+  - torchdata ; extra == 'tests'
+  - transformers>=4.42.0 ; extra == 'tests'
+  - zstandard ; extra == 'tests'
+  - polars[timezone]>=0.20.0 ; extra == 'tests'
+  - pillow>=9.4.0 ; extra == 'tests'
+  - torchcodec>=0.7.0 ; python_full_version < '3.14' and extra == 'tests'
+  - nibabel>=5.3.1 ; extra == 'tests'
+  - numba>=0.56.4 ; python_full_version < '3.14' and extra == 'tests-numpy2'
+  - absl-py ; extra == 'tests-numpy2'
+  - decorator ; extra == 'tests-numpy2'
+  - joblib<1.3.0 ; extra == 'tests-numpy2'
+  - joblibspark ; python_full_version < '3.14' and extra == 'tests-numpy2'
+  - pytest ; extra == 'tests-numpy2'
+  - pytest-datadir ; extra == 'tests-numpy2'
+  - pytest-xdist ; extra == 'tests-numpy2'
+  - aiohttp ; extra == 'tests-numpy2'
+  - elasticsearch>=7.17.12,<8.0.0 ; extra == 'tests-numpy2'
+  - h5py ; extra == 'tests-numpy2'
+  - pylance ; extra == 'tests-numpy2'
+  - jax>=0.3.14 ; sys_platform != 'win32' and extra == 'tests-numpy2'
+  - jaxlib>=0.3.14 ; sys_platform != 'win32' and extra == 'tests-numpy2'
+  - lz4 ; python_full_version < '3.14' and extra == 'tests-numpy2'
+  - moto[server] ; extra == 'tests-numpy2'
+  - pyspark>=3.4 ; extra == 'tests-numpy2'
+  - py7zr ; extra == 'tests-numpy2'
+  - rarfile>=4.0 ; extra == 'tests-numpy2'
+  - sqlalchemy ; extra == 'tests-numpy2'
+  - protobuf<4.0.0 ; extra == 'tests-numpy2'
+  - tiktoken ; extra == 'tests-numpy2'
+  - torch>=2.8.0 ; extra == 'tests-numpy2'
+  - torchdata ; extra == 'tests-numpy2'
+  - transformers>=4.42.0 ; extra == 'tests-numpy2'
+  - zstandard ; extra == 'tests-numpy2'
+  - polars[timezone]>=0.20.0 ; extra == 'tests-numpy2'
+  - pillow>=9.4.0 ; extra == 'tests-numpy2'
+  - torchcodec>=0.7.0 ; python_full_version < '3.14' and extra == 'tests-numpy2'
+  - nibabel>=5.3.1 ; extra == 'tests-numpy2'
+  - ruff>=0.3.0 ; extra == 'quality'
+  - tensorflow==2.12.0 ; extra == 'benchmarks'
+  - torch==2.0.1 ; extra == 'benchmarks'
+  - transformers==4.30.1 ; extra == 'benchmarks'
+  - transformers ; extra == 'docs'
+  - torch ; extra == 'docs'
+  - tensorflow>=2.6.0 ; extra == 'docs'
+  - pdfplumber>=0.11.4 ; extra == 'pdfs'
+  - nibabel>=5.3.2 ; extra == 'nibabel'
+  - ipyniivue==2.4.2 ; extra == 'nibabel'
+  requires_python: '>=3.10.0'
+- pypi: https://files.pythonhosted.org/packages/e1/e9/4328c781bc64f8b74363f66674c00e65021e9a857fb9cb4882ed447956cd/diffusers-0.42.1-py3-none-any.whl
+  name: diffusers
+  version: 0.42.1
+  sha256: 9154faa704ce00e0b77f568e0d64786064368528aab5fc14eeea92f87d788014
+  requires_dist:
+  - importlib-metadata
+  - filelock
+  - huggingface-hub>=1.32.0,<3.0
+  - numpy
+  - regex!=2019.12.17
+  - requests
+  - safetensors>=0.8.0
+  - pillow
+  - urllib3<=2.0.0 ; extra == 'quality'
+  - isort>=5.5.4 ; extra == 'quality'
+  - ruff==0.9.10 ; extra == 'quality'
+  - hf-doc-builder>=0.3.0 ; extra == 'quality'
+  - hf-doc-builder>=0.3.0 ; extra == 'docs'
+  - accelerate>=0.31.0 ; extra == 'training'
+  - datasets ; extra == 'training'
+  - protobuf>=3.20.3,<4 ; extra == 'training'
+  - tensorboard ; extra == 'training'
+  - jinja2 ; extra == 'training'
+  - peft>=0.17.0 ; extra == 'training'
+  - timm ; extra == 'training'
+  - ftfy ; extra == 'test'
+  - gitpython<3.1.19 ; extra == 'test'
+  - datasets ; extra == 'test'
+  - jinja2 ; extra == 'test'
+  - invisible-watermark>=0.2.0 ; extra == 'test'
+  - librosa ; extra == 'test'
+  - llvmlite>=0.40.0 ; extra == 'test'
+  - numba>=0.57.0 ; extra == 'test'
+  - parameterized ; extra == 'test'
+  - protobuf>=3.20.3,<4 ; extra == 'test'
+  - pytest ; extra == 'test'
+  - pytest-timeout ; extra == 'test'
+  - pytest-xdist ; extra == 'test'
+  - requests-mock==1.10.0 ; extra == 'test'
+  - safetensors>=0.8.0 ; extra == 'test'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'test'
+  - scipy ; extra == 'test'
+  - tiktoken>=0.7.0 ; extra == 'test'
+  - torchsde ; extra == 'test'
+  - torchvision ; extra == 'test'
+  - transformers>=4.41.2 ; extra == 'test'
+  - phonemizer ; extra == 'test'
+  - torch>=2.6 ; extra == 'torch'
+  - accelerate>=0.31.0 ; extra == 'torch'
+  - bitsandbytes>=0.43.3 ; extra == 'bitsandbytes'
+  - accelerate>=0.31.0 ; extra == 'bitsandbytes'
+  - gguf>=0.10.0 ; extra == 'gguf'
+  - accelerate>=0.31.0 ; extra == 'gguf'
+  - optimum-quanto>=0.2.6 ; extra == 'optimum-quanto'
+  - accelerate>=0.31.0 ; extra == 'optimum-quanto'
+  - torchao>=0.15.0 ; extra == 'torchao'
+  - accelerate>=0.31.0 ; extra == 'torchao'
+  - nvidia-modelopt[hf]>=0.33.1 ; extra == 'nvidia-modelopt'
+  - sdnq>=0.2.2 ; extra == 'sdnq'
+  - flashpack ; extra == 'flashpack'
+  - urllib3<=2.0.0 ; extra == 'dev'
+  - isort>=5.5.4 ; extra == 'dev'
+  - ruff==0.9.10 ; extra == 'dev'
+  - hf-doc-builder>=0.3.0 ; extra == 'dev'
+  - ftfy ; extra == 'dev'
+  - gitpython<3.1.19 ; extra == 'dev'
+  - datasets ; extra == 'dev'
+  - jinja2 ; extra == 'dev'
+  - invisible-watermark>=0.2.0 ; extra == 'dev'
+  - librosa ; extra == 'dev'
+  - llvmlite>=0.40.0 ; extra == 'dev'
+  - numba>=0.57.0 ; extra == 'dev'
+  - parameterized ; extra == 'dev'
+  - protobuf>=3.20.3,<4 ; extra == 'dev'
+  - pytest ; extra == 'dev'
+  - pytest-timeout ; extra == 'dev'
+  - pytest-xdist ; extra == 'dev'
+  - requests-mock==1.10.0 ; extra == 'dev'
+  - safetensors>=0.8.0 ; extra == 'dev'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'dev'
+  - scipy ; extra == 'dev'
+  - tiktoken>=0.7.0 ; extra == 'dev'
+  - torchsde ; extra == 'dev'
+  - torchvision ; extra == 'dev'
+  - transformers>=4.41.2 ; extra == 'dev'
+  - phonemizer ; extra == 'dev'
+  - accelerate>=0.31.0 ; extra == 'dev'
+  - datasets ; extra == 'dev'
+  - protobuf>=3.20.3,<4 ; extra == 'dev'
+  - tensorboard ; extra == 'dev'
+  - jinja2 ; extra == 'dev'
+  - peft>=0.17.0 ; extra == 'dev'
+  - timm ; extra == 'dev'
+  - hf-doc-builder>=0.3.0 ; extra == 'dev'
+  - torch>=2.6 ; extra == 'dev'
+  - accelerate>=0.31.0 ; extra == 'dev'
+  requires_python: '>=3.11.0'
+- pypi: https://files.pythonhosted.org/packages/1e/77/dc8c558f7593132cf8fefec57c4f60c83b16941c574ac5f619abb3ae7933/dill-0.4.1-py3-none-any.whl
+  name: dill
+  version: 0.4.1
+  sha256: 1e1ce33e978ae97fcfcff5638477032b801c46c7c65cf717f95fbc2248f79a9d
+  requires_dist:
+  - objgraph>=1.7.2 ; extra == 'graph'
+  - gprof2dot>=2022.7.29 ; extra == 'profile'
+  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/a7/5f/ed01f9a3cdffbd5a008556fc7b2a08ddb1cc6ace7effa7340604b1d16699/docstring_parser-0.18.0-py3-none-any.whl
   name: docstring-parser
   version: 0.18.0
@@ -367,6 +965,11 @@ packages:
   - pydoctor>=25.4.0 ; extra == 'docs'
   - pytest ; extra == 'test'
   requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl
+  name: einops
+  version: 0.8.2
+  sha256: 54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193
+  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/d5/e7/1f8f3e2ff4a736f86654f20d25d7cfc63d74d8ad09609120b0ada9f4146e/ezdxf-1.4.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: ezdxf
   version: 1.4.5
@@ -498,6 +1101,114 @@ packages:
   version: 1.8.0
   sha256: 494a5952b1c597ba44e0e78113a7266e656b9794eec897b19ead706bd7074383
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/e6/ab/fb21f4c939bb440104cc2b396d3be1d9b7a9fd3c6c2a53d98c45b3d7c954/fsspec-2026.2.0-py3-none-any.whl
+  name: fsspec
+  version: 2026.2.0
+  sha256: 98de475b5cb3bd66bedd5c4679e87b4fdfe1a3bf4d707b151b3c07e58c9a2437
+  requires_dist:
+  - adlfs ; extra == 'abfs'
+  - adlfs ; extra == 'adl'
+  - pyarrow>=1 ; extra == 'arrow'
+  - dask ; extra == 'dask'
+  - distributed ; extra == 'dask'
+  - pre-commit ; extra == 'dev'
+  - ruff>=0.5 ; extra == 'dev'
+  - numpydoc ; extra == 'doc'
+  - sphinx ; extra == 'doc'
+  - sphinx-design ; extra == 'doc'
+  - sphinx-rtd-theme ; extra == 'doc'
+  - yarl ; extra == 'doc'
+  - dropbox ; extra == 'dropbox'
+  - dropboxdrivefs ; extra == 'dropbox'
+  - requests ; extra == 'dropbox'
+  - adlfs ; extra == 'full'
+  - aiohttp!=4.0.0a0,!=4.0.0a1 ; extra == 'full'
+  - dask ; extra == 'full'
+  - distributed ; extra == 'full'
+  - dropbox ; extra == 'full'
+  - dropboxdrivefs ; extra == 'full'
+  - fusepy ; extra == 'full'
+  - gcsfs>2024.2.0 ; extra == 'full'
+  - libarchive-c ; extra == 'full'
+  - ocifs ; extra == 'full'
+  - panel ; extra == 'full'
+  - paramiko ; extra == 'full'
+  - pyarrow>=1 ; extra == 'full'
+  - pygit2 ; extra == 'full'
+  - requests ; extra == 'full'
+  - s3fs>2024.2.0 ; extra == 'full'
+  - smbprotocol ; extra == 'full'
+  - tqdm ; extra == 'full'
+  - fusepy ; extra == 'fuse'
+  - gcsfs>2024.2.0 ; extra == 'gcs'
+  - pygit2 ; extra == 'git'
+  - requests ; extra == 'github'
+  - gcsfs ; extra == 'gs'
+  - panel ; extra == 'gui'
+  - pyarrow>=1 ; extra == 'hdfs'
+  - aiohttp!=4.0.0a0,!=4.0.0a1 ; extra == 'http'
+  - libarchive-c ; extra == 'libarchive'
+  - ocifs ; extra == 'oci'
+  - s3fs>2024.2.0 ; extra == 's3'
+  - paramiko ; extra == 'sftp'
+  - smbprotocol ; extra == 'smb'
+  - paramiko ; extra == 'ssh'
+  - aiohttp!=4.0.0a0,!=4.0.0a1 ; extra == 'test'
+  - numpy ; extra == 'test'
+  - pytest ; extra == 'test'
+  - pytest-asyncio!=0.22.0 ; extra == 'test'
+  - pytest-benchmark ; extra == 'test'
+  - pytest-cov ; extra == 'test'
+  - pytest-mock ; extra == 'test'
+  - pytest-recording ; extra == 'test'
+  - pytest-rerunfailures ; extra == 'test'
+  - requests ; extra == 'test'
+  - aiobotocore>=2.5.4,<3.0.0 ; extra == 'test-downstream'
+  - dask[dataframe,test] ; extra == 'test-downstream'
+  - moto[server]>4,<5 ; extra == 'test-downstream'
+  - pytest-timeout ; extra == 'test-downstream'
+  - xarray ; extra == 'test-downstream'
+  - adlfs ; extra == 'test-full'
+  - aiohttp!=4.0.0a0,!=4.0.0a1 ; extra == 'test-full'
+  - backports-zstd ; python_full_version < '3.14' and extra == 'test-full'
+  - cloudpickle ; extra == 'test-full'
+  - dask ; extra == 'test-full'
+  - distributed ; extra == 'test-full'
+  - dropbox ; extra == 'test-full'
+  - dropboxdrivefs ; extra == 'test-full'
+  - fastparquet ; extra == 'test-full'
+  - fusepy ; extra == 'test-full'
+  - gcsfs ; extra == 'test-full'
+  - jinja2 ; extra == 'test-full'
+  - kerchunk ; extra == 'test-full'
+  - libarchive-c ; extra == 'test-full'
+  - lz4 ; extra == 'test-full'
+  - notebook ; extra == 'test-full'
+  - numpy ; extra == 'test-full'
+  - ocifs ; extra == 'test-full'
+  - pandas<3.0.0 ; extra == 'test-full'
+  - panel ; extra == 'test-full'
+  - paramiko ; extra == 'test-full'
+  - pyarrow ; extra == 'test-full'
+  - pyarrow>=1 ; extra == 'test-full'
+  - pyftpdlib ; extra == 'test-full'
+  - pygit2 ; extra == 'test-full'
+  - pytest ; extra == 'test-full'
+  - pytest-asyncio!=0.22.0 ; extra == 'test-full'
+  - pytest-benchmark ; extra == 'test-full'
+  - pytest-cov ; extra == 'test-full'
+  - pytest-mock ; extra == 'test-full'
+  - pytest-recording ; extra == 'test-full'
+  - pytest-rerunfailures ; extra == 'test-full'
+  - python-snappy ; extra == 'test-full'
+  - requests ; extra == 'test-full'
+  - smbprotocol ; extra == 'test-full'
+  - tqdm ; extra == 'test-full'
+  - urllib3 ; extra == 'test-full'
+  - zarr ; extra == 'test-full'
+  - zstandard ; python_full_version < '3.14' and extra == 'test-full'
+  - tqdm ; extra == 'tqdm'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl
   name: fsspec
   version: 2026.9.0
@@ -679,10 +1390,22 @@ packages:
   - ruff ; extra == 'dev'
   - ty ; extra == 'dev'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/d6/d8/f87ea6f42456254b48915970ed98e993110521e9263472840174d32c880d/hf_transfer-0.1.9-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  name: hf-transfer
+  version: 0.1.9
+  sha256: cdca9bfb89e6f8f281890cc61a8aff2d3cecaff7e1a4d275574d96ca70098557
+  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/a3/4c/2bf3b66c215d409655f28de1622393dde04c9461280d48c7924bb3b2decd/hf_xet-1.7.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: hf-xet
   version: 1.7.0
   sha256: 2814a6e999d13464c4d679b788cc5d784eb5a4edfc638a31f10e9a11ab531ef8
+  requires_dist:
+  - pytest ; extra == 'tests'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/91/99/105c23da56161acdc4e5b3022ae6d225ab54269a44eb7303f41e3a7be09e/hf_xet-1.7.1-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: hf-xet
+  version: 1.7.1
+  sha256: f26bfd4a6e31b4e37e749a07e8642589406e8537be05eccfd633a92b95e2fb51
   requires_dist:
   - pytest ; extra == 'tests'
   requires_python: '>=3.8'
@@ -880,6 +1603,29 @@ packages:
   - hypothesis>=6.141.1 ; extra == 'all'
   - coverage>=7.10.0 ; extra == 'all'
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/65/b6/495438ad95e0102aff8f6786b5474202f38cd5d4700d03a72b77977dec10/importlib_metadata-10.1.0-py3-none-any.whl
+  name: importlib-metadata
+  version: 10.1.0
+  sha256: cf45ce66a929c64e994185a809c04840d0501db17e663810d993d0f4829265c7
+  requires_dist:
+  - zipp>=3.20
+  - pytest>=6,!=8.1.* ; extra == 'test'
+  - packaging ; extra == 'test'
+  - pyfakefs ; extra == 'test'
+  - pytest-perf>=0.17 ; extra == 'test'
+  - sphinx>=3.5 ; extra == 'doc'
+  - jaraco-packaging>=9.3 ; extra == 'doc'
+  - rst-linker>=1.9 ; extra == 'doc'
+  - furo ; extra == 'doc'
+  - sphinx-lint ; extra == 'doc'
+  - jaraco-tidelift>=1.4 ; extra == 'doc'
+  - ipython ; extra == 'perf'
+  - pytest-checkdocs>=2.14 ; extra == 'check'
+  - pytest-ruff>=0.2.1 ; sys_platform != 'cygwin' and extra == 'check'
+  - pytest-cov ; extra == 'cover'
+  - pytest-enabler>=3.4 ; extra == 'enabler'
+  - pytest-mypy>=1.0.1 ; platform_python_implementation != 'PyPy' and extra == 'type'
+  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/56/43/4ca9e49d27a1fcf6bece6f6aec0ea46bb9112489b93d4b688fb415457bdb/iniconfig-2.3.1-py3-none-any.whl
   name: iniconfig
   version: 2.3.1
@@ -928,6 +1674,11 @@ packages:
   - sphinx-design ; extra == 'docs'
   - tqdm ; extra == 'docs'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/ae/39/e689b616c4279a821d5842a8a85c1874540f8d58e35028df93f2182120c2/json5-0.17.3-py3-none-any.whl
+  name: json5
+  version: 0.17.3
+  sha256: 2c8b22a893c35cd6a3c5ccbf1dd1c7d02c25dc1b5897fea658f9bf08c2e05f9a
+  requires_python: '>=3.8.0'
 - pypi: https://files.pythonhosted.org/packages/fc/f4/dadfec469313c7f428efa7e84b4aba9732f813c13ea7131a24b7b008ef57/kiwisolver-1.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: kiwisolver
   version: 1.5.1
@@ -959,6 +1710,19 @@ packages:
   purls: []
   size: 77893
   timestamp: 1790346247149
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.9.0-hd2095e1_0.conda
+  sha256: 7b930a8b6bc6553cb754b4977a11f9c862c719a652fc2d128d89270992ce8beb
+  md5: 317ecabe4a58b3068c7958dc5eb89e43
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=15
+  constrains:
+  - expat 2.9.0.*
+  license: MIT
+  license_family: MIT
+  purls: []
+  size: 78894
+  timestamp: 1793054221966
 - conda: https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda
   sha256: c8c7583ef063bc3c430f1d48298e5ad24f796a35c22ed5b14183325825a61106
   md5: 6525a0b06aa4fd390795f0740636a9dd
@@ -1028,6 +1792,16 @@ packages:
   purls: []
   size: 8775924
   timestamp: 1791911120563
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libpython-3.12.16-ha57cdbe_0_cpython.conda
+  sha256: 71126cad347dfd1be645b1207baa3729e64f055edb5f785dadeb84872480a015
+  md5: e1442492859319edcd76293a2488156e
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=15
+  license: Python-2.0
+  purls: []
+  size: 8763999
+  timestamp: 1793015475617
 - conda: https://conda.anaconda.org/conda-forge/linux-64/libsqlite-3.54.1-h0737f62_100.conda
   sha256: 107ba2f9134b45a6fdaf8d2485f432e3a643fdfaf711a325d0c9139b580b3523
   md5: 5fdfd335c3d653e41c1eea1353d827d0
@@ -1041,6 +1815,19 @@ packages:
   purls: []
   size: 980418
   timestamp: 1792175610911
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libsqlite-3.54.1-h0737f62_101.conda
+  sha256: c294029f893d05286f1061bbab85b820f1eea73dd859af4bcc619197bcc34810
+  md5: 36e097bf5f1e0699e88c8ac801f2dc65
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=15
+  - libzlib >=1.3.2,<2.0a0
+  constrains:
+  - icu <0.0a0
+  license: blessing
+  purls: []
+  size: 980491
+  timestamp: 1793051548007
 - conda: https://conda.anaconda.org/conda-forge/linux-64/libuuid-2.42.4-hcfc3c73_0.conda
   sha256: f34b8d1de9a2bf62476d8608057d9b8a918d97444236dc53a47128f2fae79041
   md5: 54a948337e66706380ff24d6b5fde63f
@@ -1151,10 +1938,32 @@ packages:
   version: 11.2.1
   sha256: 35a7377edd1dd6608dcb2cdf534ded55ea32d49448875ad042cd3f879fb1ded0
   requires_python: '>=3.11'
+- pypi: https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl
+  name: mpmath
+  version: 1.3.0
+  sha256: a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c
+  requires_dist:
+  - pytest>=4.6 ; extra == 'develop'
+  - pycodestyle ; extra == 'develop'
+  - pytest-cov ; extra == 'develop'
+  - codecov ; extra == 'develop'
+  - wheel ; extra == 'develop'
+  - sphinx ; extra == 'docs'
+  - gmpy2>=2.1.0a4 ; platform_python_implementation != 'PyPy' and extra == 'gmpy'
+  - pytest>=4.6 ; extra == 'tests'
 - pypi: https://files.pythonhosted.org/packages/3a/cf/9c2e4d6c179529d5bf4a64cff76fa581486569e9fbdd35bd98f51cb624bf/msgpack-1.2.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
   name: msgpack
   version: 1.2.3
   sha256: ede33b2892ceb976283e009ad12fa1834cfdf1f9c43ee9c97849fc588d00a618
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/4a/cc/aa1a47f8c92280d37498a5ea56a2a36606d034383e3e6472d64cbb56cf85/msgspec-0.22.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: msgspec
+  version: 0.22.0
+  sha256: 99c401861c5bb3a57f7d6423ea7ed4352cd57aa3f04f4fbe9f3e3e4564a10f08
+  requires_dist:
+  - tomli ; python_full_version < '3.11' and extra == 'toml'
+  - tomli-w ; extra == 'toml'
+  - pyyaml ; extra == 'yaml'
   requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/7a/f3/374c0ab122bb98b1a62a8742b1e3f59563e4d609942005a4041861a0df67/multidict-7.1.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
   name: multidict
@@ -1163,10 +1972,22 @@ packages:
   requires_dist:
   - typing-extensions>=4.1.0 ; python_full_version < '3.11'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/43/50/6bd8600b4843f0a9d939e0cc0f4160f4c727bd6c69e4f7e294a1caa93db8/multidict-7.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: multidict
+  version: 7.2.1
+  sha256: 1fb8c1a3480c130c3a6422d5f16f3cad6552bf08c2089dd288ba7134649183b5
+  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/af/98/cff14d53a2f2f67d7fe8a4e235a383ee71aba6a1da12aeea24b325d0c72a/multimethod-1.12-py3-none-any.whl
   name: multimethod
   version: '1.12'
   sha256: fd0c473c43558908d97cc06e4d68e8f69202f167db46f7b4e4058893e7dbdf60
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/71/70/38998b950a97ea279e6bd657575d22d1a2047256caf707d9a10fbce4f065/multiprocess-0.70.19-py312-none-any.whl
+  name: multiprocess
+  version: 0.70.19
+  sha256: 3a56c0e85dd5025161bac5ce138dcac1e49174c7d8e74596537e729fd5c53c28
+  requires_dist:
+  - dill>=0.4.1
   requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/d1/89/5d4c86da1130d9059681e5b6cd7645df5c10279a6a079c5c37dcb2cc6f3f/narwhals-2.27.1-py3-none-any.whl
   name: narwhals
@@ -1199,6 +2020,11 @@ packages:
   purls: []
   size: 911196
   timestamp: 1786355078102
+- pypi: https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl
+  name: nest-asyncio
+  version: 1.6.0
+  sha256: 87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c
+  requires_python: '>=3.5'
 - pypi: https://files.pythonhosted.org/packages/7e/cd/fe58041e9011f307c490e3e17dd48cc516448f7c698a3f2d9d9d65d7e6a8/networkx-3.7-py3-none-any.whl
   name: networkx
   version: '3.7'
@@ -1264,6 +2090,92 @@ packages:
   version: 2.5.4
   sha256: fbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a
   requires_python: '>=3.12'
+- pypi: https://files.pythonhosted.org/packages/3b/cd/154ca20c38269e05eff77c1464e6c1da89f50a6390b565e9d82e06bc11e1/nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_x86_64.whl
+  name: nvidia-cublas
+  version: 13.1.1.3
+  sha256: 37936a16db8fe4ac1f065c2139360608a543a09275cb1a1af612e08cfa065436
+  requires_dist:
+  - nvidia-cuda-nvrtc
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/33/6d/737d164b4837a9bbd202f5ae3078975f0525a55730fe871d8ed4e3b952b0/nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl
+  name: nvidia-cuda-cupti
+  version: 13.0.85
+  sha256: 4eb01c08e859bf924d222250d2e8f8b8ff6d3db4721288cf35d14252a4d933c8
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/c3/68/483a78f5e8f31b08fb1bb671559968c0ca3a065ac7acabfc7cee55214fd6/nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+  name: nvidia-cuda-nvrtc
+  version: 13.0.88
+  sha256: ad9b6d2ead2435f11cbb6868809d2adeeee302e9bb94bcf0539c7a40d80e8575
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/2e/24/d1558f3b68b1d26e706813b1d10aa1d785e4698c425af8db8edc3dced472/nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-cuda-runtime
+  version: 13.0.96
+  sha256: 7f82250d7782aa23b6cfe765ecc7db554bd3c2870c43f3d1821f1d18aebf0548
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/5c/ba/791cffd048fe5b044e620df55267e3e95c0e6e07d50b41e377c03dfc910f/nvidia_cudnn_cu13-9.24.0.43-py3-none-manylinux_2_27_x86_64.whl
+  name: nvidia-cudnn-cu13
+  version: 9.24.0.43
+  sha256: 71f181cd810e90f9b6023b01186fe82d13d65f0ec098581ee201d39fad769e4b
+  requires_dist:
+  - nvidia-cublas
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/a8/2f/7b57e29836ea8714f81e9898409196f47d772d5ddedddf1592eadb8ab743/nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-cufft
+  version: 12.0.0.61
+  sha256: 6c44f692dce8fd5ffd3e3df134b6cdb9c2f72d99cf40b62c32dde45eea9ddad3
+  requires_dist:
+  - nvidia-nvjitlink
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/3f/70/4f193de89a48b71714e74602ee14d04e4019ad36a5a9f20c425776e72cd6/nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-cufile
+  version: 1.15.1.6
+  sha256: 08a3ecefae5a01c7f5117351c64f17c7c62efa5fffdbe24fc7d298da19cd0b44
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/a5/9f/be0a41ca4a4917abf5cb9ae0daff1a6060cc5de950aec0396de9f3b52bc5/nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl
+  name: nvidia-curand
+  version: 10.4.0.35
+  sha256: 1aee33a5da6e1db083fe2b90082def8915f30f3248d5896bcec36a579d941bfc
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/5f/67/cba3777620cdacb99102da4042883709c41c709f4b6323c10781a9c3aa34/nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl
+  name: nvidia-cusolver
+  version: 12.0.4.66
+  sha256: 0a759da5dea5c0ea10fd307de75cdeb59e7ea4fcb8add0924859b944babf1112
+  requires_dist:
+  - nvidia-cublas
+  - nvidia-nvjitlink
+  - nvidia-cusparse
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/fa/18/623c77619c31d62efd55302939756966f3ecc8d724a14dab2b75f1508850/nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-cusparse
+  version: 12.6.3.3
+  sha256: 2b3c89c88d01ee0e477cb7f82ef60a11a4bcd57b6b87c33f789350b59759360b
+  requires_dist:
+  - nvidia-nvjitlink
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/34/7d/2661f2fb3ac4302f3a246f5fc030213ac60c1fe0bce84f9783dbd831dbb7/nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl
+  name: nvidia-cusparselt-cu13
+  version: 0.8.1
+  sha256: 786ce87568c303fadb5afcc7102d454cd3040d75f6f8626f5db460d1871f4dd0
+- pypi: https://files.pythonhosted.org/packages/3f/34/c500f90c7ae641b8e0f98965b36b8a7ac79cc8b296e8d251fe3eb592ee54/nvidia_nccl_cu13-2.30.7-py3-none-manylinux_2_18_x86_64.whl
+  name: nvidia-nccl-cu13
+  version: 2.30.7
+  sha256: cefa7fdb9710efd0f39c5f1be1d61ff6fc9a996c451265bd7fbdcf9455ed4b50
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/1d/6b/eef7a9e32872b8f41e145bf10cddc9af26e153c338852811fe9a9baddf9e/nvidia_nvjitlink-13.4.92-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+  name: nvidia-nvjitlink
+  version: 13.4.92
+  sha256: e0391f24ed94ec879b84e3da4d4ec320c879aff681f2c7a638462f7199284323
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/3c/35/a9bf80a609e74e3b000fef598933235c908fcefcef9026042b8e6dfde2a9/nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+  name: nvidia-nvshmem-cu13
+  version: 3.4.5
+  sha256: 290f0a2ee94c9f3687a02502f3b9299a9f9fe826e6d0287ee18482e78d495b80
+  requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/c2/f3/d86c845465a2723ad7e1e5c36dcd75ddb82898b3f53be47ebd429fb2fa5d/nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl
+  name: nvidia-nvtx
+  version: 13.0.85
+  sha256: 4936d1d6780fbe68db454f5e72a42ff64d1fd6397df9f363ae786930fd5c1cd4
+  requires_python: '>=3'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.5-h781a0a9_0.conda
   sha256: 9c1533f1cf784f0e250919c0c9762d0b0e6bc727a79290ffb7cea1ceca1d038c
   md5: 5a51a2ea653f120240b1a9bf76e0aae9
@@ -1383,6 +2295,142 @@ packages:
   - xlsxwriter>=3.2.0 ; extra == 'all'
   - zstandard>=0.23.0 ; extra == 'all'
   requires_python: '>=3.11'
+- pypi: https://files.pythonhosted.org/packages/c5/a6/dc89cdd95e12093bc813e9b814a09f1a056be3e1304edaef9bf9dbee108a/pandas-3.1.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+  name: pandas
+  version: 3.1.0
+  sha256: 9433b5dc2f26ef9d9b56daaf4d41d078bf4372c5d88c42ed5b397a6eea80de16
+  requires_dist:
+  - numpy>=2.0.2 ; python_full_version < '3.14'
+  - numpy>=2.3.3 ; python_full_version >= '3.14'
+  - python-dateutil>=2.9.0
+  - tzdata ; sys_platform == 'win32'
+  - tzdata ; sys_platform == 'emscripten'
+  - pytest>=8.3.4 ; extra == 'test'
+  - pytest-xdist>=3.6.1 ; extra == 'test'
+  - pyarrow>=16.0.0 ; extra == 'pyarrow'
+  - bottleneck>=1.5.0 ; extra == 'performance'
+  - numba>=0.61.2 ; extra == 'performance'
+  - numexpr>=2.11.0,!=2.14.1 ; extra == 'performance'
+  - scipy>=1.16.1 ; extra == 'computation'
+  - xarray>=2025.7.1 ; extra == 'computation'
+  - fsspec>=2025.7.0 ; extra == 'fss'
+  - s3fs>=2025.7.0 ; extra == 'aws'
+  - gcsfs>=2025.7.0 ; extra == 'gcp'
+  - odfpy>=1.4.1 ; extra == 'excel'
+  - openpyxl>=3.1.5 ; extra == 'excel'
+  - python-calamine>=0.4.0 ; extra == 'excel'
+  - pyxlsb>=1.0.10 ; extra == 'excel'
+  - xlrd>=2.0.2 ; extra == 'excel'
+  - xlsxwriter>=3.2.5 ; extra == 'excel'
+  - pyarrow>=13.0.0 ; extra == 'parquet'
+  - pyarrow>=13.0.0 ; extra == 'feather'
+  - pyiceberg>=0.9.1 ; extra == 'iceberg'
+  - tables>=3.10.2 ; extra == 'hdf5'
+  - pyreadstat>=1.3.0 ; extra == 'spss'
+  - sqlalchemy>=2.0.42 ; extra == 'postgresql'
+  - psycopg2>=2.9.10 ; extra == 'postgresql'
+  - adbc-driver-postgresql>=1.7.0 ; extra == 'postgresql'
+  - sqlalchemy>=2.0.42 ; extra == 'mysql'
+  - pymysql>=1.1.1 ; extra == 'mysql'
+  - sqlalchemy>=2.0.42 ; extra == 'sql-other'
+  - adbc-driver-postgresql>=1.7.0 ; extra == 'sql-other'
+  - adbc-driver-sqlite>=1.7.0 ; extra == 'sql-other'
+  - beautifulsoup4>=4.13.4 ; extra == 'html'
+  - html5lib>=1.1 ; extra == 'html'
+  - lxml>=6.0.0 ; extra == 'html'
+  - lxml>=6.0.0 ; extra == 'xml'
+  - matplotlib>=3.10.5 ; extra == 'plot'
+  - jinja2>=3.1.6 ; extra == 'output-formatting'
+  - tabulate>=0.9.0 ; extra == 'output-formatting'
+  - pyqt5>=5.15.11 ; extra == 'clipboard'
+  - qtpy>=2.4.3 ; extra == 'clipboard'
+  - zstandard>=0.23.0 ; extra == 'compression'
+  - pytz>=2020.1 ; extra == 'timezone'
+  - adbc-driver-postgresql>=1.7.0 ; extra == 'all'
+  - adbc-driver-sqlite>=1.7.0 ; extra == 'all'
+  - beautifulsoup4>=4.13.4 ; extra == 'all'
+  - bottleneck>=1.5.0 ; extra == 'all'
+  - fastparquet>=2024.11.0 ; extra == 'all'
+  - fsspec>=2025.7.0 ; extra == 'all'
+  - gcsfs>=2025.7.0 ; extra == 'all'
+  - html5lib>=1.1 ; extra == 'all'
+  - jinja2>=3.1.6 ; extra == 'all'
+  - lxml>=6.0.0 ; extra == 'all'
+  - matplotlib>=3.10.5 ; extra == 'all'
+  - numba>=0.61.2 ; extra == 'all'
+  - numexpr>=2.11.0,!=2.14.1 ; extra == 'all'
+  - odfpy>=1.4.1 ; extra == 'all'
+  - openpyxl>=3.1.5 ; extra == 'all'
+  - psycopg2>=2.9.10 ; extra == 'all'
+  - pyarrow>=16.0.0 ; extra == 'all'
+  - pyiceberg>=0.9.1 ; extra == 'all'
+  - pymysql>=1.1.1 ; extra == 'all'
+  - pyqt5>=5.15.11 ; extra == 'all'
+  - pyreadstat>=1.3.0 ; extra == 'all'
+  - pytest>=8.3.4 ; extra == 'all'
+  - pytest-xdist>=3.6.1 ; extra == 'all'
+  - python-calamine>=0.4.0 ; extra == 'all'
+  - pytz>=2020.1 ; extra == 'all'
+  - pyxlsb>=1.0.10 ; extra == 'all'
+  - qtpy>=2.4.3 ; extra == 'all'
+  - scipy>=1.16.1 ; extra == 'all'
+  - s3fs>=2025.7.0 ; extra == 'all'
+  - sqlalchemy>=2.0.42 ; extra == 'all'
+  - tables>=3.10.2 ; extra == 'all'
+  - tabulate>=0.9.0 ; extra == 'all'
+  - xarray>=2025.7.1 ; extra == 'all'
+  - xlrd>=2.0.2 ; extra == 'all'
+  - xlsxwriter>=3.2.5 ; extra == 'all'
+  - zstandard>=0.23.0 ; extra == 'all'
+  requires_python: '>=3.11'
+- pypi: https://files.pythonhosted.org/packages/70/0b/59441cdbfdd342ed03c08af90a2fe16173f0cd48ab219f523b39ca059a79/peft-0.21.2-py3-none-any.whl
+  name: peft
+  version: 0.21.2
+  sha256: 106ab6077ff72c54d21577f9af5970e34bac7582cb14209f7b2b511e322a4eae
+  requires_dist:
+  - numpy>=1.17
+  - packaging>=20.0
+  - psutil
+  - pyyaml
+  - torch>=1.13.0
+  - transformers
+  - tqdm
+  - accelerate>=0.21.0
+  - safetensors
+  - huggingface-hub>=0.25.0
+  - black ; extra == 'quality'
+  - hf-doc-builder ; extra == 'quality'
+  - ruff==0.16.4 ; extra == 'quality'
+  - griffe ; extra == 'quality'
+  - black ; extra == 'docs-specific'
+  - requests ; extra == 'docs-specific'
+  - hf-doc-builder ; extra == 'docs-specific'
+  - black ; extra == 'dev'
+  - hf-doc-builder ; extra == 'dev'
+  - ruff==0.16.4 ; extra == 'dev'
+  - griffe ; extra == 'dev'
+  - black ; extra == 'dev'
+  - requests ; extra == 'dev'
+  - hf-doc-builder ; extra == 'dev'
+  - black ; extra == 'test'
+  - hf-doc-builder ; extra == 'test'
+  - ruff==0.16.4 ; extra == 'test'
+  - griffe ; extra == 'test'
+  - black ; extra == 'test'
+  - requests ; extra == 'test'
+  - hf-doc-builder ; extra == 'test'
+  - pytest ; extra == 'test'
+  - pytest-cov ; extra == 'test'
+  - pytest-xdist ; extra == 'test'
+  - parameterized ; extra == 'test'
+  - datasets ; extra == 'test'
+  - diffusers ; extra == 'test'
+  - scipy ; extra == 'test'
+  - scikit-learn ; extra == 'test'
+  - protobuf ; extra == 'test'
+  - sentencepiece ; extra == 'test'
+  - torchvision ; extra == 'test'
+  requires_python: '>=3.10.0'
 - pypi: https://files.pythonhosted.org/packages/84/21/a35af28dcc61f37ed850a2d64c65c701321dfbf25085e469d5559360cbbf/pillow-12.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
   name: pillow
   version: 12.3.0
@@ -1414,6 +2462,38 @@ packages:
   - trove-classifiers>=2024.10.12 ; extra == 'tests'
   - defusedxml ; extra == 'xmp'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/e6/99/fdf65cc539e266ab93546c261bdf98411fe165c6e4e13f9dbf597097192b/pillow-13.0.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+  name: pillow
+  version: 13.0.0
+  sha256: 42d63be3af4f9b951b199b0a9d23365d37ab14687e6d77b74940432c8515c4ca
+  requires_dist:
+  - furo ; extra == 'docs'
+  - olefile ; extra == 'docs'
+  - sphinx>=8.2 ; extra == 'docs'
+  - sphinx-autobuild ; extra == 'docs'
+  - sphinx-copybutton ; extra == 'docs'
+  - sphinx-inline-tabs ; extra == 'docs'
+  - sphinxext-opengraph ; extra == 'docs'
+  - olefile ; extra == 'fpx'
+  - olefile ; extra == 'mic'
+  - arro3-compute ; extra == 'test-arrow'
+  - arro3-core ; extra == 'test-arrow'
+  - nanoarrow ; extra == 'test-arrow'
+  - pyarrow ; extra == 'test-arrow'
+  - coverage>=7.4.2 ; extra == 'tests'
+  - defusedxml ; extra == 'tests'
+  - markdown2 ; extra == 'tests'
+  - olefile ; extra == 'tests'
+  - packaging ; extra == 'tests'
+  - psutil ; (sys_platform == 'darwin' and extra == 'tests') or (sys_platform == 'linux' and extra == 'tests')
+  - pytest ; extra == 'tests'
+  - pytest-cov ; extra == 'tests'
+  - pytest-timeout ; extra == 'tests'
+  - pytest-xdist ; extra == 'tests'
+  - setuptools ; extra == 'tests'
+  - trove-classifiers>=2024.10.12 ; extra == 'tests'
+  - defusedxml ; extra == 'xmp'
+  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/40/9e/2b38731e0fc536806f16490e1a12d7f0dc2a1235aa8cc07bcc75416a7daa/pluggy-1.7.0-py3-none-any.whl
   name: pluggy
   version: 1.7.0
@@ -1424,6 +2504,60 @@ packages:
   version: 0.5.4
   sha256: 2814ecd8e818f487bee4b0f921bc4d1c176cc5fc71ac0f072d0fa67eda4ac14b
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/db/f3/3996583dd2906297a637af12114deddf7658af6e683fedb83be061983fb5/protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl
+  name: protobuf
+  version: 7.36.2
+  sha256: 89f23aa53c24553a2416fd4fd1ec06f74fa42b14b546d8883128813f775bbfd2
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/b5/70/5d8df3b09e25bce090399cf48e452d25c935ab72dad19406c77f4e828045/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl
+  name: psutil
+  version: 7.2.2
+  sha256: 076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9
+  requires_dist:
+  - psleak ; extra == 'dev'
+  - pytest ; extra == 'dev'
+  - pytest-instafail ; extra == 'dev'
+  - pytest-xdist ; extra == 'dev'
+  - setuptools ; extra == 'dev'
+  - abi3audit ; extra == 'dev'
+  - black ; extra == 'dev'
+  - check-manifest ; extra == 'dev'
+  - coverage ; extra == 'dev'
+  - packaging ; extra == 'dev'
+  - pylint ; extra == 'dev'
+  - pyperf ; extra == 'dev'
+  - pypinfo ; extra == 'dev'
+  - pytest-cov ; extra == 'dev'
+  - requests ; extra == 'dev'
+  - rstcheck ; extra == 'dev'
+  - ruff ; extra == 'dev'
+  - sphinx ; extra == 'dev'
+  - sphinx-rtd-theme ; extra == 'dev'
+  - toml-sort ; extra == 'dev'
+  - twine ; extra == 'dev'
+  - validate-pyproject[all] ; extra == 'dev'
+  - virtualenv ; extra == 'dev'
+  - vulture ; extra == 'dev'
+  - wheel ; extra == 'dev'
+  - colorama ; os_name == 'nt' and extra == 'dev'
+  - pyreadline3 ; os_name == 'nt' and extra == 'dev'
+  - pywin32 ; implementation_name != 'pypy' and os_name == 'nt' and extra == 'dev'
+  - wheel ; implementation_name != 'pypy' and os_name == 'nt' and extra == 'dev'
+  - wmi ; implementation_name != 'pypy' and os_name == 'nt' and extra == 'dev'
+  - psleak ; extra == 'test'
+  - pytest ; extra == 'test'
+  - pytest-instafail ; extra == 'test'
+  - pytest-xdist ; extra == 'test'
+  - setuptools ; extra == 'test'
+  - pywin32 ; implementation_name != 'pypy' and os_name == 'nt' and extra == 'test'
+  - wheel ; implementation_name != 'pypy' and os_name == 'nt' and extra == 'test'
+  - wmi ; implementation_name != 'pypy' and os_name == 'nt' and extra == 'test'
+  requires_python: '>=3.6'
+- pypi: https://files.pythonhosted.org/packages/88/e4/9cd356d906e71bd79b0c3fc5c9a54e01a0020dcf14c152ccfbcb503c7298/pyarrow-26.0.0-cp312-cp312-manylinux_2_28_x86_64.whl
+  name: pyarrow
+  version: 26.0.0
+  sha256: 6a628922ba20705fa964ca73e4ef959c2fb2f14b9bbec5589a6a1e68e6257c85
+  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/35/ea/a56b9fe5066f3537b7882f77e9c5dfb26d8c2eefdaed9b5fc73d57b4dc22/pydantic-2.14.1-py3-none-any.whl
   name: pydantic
   version: 2.14.1
@@ -1511,12 +2645,48 @@ packages:
   purls: []
   size: 23065587
   timestamp: 1791911147011
+- conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.12.16-h5f976f7_0_cpython.conda
+  sha256: a40188b47c3995bc42a33820be4d780af5c11cc295409413fb925549f0abfe92
+  md5: bef9f5422e5246840497b4ae3d968001
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - bzip2 >=1.0.8,<2.0a0
+  - ld_impl_linux-64 >=2.36.1
+  - libexpat >=2.8.5,<3.0a0
+  - libffi >=3.7.0,<3.8.0a0
+  - libgcc >=15
+  - liblzma >=5.8.3,<6.0a0
+  - libnsl >=2.0.1,<2.1.0a0
+  - libpython 3.12.16 ha57cdbe_0_cpython
+  - libsqlite >=3.54.1,<4.0a0
+  - libuuid >=2.42.4,<3.0a0
+  - libxcrypt >=4.4.38
+  - libzlib >=1.3.2,<2.0a0
+  - ncurses >=6.6,<7.0a0
+  - openssl >=3.5.9,<4.0a0
+  - readline >=8.3,<9.0a0
+  - tk >=8.6.13,<8.7.0a0
+  - tzdata
+  constrains:
+  - python_abi 3.12.* *_cp312
+  license: Python-2.0
+  purls: []
+  size: 22997826
+  timestamp: 1793015501085
 - pypi: https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl
   name: python-dateutil
   version: 2.9.0.post0
   sha256: a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
   requires_dist:
   - six>=1.5
+  requires_python: '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*'
+- pypi: https://files.pythonhosted.org/packages/5a/17/cebee01d1c0c1441174cf0456ddc91b280d79acb65340c05e41d77866ee8/python_dateutil-3.0.0-py2.py3-none-any.whl
+  name: python-dateutil
+  version: 3.0.0
+  sha256: 3c79630202e4152c6add678446984236efe4f57e84d8e892aab0637bab82e9fd
+  requires_dist:
+  - six>=1.6
+  - tzdata
   requires_python: '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*'
 - pypi: https://files.pythonhosted.org/packages/e1/04/e8135ebd1ad02c56ec633277529b2602ff99ff634be76cdba5744cf554fd/python_multipart-0.0.32-py3-none-any.whl
   name: python-multipart
@@ -1544,6 +2714,23 @@ packages:
   purls: []
   size: 348899
   timestamp: 1787033801506
+- pypi: https://files.pythonhosted.org/packages/26/83/d2fbd2e4e3afb1167daa825187d196f313cbaa1a4768f311fb041bb0e3d2/regex-2026.9.29-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: regex
+  version: 2026.9.29
+  sha256: 39ab5894d971f9ac68baa6eca5c50387db579cfcacf36ae8df3feceb1815e6d0
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl
+  name: requests
+  version: 2.34.2
+  sha256: 2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0
+  requires_dist:
+  - charset-normalizer>=2,<4
+  - idna>=2.5,<4
+  - urllib3>=1.26,<3
+  - certifi>=2023.5.7
+  - pysocks>=1.5.6,!=1.5.7 ; extra == 'socks'
+  - chardet>=3.0.2,<8 ; extra == 'use-chardet-on-py3'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl
   name: rich
   version: 15.0.0
@@ -1566,6 +2753,48 @@ packages:
   - httpx
   - pytest ; extra == 'dev'
   requires_python: '>3.9'
+- pypi: https://files.pythonhosted.org/packages/28/50/f203ff3a3ddfe19308efc83c5a3a29ed02bf786732ec35e68bf9162f3365/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  name: safetensors
+  version: 0.8.0
+  sha256: fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774
+  requires_dist:
+  - safetensors[torch] ; extra == 'all'
+  - safetensors[numpy] ; extra == 'all'
+  - safetensors[jax] ; extra == 'all'
+  - safetensors[paddlepaddle] ; extra == 'all'
+  - safetensors[convert] ; extra == 'all'
+  - safetensors[quality] ; extra == 'all'
+  - safetensors[testing] ; extra == 'all'
+  - safetensors[torch] ; extra == 'convert'
+  - huggingface-hub>=1.4 ; extra == 'convert'
+  - safetensors[all] ; extra == 'dev'
+  - safetensors[pinned-tf] ; extra == 'dev'
+  - safetensors[numpy] ; extra == 'jax'
+  - flax>=0.6.3 ; extra == 'jax'
+  - jax>=0.3.25 ; extra == 'jax'
+  - jaxlib>=0.3.25 ; extra == 'jax'
+  - mlx>=0.0.9 ; extra == 'mlx'
+  - numpy>=1.24.6 ; extra == 'numpy'
+  - safetensors[numpy] ; extra == 'paddlepaddle'
+  - paddlepaddle>=2.4.1 ; extra == 'paddlepaddle'
+  - safetensors[numpy] ; extra == 'pinned-tf'
+  - tensorflow==2.18.0 ; extra == 'pinned-tf'
+  - ruff ; extra == 'quality'
+  - safetensors[numpy] ; extra == 'tensorflow'
+  - tensorflow>=2.11.0 ; extra == 'tensorflow'
+  - safetensors[numpy] ; extra == 'testing'
+  - h5py>=3.7.0 ; extra == 'testing'
+  - setuptools-rust>=1.12.0 ; extra == 'testing'
+  - pytest>=9.0 ; extra == 'testing'
+  - pytest-benchmark>=5.2 ; extra == 'testing'
+  - hypothesis>=6.70.2 ; extra == 'testing'
+  - fsspec>=2024.6.0 ; extra == 'testing'
+  - s3fs>=2024.6.0 ; extra == 'testing'
+  - safetensors[numpy] ; extra == 'tf-nightly'
+  - tf-nightly ; extra == 'tf-nightly'
+  - safetensors[numpy] ; extra == 'torch'
+  - torch>=2.4 ; extra == 'torch'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/8e/57/a50162f3d29feb979ab6347c6debda506dfb525bcff3c50dd17606651c7e/scikit_learn-1.9.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
   name: scikit-learn
   version: 1.9.1
@@ -1641,6 +2870,73 @@ packages:
   - sphinx ; extra == 'doc'
   - sphinx-rtd-theme ; extra == 'doc'
   requires_python: '>=2.7'
+- pypi: https://files.pythonhosted.org/packages/b6/2d/37e3da037318a70066ded0d51bc2a7f35491ae6338dd993d5eb1503fc3b5/sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+  name: sentencepiece
+  version: 0.2.2
+  sha256: c8a168b040bc61681293f79a949b5d911c8e25086f4260285b8d97ab5f1195da
+  requires_dist:
+  - numpy ; extra == 'numpy'
+  - protobuf ; extra == 'protobuf'
+  - pytest ; extra == 'test'
+  - numpy ; extra == 'test'
+  - protobuf ; extra == 'test'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/ef/55/6dc6d6bb953bdfc52519a0059592c52b6e3b8ad51cf8256dffceb55b0610/setuptools-84.2.1-py3-none-any.whl
+  name: setuptools
+  version: 84.2.1
+  sha256: ca140b45d5325a9478f880e351484f62fef15f336462e449ca0c03c873d589c2
+  requires_dist:
+  - pytest>=6,!=8.1.* ; extra == 'test'
+  - virtualenv>=13.0.0 ; extra == 'test'
+  - wheel>=0.44.0 ; extra == 'test'
+  - pip>=19.1 ; extra == 'test'
+  - packaging>=26.3 ; extra == 'test'
+  - jaraco-envs>=2.2 ; extra == 'test'
+  - pytest-xdist>=3 ; extra == 'test'
+  - jaraco-path>=3.7.2 ; extra == 'test'
+  - build[virtualenv]>=1.0.3 ; extra == 'test'
+  - filelock>=3.4.0 ; extra == 'test'
+  - ini2toml[lite]>=0.14 ; extra == 'test'
+  - tomli-w>=1.0.0 ; extra == 'test'
+  - pytest-timeout ; extra == 'test'
+  - pytest-perf ; sys_platform != 'cygwin' and extra == 'test'
+  - jaraco-develop>=7.21 ; python_full_version >= '3.9' and sys_platform != 'cygwin' and extra == 'test'
+  - pytest-home>=0.5 ; extra == 'test'
+  - pytest-subprocess ; extra == 'test'
+  - pyproject-hooks!=1.1 ; extra == 'test'
+  - jaraco-test>=5.5 ; extra == 'test'
+  - sphinx>=3.5 ; extra == 'doc'
+  - jaraco-packaging>=9.3 ; extra == 'doc'
+  - rst-linker>=1.9 ; extra == 'doc'
+  - furo ; extra == 'doc'
+  - sphinx-lint ; extra == 'doc'
+  - jaraco-tidelift>=1.4 ; extra == 'doc'
+  - pygments-github-lexers==0.0.5 ; extra == 'doc'
+  - sphinx-favicon ; extra == 'doc'
+  - sphinx-inline-tabs ; extra == 'doc'
+  - sphinx-reredirects ; extra == 'doc'
+  - sphinxcontrib-towncrier ; extra == 'doc'
+  - sphinx-notfound-page>=1,<2 ; extra == 'doc'
+  - pyproject-hooks!=1.1 ; extra == 'doc'
+  - towncrier<24.7 ; extra == 'doc'
+  - packaging>=26.3 ; extra == 'core'
+  - more-itertools>=8.8 ; extra == 'core'
+  - jaraco-text>=3.7 ; extra == 'core'
+  - importlib-metadata>=6 ; python_full_version < '3.10' and extra == 'core'
+  - tomli>=2.0.1 ; python_full_version < '3.11' and extra == 'core'
+  - wheel>=0.43.0 ; extra == 'core'
+  - jaraco-functools>=4 ; extra == 'core'
+  - more-itertools ; extra == 'core'
+  - pytest-checkdocs>=2.14 ; extra == 'check'
+  - pytest-ruff>=0.2.1 ; sys_platform != 'cygwin' and extra == 'check'
+  - ruff>=0.13.0 ; sys_platform != 'cygwin' and extra == 'check'
+  - pytest-cov ; extra == 'cover'
+  - pytest-enabler>=3.4 ; extra == 'enabler'
+  - pytest-mypy>=1.0.1 ; platform_python_implementation != 'PyPy' and extra == 'type'
+  - mypy==1.18.* ; extra == 'type'
+  - importlib-metadata>=7.0.2 ; python_full_version < '3.10' and extra == 'type'
+  - jaraco-develop>=7.21 ; sys_platform != 'cygwin' and extra == 'type'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl
   name: shellingham
   version: 1.5.4
@@ -1671,6 +2967,22 @@ packages:
   - python-multipart>=0.0.18 ; extra == 'full'
   - pyyaml ; extra == 'full'
   requires_python: '>=3.11'
+- pypi: https://files.pythonhosted.org/packages/a9/18/489c97b834dfff9cf2fc2507cede4bcd4b11e67f84bc462acd1992496f86/structlog-26.1.0-py3-none-any.whl
+  name: structlog
+  version: 26.1.0
+  sha256: e081a26d6c373e6d201eca24eede26d8ffab07f88f477822e679183428d3d91e
+  requires_dist:
+  - typing-extensions ; python_full_version < '3.11'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl
+  name: sympy
+  version: 1.14.0
+  sha256: e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5
+  requires_dist:
+  - mpmath>=1.1.0,<1.4
+  - pytest>=7.1.0 ; extra == 'dev'
+  - hypothesis>=6.70.0 ; extra == 'dev'
+  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/43/3f/f88a53f60a472b46f4023f56d204dd7de33d34c5d2acbfa0d70a674e639e/threadpoolctl-3.7.0-py3-none-any.whl
   name: threadpoolctl
   version: 3.7.0
@@ -1690,11 +3002,93 @@ packages:
   purls: []
   size: 3566806
   timestamp: 1787272857910
+- pypi: https://files.pythonhosted.org/packages/3a/40/6706b82693715581457c6d5423eaa7faae576bb0526c5738a57085eb4449/tokenizers-0.23.3-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  name: tokenizers
+  version: 0.23.3
+  sha256: 376851d22bcf9d650a5c3090bb83e6cf9e895fbf0595369fa4cd43c1f69b5f87
+  requires_dist:
+  - huggingface-hub>=0.16.4,<3.0
+  - tokenizers[testing] ; extra == 'dev'
+  - sphinx ; extra == 'docs'
+  - sphinx-rtd-theme ; extra == 'docs'
+  - setuptools-rust ; extra == 'docs'
+  - pytest ; extra == 'testing'
+  - pytest-asyncio ; extra == 'testing'
+  - requests ; extra == 'testing'
+  - numpy ; extra == 'testing'
+  - datasets ; extra == 'testing'
+  - ruff ; extra == 'testing'
+  - ty ; extra == 'testing'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/b5/11/87d6d29fb5d237229d67973a6c9e06e048f01cf4994dee194ab0ea841814/tomlkit-0.14.0-py3-none-any.whl
   name: tomlkit
   version: 0.14.0
   sha256: 592064ed85b40fa213469f81ac584f67a4f2992509a7c3ea2d632208623a3680
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/ba/fd/c470857d0dfc5d4c94430658b3eed60fd5292b0bf596a8aae7b9fd66d674/torch-2.14.1-cp312-cp312-manylinux_2_28_x86_64.whl
+  name: torch
+  version: 2.14.1
+  sha256: 23011fe29a99b591eabb3a31a25080c62e2c2f0690a3c798744e5489dae50451
+  requires_dist:
+  - filelock
+  - typing-extensions>=4.10.0
+  - setuptools>=77.0.3
+  - sympy>=1.13.3
+  - networkx>=2.5.1
+  - jinja2
+  - fsspec>=0.8.5
+  - cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3 ; sys_platform == 'linux'
+  - cuda-bindings>=13.0.3,<14 ; python_full_version < '3.15' and sys_platform == 'linux'
+  - nvidia-cudnn-cu13==9.24.0.43 ; sys_platform == 'linux'
+  - nvidia-cusparselt-cu13==0.8.1 ; sys_platform == 'linux'
+  - nvidia-nccl-cu13==2.30.7 ; sys_platform == 'linux'
+  - nvidia-nvshmem-cu13==3.4.5 ; sys_platform == 'linux'
+  - triton~=3.8.0 ; python_full_version < '3.15' and sys_platform == 'linux'
+  - optree>=0.13.0 ; extra == 'optree'
+  - opt-einsum>=3.3 ; extra == 'opt-einsum'
+  - pyyaml ; extra == 'pyyaml'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/19/55/ed9ad98f0f09d5a1124d09830043d13a39e63539f9590d2bdb6d71cbc4a4/torchao-0.18.0-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+  name: torchao
+  version: 0.18.0
+  sha256: 6540b148e40ba81cbd4de86392225a076a1591146e9cebb099b3b234ba9feebe
+  requires_dist:
+  - pytest==9.0.3 ; extra == 'dev'
+  - unittest-xml-reporting ; extra == 'dev'
+  - parameterized ; extra == 'dev'
+  - packaging ; extra == 'dev'
+  - transformers ; extra == 'dev'
+  - hypothesis ; extra == 'dev'
+  - sentencepiece ; extra == 'dev'
+  - expecttest ; extra == 'dev'
+  - pyyaml ; extra == 'dev'
+  - bitsandbytes ; extra == 'dev'
+  - matplotlib ; extra == 'dev'
+  - pandas ; extra == 'dev'
+  - fire ; extra == 'dev'
+  - tabulate ; extra == 'dev'
+  - tiktoken ; extra == 'dev'
+  - blobfile ; extra == 'dev'
+  - lm-eval ; extra == 'dev'
+  - diskcache ; extra == 'dev'
+  - pycocotools ; extra == 'dev'
+  - tqdm ; extra == 'dev'
+  - importlib-metadata ; extra == 'dev'
+  - ninja ; extra == 'dev'
+  - cmake>=3.19.0,<4.0.0 ; extra == 'dev'
+  - ruff==0.11.6 ; extra == 'dev'
+  - pre-commit ; extra == 'dev'
+- pypi: https://files.pythonhosted.org/packages/92/74/699d28bed7453dbe40b09d37aab8f6cd75f19a77a77d5ab4588a4f3239e7/torchvision-0.29.2-py3-none-manylinux_2_28_x86_64.whl
+  name: torchvision
+  version: 0.29.2
+  sha256: 0875f7a23bd298813240f716c56df44ce72ddb45146589442a38edd0e1f59637
+  requires_dist:
+  - numpy
+  - torch>=2.14.0
+  - pillow>=5.3.0,!=8.3.*
+  - gdown>=4.7.3 ; extra == 'gdown'
+  - scipy ; extra == 'scipy'
+  requires_python: '>=3.10,!=3.14.1'
 - pypi: https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl
   name: tqdm
   version: 4.70.1
@@ -1813,6 +3207,266 @@ packages:
   - ruff ; extra == 'dev'
   - pytest ; extra == 'dev'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/e8/d0/c502b60d684adbd98a8dc7d5bb866842772b816ac4354e4608be240041ae/transformers-5.17.0-py3-none-any.whl
+  name: transformers
+  version: 5.17.0
+  sha256: 78ec1ce21579b38dfb83950a0658cd119f87212a2fcfdff478096ce9d6c03801
+  requires_dist:
+  - huggingface-hub>=1.5.0,<2.0
+  - numpy>=1.17
+  - packaging>=20.0
+  - pyyaml>=5.1
+  - regex>=2025.10.22
+  - tokenizers>=0.23.1,<0.24.0
+  - typer
+  - safetensors>=0.8.0
+  - tqdm>=4.60
+  - torch>=2.5 ; extra == 'torch'
+  - accelerate>=1.1.0 ; extra == 'torch'
+  - torchvision ; extra == 'vision'
+  - pillow>=10.0.1,<=15.0 ; extra == 'vision'
+  - torchaudio ; extra == 'audio'
+  - librosa ; extra == 'audio'
+  - pyctcdecode>=0.4.0 ; extra == 'audio'
+  - phonemizer ; extra == 'audio'
+  - av ; extra == 'video'
+  - timm>=1.0.23 ; extra == 'timm'
+  - datasets>=2.15.0 ; extra == 'quality'
+  - ruff==0.14.10 ; extra == 'quality'
+  - gitpython<3.1.19 ; extra == 'quality'
+  - urllib3<2.0.0 ; extra == 'quality'
+  - libcst ; extra == 'quality'
+  - rich ; extra == 'quality'
+  - ty==0.0.20 ; extra == 'quality'
+  - tomli ; extra == 'quality'
+  - transformers-mlinter==0.1.5 ; extra == 'quality'
+  - hf-doc-builder ; extra == 'docs'
+  - kernels>=0.16.0,<0.17 ; extra == 'kernels'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'sentencepiece'
+  - protobuf ; extra == 'sentencepiece'
+  - tiktoken ; extra == 'tiktoken'
+  - blobfile ; extra == 'tiktoken'
+  - mistral-common[image]>=1.11.7 ; extra == 'mistral-common'
+  - jinja2>=3.1.0 ; extra == 'chat-template'
+  - scikit-learn ; extra == 'sklearn'
+  - accelerate>=1.1.0 ; extra == 'accelerate'
+  - faiss-cpu ; extra == 'retrieval'
+  - datasets>=2.15.0 ; extra == 'retrieval'
+  - sagemaker>=2.31.0 ; extra == 'sagemaker'
+  - deepspeed>=0.9.3 ; extra == 'deepspeed'
+  - accelerate>=1.1.0 ; extra == 'deepspeed'
+  - optuna ; extra == 'optuna'
+  - kernels>=0.16.0,<0.17 ; extra == 'integrations'
+  - optuna ; extra == 'integrations'
+  - codecarbon>=2.8.1 ; extra == 'integrations'
+  - ray[tune]>=2.7.0 ; extra == 'integrations'
+  - ray[tune]>=2.7.0 ; extra == 'ray'
+  - codecarbon>=2.8.1 ; extra == 'codecarbon'
+  - openai>=1.98.0 ; extra == 'serving'
+  - pydantic>=2 ; extra == 'serving'
+  - uvicorn ; extra == 'serving'
+  - fastapi ; extra == 'serving'
+  - starlette ; extra == 'serving'
+  - rich ; extra == 'serving'
+  - torch>=2.5 ; extra == 'serving'
+  - accelerate>=1.1.0 ; extra == 'serving'
+  - num2words ; extra == 'num2words'
+  - optimum-benchmark>=0.3.0 ; extra == 'benchmark'
+  - fugashi>=1.0 ; extra == 'ja'
+  - ipadic>=1.0.0,<2.0 ; extra == 'ja'
+  - unidic-lite>=1.0.7 ; extra == 'ja'
+  - unidic>=1.0.2 ; extra == 'ja'
+  - rhoknp>=1.1.0,<1.3.1 ; extra == 'ja'
+  - sudachipy>=0.6.6 ; extra == 'ja'
+  - sudachidict-core>=20220729 ; extra == 'ja'
+  - pytest>=7.2.0,<9.0.0 ; extra == 'testing'
+  - pytest-asyncio>=1.2.0 ; extra == 'testing'
+  - pytest-random-order ; extra == 'testing'
+  - pytest-rich ; extra == 'testing'
+  - pytest-xdist ; extra == 'testing'
+  - pytest-order ; extra == 'testing'
+  - pytest-rerunfailures<16.0 ; extra == 'testing'
+  - pytest-timeout ; extra == 'testing'
+  - pytest-env ; extra == 'testing'
+  - timeout-decorator ; extra == 'testing'
+  - parameterized>=0.9 ; extra == 'testing'
+  - psutil ; extra == 'testing'
+  - dill<0.3.5 ; extra == 'testing'
+  - diffusers==0.35.2 ; extra == 'testing'
+  - evaluate>=0.4.6 ; extra == 'testing'
+  - rouge-score!=0.0.7,!=0.0.8,!=0.1,!=0.1.1 ; extra == 'testing'
+  - nltk<=3.8.1 ; extra == 'testing'
+  - sacremoses ; extra == 'testing'
+  - rjieba ; extra == 'testing'
+  - beautifulsoup4 ; extra == 'testing'
+  - tensorboard ; extra == 'testing'
+  - sacrebleu>=1.4.12,<2.0.0 ; extra == 'testing'
+  - filelock ; extra == 'testing'
+  - hf-doc-builder ; extra == 'testing'
+  - datasets>=2.15.0 ; extra == 'testing'
+  - ruff==0.14.10 ; extra == 'testing'
+  - gitpython<3.1.19 ; extra == 'testing'
+  - urllib3<2.0.0 ; extra == 'testing'
+  - libcst ; extra == 'testing'
+  - rich ; extra == 'testing'
+  - ty==0.0.20 ; extra == 'testing'
+  - tomli ; extra == 'testing'
+  - transformers-mlinter==0.1.5 ; extra == 'testing'
+  - faiss-cpu ; extra == 'testing'
+  - datasets>=2.15.0 ; extra == 'testing'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'testing'
+  - protobuf ; extra == 'testing'
+  - openai>=1.98.0 ; extra == 'testing'
+  - pydantic>=2 ; extra == 'testing'
+  - uvicorn ; extra == 'testing'
+  - fastapi ; extra == 'testing'
+  - starlette ; extra == 'testing'
+  - rich ; extra == 'testing'
+  - torch>=2.5 ; extra == 'testing'
+  - accelerate>=1.1.0 ; extra == 'testing'
+  - mistral-common[image]>=1.11.7 ; extra == 'testing'
+  - deepspeed>=0.9.3 ; extra == 'deepspeed-testing'
+  - accelerate>=1.1.0 ; extra == 'deepspeed-testing'
+  - pytest>=7.2.0,<9.0.0 ; extra == 'deepspeed-testing'
+  - pytest-asyncio>=1.2.0 ; extra == 'deepspeed-testing'
+  - pytest-random-order ; extra == 'deepspeed-testing'
+  - pytest-rich ; extra == 'deepspeed-testing'
+  - pytest-xdist ; extra == 'deepspeed-testing'
+  - pytest-order ; extra == 'deepspeed-testing'
+  - pytest-rerunfailures<16.0 ; extra == 'deepspeed-testing'
+  - pytest-timeout ; extra == 'deepspeed-testing'
+  - pytest-env ; extra == 'deepspeed-testing'
+  - timeout-decorator ; extra == 'deepspeed-testing'
+  - parameterized>=0.9 ; extra == 'deepspeed-testing'
+  - psutil ; extra == 'deepspeed-testing'
+  - dill<0.3.5 ; extra == 'deepspeed-testing'
+  - diffusers==0.35.2 ; extra == 'deepspeed-testing'
+  - evaluate>=0.4.6 ; extra == 'deepspeed-testing'
+  - rouge-score!=0.0.7,!=0.0.8,!=0.1,!=0.1.1 ; extra == 'deepspeed-testing'
+  - nltk<=3.8.1 ; extra == 'deepspeed-testing'
+  - sacremoses ; extra == 'deepspeed-testing'
+  - rjieba ; extra == 'deepspeed-testing'
+  - beautifulsoup4 ; extra == 'deepspeed-testing'
+  - tensorboard ; extra == 'deepspeed-testing'
+  - sacrebleu>=1.4.12,<2.0.0 ; extra == 'deepspeed-testing'
+  - filelock ; extra == 'deepspeed-testing'
+  - hf-doc-builder ; extra == 'deepspeed-testing'
+  - datasets>=2.15.0 ; extra == 'deepspeed-testing'
+  - ruff==0.14.10 ; extra == 'deepspeed-testing'
+  - gitpython<3.1.19 ; extra == 'deepspeed-testing'
+  - urllib3<2.0.0 ; extra == 'deepspeed-testing'
+  - libcst ; extra == 'deepspeed-testing'
+  - rich ; extra == 'deepspeed-testing'
+  - ty==0.0.20 ; extra == 'deepspeed-testing'
+  - tomli ; extra == 'deepspeed-testing'
+  - transformers-mlinter==0.1.5 ; extra == 'deepspeed-testing'
+  - faiss-cpu ; extra == 'deepspeed-testing'
+  - datasets>=2.15.0 ; extra == 'deepspeed-testing'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'deepspeed-testing'
+  - protobuf ; extra == 'deepspeed-testing'
+  - openai>=1.98.0 ; extra == 'deepspeed-testing'
+  - pydantic>=2 ; extra == 'deepspeed-testing'
+  - uvicorn ; extra == 'deepspeed-testing'
+  - fastapi ; extra == 'deepspeed-testing'
+  - starlette ; extra == 'deepspeed-testing'
+  - rich ; extra == 'deepspeed-testing'
+  - torch>=2.5 ; extra == 'deepspeed-testing'
+  - accelerate>=1.1.0 ; extra == 'deepspeed-testing'
+  - mistral-common[image]>=1.11.7 ; extra == 'deepspeed-testing'
+  - optuna ; extra == 'deepspeed-testing'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'deepspeed-testing'
+  - protobuf ; extra == 'deepspeed-testing'
+  - torch>=2.5 ; extra == 'all'
+  - accelerate>=1.1.0 ; extra == 'all'
+  - torchvision ; extra == 'all'
+  - pillow>=10.0.1,<=15.0 ; extra == 'all'
+  - torchaudio ; extra == 'all'
+  - librosa ; extra == 'all'
+  - pyctcdecode>=0.4.0 ; extra == 'all'
+  - phonemizer ; extra == 'all'
+  - av ; extra == 'all'
+  - kernels>=0.16.0,<0.17 ; extra == 'all'
+  - timm>=1.0.23 ; extra == 'all'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'all'
+  - protobuf ; extra == 'all'
+  - tiktoken ; extra == 'all'
+  - blobfile ; extra == 'all'
+  - jinja2>=3.1.0 ; extra == 'all'
+  - num2words ; extra == 'all'
+  - mistral-common[image]>=1.11.7 ; extra == 'all'
+  - torch>=2.5 ; extra == 'dev'
+  - accelerate>=1.1.0 ; extra == 'dev'
+  - torchvision ; extra == 'dev'
+  - pillow>=10.0.1,<=15.0 ; extra == 'dev'
+  - torchaudio ; extra == 'dev'
+  - librosa ; extra == 'dev'
+  - pyctcdecode>=0.4.0 ; extra == 'dev'
+  - phonemizer ; extra == 'dev'
+  - av ; extra == 'dev'
+  - kernels>=0.16.0,<0.17 ; extra == 'dev'
+  - timm>=1.0.23 ; extra == 'dev'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'dev'
+  - protobuf ; extra == 'dev'
+  - tiktoken ; extra == 'dev'
+  - blobfile ; extra == 'dev'
+  - jinja2>=3.1.0 ; extra == 'dev'
+  - num2words ; extra == 'dev'
+  - mistral-common[image]>=1.11.7 ; extra == 'dev'
+  - pytest>=7.2.0,<9.0.0 ; extra == 'dev'
+  - pytest-asyncio>=1.2.0 ; extra == 'dev'
+  - pytest-random-order ; extra == 'dev'
+  - pytest-rich ; extra == 'dev'
+  - pytest-xdist ; extra == 'dev'
+  - pytest-order ; extra == 'dev'
+  - pytest-rerunfailures<16.0 ; extra == 'dev'
+  - pytest-timeout ; extra == 'dev'
+  - pytest-env ; extra == 'dev'
+  - timeout-decorator ; extra == 'dev'
+  - parameterized>=0.9 ; extra == 'dev'
+  - psutil ; extra == 'dev'
+  - dill<0.3.5 ; extra == 'dev'
+  - diffusers==0.35.2 ; extra == 'dev'
+  - evaluate>=0.4.6 ; extra == 'dev'
+  - rouge-score!=0.0.7,!=0.0.8,!=0.1,!=0.1.1 ; extra == 'dev'
+  - nltk<=3.8.1 ; extra == 'dev'
+  - sacremoses ; extra == 'dev'
+  - rjieba ; extra == 'dev'
+  - beautifulsoup4 ; extra == 'dev'
+  - tensorboard ; extra == 'dev'
+  - sacrebleu>=1.4.12,<2.0.0 ; extra == 'dev'
+  - filelock ; extra == 'dev'
+  - hf-doc-builder ; extra == 'dev'
+  - datasets>=2.15.0 ; extra == 'dev'
+  - ruff==0.14.10 ; extra == 'dev'
+  - gitpython<3.1.19 ; extra == 'dev'
+  - urllib3<2.0.0 ; extra == 'dev'
+  - libcst ; extra == 'dev'
+  - rich ; extra == 'dev'
+  - ty==0.0.20 ; extra == 'dev'
+  - tomli ; extra == 'dev'
+  - transformers-mlinter==0.1.5 ; extra == 'dev'
+  - faiss-cpu ; extra == 'dev'
+  - datasets>=2.15.0 ; extra == 'dev'
+  - sentencepiece>=0.1.91,!=0.1.92 ; extra == 'dev'
+  - protobuf ; extra == 'dev'
+  - openai>=1.98.0 ; extra == 'dev'
+  - pydantic>=2 ; extra == 'dev'
+  - uvicorn ; extra == 'dev'
+  - fastapi ; extra == 'dev'
+  - starlette ; extra == 'dev'
+  - rich ; extra == 'dev'
+  - torch>=2.5 ; extra == 'dev'
+  - accelerate>=1.1.0 ; extra == 'dev'
+  - mistral-common[image]>=1.11.7 ; extra == 'dev'
+  - fugashi>=1.0 ; extra == 'dev'
+  - ipadic>=1.0.0,<2.0 ; extra == 'dev'
+  - unidic-lite>=1.0.7 ; extra == 'dev'
+  - unidic>=1.0.2 ; extra == 'dev'
+  - rhoknp>=1.1.0,<1.3.1 ; extra == 'dev'
+  - sudachipy>=0.6.6 ; extra == 'dev'
+  - sudachidict-core>=20220729 ; extra == 'dev'
+  - scikit-learn ; extra == 'dev'
+  requires_python: '>=3.10.0'
 - pypi: https://files.pythonhosted.org/packages/8f/f6/fb68b8c08f864ecee8f7f7ee2f1203ed5cba2335215de69e4f621eb47db5/trimesh-5.1.1-py3-none-any.whl
   name: trimesh
   version: 5.1.1
@@ -1860,10 +3514,80 @@ packages:
   - dracopy>=1.7.0 ; extra == 'test-more'
   - trimesh[deprecated,easy,recommend,test,test-more] ; extra == 'all'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/c1/09/b7012e5bfae67640f268aa584caa80fe1674f6b0da949046b679972c33e3/triton-3.8.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+  name: triton
+  version: 3.8.0
+  sha256: e91ffa46d095b252248297292dd22bcbacd53a125a0c2eefbbbf74925a320bc3
+  requires_dist:
+  - importlib-metadata ; python_full_version < '3.10'
+  requires_python: '>=3.10,<3.15'
+- pypi: https://files.pythonhosted.org/packages/12/27/a699471afa0ebc08ef9c86d5b2f9aca2f53fa3ee6b87ad88017000b128ef/trl-1.15.0-py3-none-any.whl
+  name: trl
+  version: 1.15.0
+  sha256: 9c9a4b68a184a0b6425293e9b152950f817af686f3758f70191fff4ded1391c7
+  requires_dist:
+  - accelerate>=1.4.0
+  - datasets>=4.7.0
+  - jinja2
+  - packaging>20.0
+  - transformers>=4.56.2
+  - deepspeed>=0.18.6 ; extra == 'deepspeed'
+  - transformers!=5.1.0 ; extra == 'deepspeed'
+  - harbor>=0.13.0 ; python_full_version >= '3.12' and extra == 'harbor'
+  - transformers[kernels] ; extra == 'kernels'
+  - transformers[hub-kernels] ; extra == 'kernels'
+  - liger-kernel>=0.8.2 ; extra == 'liger'
+  - math-verify>=0.5.2 ; extra == 'math-verify'
+  - openreward>=0.1.109 ; extra == 'openreward'
+  - peft>=0.13.0 ; extra == 'peft'
+  - pre-commit ; extra == 'quality'
+  - hf-doc-builder ; extra == 'quality'
+  - bitsandbytes ; extra == 'quantization'
+  - pytest-cov ; extra == 'test'
+  - pytest-datadir>=1.7.0 ; extra == 'test'
+  - pytest-reportlog ; extra == 'test'
+  - pytest-rerunfailures>=16.7 ; extra == 'test'
+  - pytest-xdist ; extra == 'test'
+  - pytest ; extra == 'test'
+  - tabulate ; extra == 'test'
+  - vllm>=0.21.0,<=0.31.0 ; extra == 'vllm'
+  - aiohttp>=3.13.3 ; extra == 'vllm'
+  - requests ; extra == 'vllm'
+  - pillow ; extra == 'vlm'
+  - torchvision ; extra == 'vlm'
+  - num2words==0.5.14 ; extra == 'vlm'
+  - deepspeed>=0.18.6 ; extra == 'dev'
+  - transformers[kernels] ; extra == 'dev'
+  - transformers[hub-kernels] ; extra == 'dev'
+  - liger-kernel>=0.8.2 ; extra == 'dev'
+  - openreward>=0.1.109 ; extra == 'dev'
+  - peft>=0.13.0 ; extra == 'dev'
+  - pre-commit ; extra == 'dev'
+  - hf-doc-builder ; extra == 'dev'
+  - bitsandbytes ; extra == 'dev'
+  - pytest-cov ; extra == 'dev'
+  - pytest-datadir>=1.7.0 ; extra == 'dev'
+  - pytest-reportlog ; extra == 'dev'
+  - pytest-rerunfailures>=16.7 ; extra == 'dev'
+  - pytest-xdist ; extra == 'dev'
+  - pytest ; extra == 'dev'
+  - tabulate ; extra == 'dev'
+  - pillow ; extra == 'dev'
+  - torchvision ; extra == 'dev'
+  - num2words==0.5.14 ; extra == 'dev'
+  - jmespath ; extra == 'dev'
+  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/51/e9/3a7820be2bb0fe53b6bc9c3be26d3d1158004e4c3ab953aa6840b955b1e9/truststore-0.10.5-py3-none-any.whl
   name: truststore
   version: 0.10.5
   sha256: 9aaaedaefaf06d8b206278cf8b5012bc897f485a874503501e12d776df78951c
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/8f/eb/461d5f167b6f5c7d97696f397c82f82e3480e003fce3f0a1cd1dd26e2eb2/typeguard-4.6.0-py3-none-any.whl
+  name: typeguard
+  version: 4.6.0
+  sha256: 79878165bb86f2cf5d41d159a0ff1792a796cf496882d2fe1b1c6c7049b9cdd7
+  requires_dist:
+  - typing-extensions>=4.14.0
   requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/07/ea/2e31b67051e91a133189e9c000c222502ddc6969856416de0d095de4c0b0/typer-0.27.3-py3-none-any.whl
   name: typer
@@ -1887,6 +3611,56 @@ packages:
   requires_dist:
   - typing-extensions>=4.15.0
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/23/d9/ea12ca0392c9eaeff7421efcc665f350dbc2ef30a113ee13c7afea21cf37/tyro-1.0.16-py3-none-any.whl
+  name: tyro
+  version: 1.0.16
+  sha256: 2f9087196113699647190459a12b6b4f2784dd0703c50ab1f7bf0f85a3a794ea
+  requires_dist:
+  - docstring-parser>=0.16
+  - eval-type-backport>=0.1.3 ; python_full_version < '3.10'
+  - typeguard>=4.0.0
+  - typing-extensions>=4.13.0
+  - attrs>=21.4.0 ; extra == 'dev'
+  - coverage[toml]>=6.5.0 ; extra == 'dev'
+  - eval-type-backport>=0.1.3 ; extra == 'dev'
+  - ml-collections>=0.1.0 ; extra == 'dev'
+  - msgspec>=0.18.6 ; extra == 'dev'
+  - mypy>=1.4.1 ; extra == 'dev'
+  - omegaconf>=2.2.2 ; extra == 'dev'
+  - pydantic>=2.5.2,!=2.10.0 ; extra == 'dev'
+  - pyright>=1.1.349,!=1.1.379 ; extra == 'dev'
+  - pytest-cov>=3.0.0 ; extra == 'dev'
+  - pytest-xdist>=3.5.0 ; extra == 'dev'
+  - pytest>=7.1.2 ; extra == 'dev'
+  - pyyaml>=6.0 ; extra == 'dev'
+  - shtab>=1.5.6 ; extra == 'dev'
+  - ty>=0.0.33 ; extra == 'dev'
+  - universal-pathlib>=0.2.0 ; extra == 'dev'
+  - attrs>=21.4.0 ; extra == 'dev-nn'
+  - coverage[toml]>=6.5.0 ; extra == 'dev-nn'
+  - eval-type-backport>=0.1.3 ; extra == 'dev-nn'
+  - flax>=0.6.9 ; python_full_version >= '3.10' and python_full_version < '3.14' and extra == 'dev-nn'
+  - ml-collections>=0.1.0 ; extra == 'dev-nn'
+  - msgspec>=0.18.6 ; extra == 'dev-nn'
+  - mypy>=1.4.1 ; extra == 'dev-nn'
+  - numpy>=1.20.0 ; extra == 'dev-nn'
+  - omegaconf>=2.2.2 ; extra == 'dev-nn'
+  - pydantic>=2.5.2,!=2.10.0 ; extra == 'dev-nn'
+  - pyright>=1.1.349,!=1.1.379 ; extra == 'dev-nn'
+  - pytest-cov>=3.0.0 ; extra == 'dev-nn'
+  - pytest-xdist>=3.5.0 ; extra == 'dev-nn'
+  - pytest>=7.1.2 ; extra == 'dev-nn'
+  - pyyaml>=6.0 ; extra == 'dev-nn'
+  - shtab>=1.5.6 ; extra == 'dev-nn'
+  - torch>=1.10.0 ; python_full_version >= '3.9' and python_full_version < '3.14' and extra == 'dev-nn'
+  - ty>=0.0.33 ; extra == 'dev-nn'
+  - universal-pathlib>=0.2.0 ; extra == 'dev-nn'
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl
+  name: tzdata
+  version: '2026.6'
+  sha256: 0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+  requires_python: '>=2'
 - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
   sha256: b928c30ddcb0e3f544c6eade8352737e6e610e263276b90232db6a578ef899d8
   md5: fcb489df604d100968b737f2cb6076c6
@@ -1894,6 +3668,673 @@ packages:
   purls: []
   size: 118849
   timestamp: 1784250406640
+- conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
+  sha256: 2b7ca858879f183ce2dcc65b300f48a0133d5430550f35b23d80d405a0788dbf
+  md5: abccc3810d2b97e570dee487f2b46e38
+  license: LicenseRef-Public-Domain
+  purls: []
+  size: 119208
+  timestamp: 1792758382821
+- pypi: https://files.pythonhosted.org/packages/45/1e/6bc2275efbf65085a5b0b853c40b20a56f4e1bd30cabe324f9b2f50d9513/unsloth-2026.10.10-py3-none-any.whl
+  name: unsloth
+  version: 2026.10.10
+  sha256: e0c0cd8f48d8880b6b76af2e7224c80e14b4be93ab8ff4dc140d93c282c73af0
+  requires_dist:
+  - unsloth-zoo>=2026.10.10
+  - wheel>=0.42.0
+  - packaging
+  - torch>=2.4.0,<2.15.0
+  - torchvision
+  - numpy
+  - tqdm
+  - psutil
+  - tyro
+  - protobuf
+  - xformers>=0.0.27.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform) or (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and 'linux' in sys_platform) or (platform_machine == 'x86_64' and sys_platform == 'win32')
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0
+  - triton>=3.0.0 ; 'linux' in sys_platform
+  - triton-windows ; (platform_machine == 'AMD64' and sys_platform == 'win32') or (platform_machine == 'x86_64' and sys_platform == 'win32')
+  - sentencepiece>=0.2.0
+  - datasets>=3.4.1,!=4.0.*,!=4.1.0,!=4.4.*,!=4.5.0,<5.0.0
+  - accelerate>=0.34.1
+  - peft!=0.11.0,>=0.18.0
+  - huggingface-hub>=0.34.0
+  - hf-transfer
+  - diffusers
+  - transformers>=4.52.4,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.17.0
+  - trl>=0.18.2,!=0.19.0,<=1.15.0
+  - typer>=0.19.0
+  - rich
+  - pydantic
+  - pyyaml
+  - json5>=0.9.25
+  - nest-asyncio
+  - huggingface-hub>=0.34.0
+  - structlog>=24.1.0
+  - click>=8.0
+  - rich
+  - certifi>=2026.10.19
+  - typer==0.27.1 ; python_full_version >= '3.10' and extra == 'studio'
+  - typer==0.23.2 ; python_full_version < '3.10' and extra == 'studio'
+  - fastapi==0.141.1 ; python_full_version >= '3.10' and extra == 'studio'
+  - fastapi==0.128.8 ; python_full_version < '3.10' and extra == 'studio'
+  - uvicorn==0.52.1 ; python_full_version >= '3.10' and extra == 'studio'
+  - uvicorn==0.39.0 ; python_full_version < '3.10' and extra == 'studio'
+  - pydantic==2.13.4 ; extra == 'studio'
+  - packaging==26.3 ; extra == 'studio'
+  - matplotlib==3.10.9 ; extra == 'studio'
+  - pandas==2.3.3 ; (python_full_version < '3.11' and extra == 'studio') or (platform_machine != 'ARM64' and extra == 'studio') or (sys_platform != 'win32' and extra == 'studio')
+  - pandas>=3.0,<4 ; python_full_version >= '3.11' and platform_machine == 'ARM64' and sys_platform == 'win32' and extra == 'studio'
+  - nest-asyncio==1.6.0 ; extra == 'studio'
+  - datasets==4.3.0 ; extra == 'studio'
+  - pyjwt==2.15.1 ; extra == 'studio'
+  - huggingface-hub>=1.32.0,<2.0 ; python_full_version >= '3.10' and extra == 'studio'
+  - huggingface-hub==0.36.2 ; python_full_version < '3.10' and extra == 'studio'
+  - hf-xet>=1.5.2,<2.0 ; (python_full_version >= '3.10' and platform_machine == 'AMD64' and extra == 'studio') or (python_full_version >= '3.10' and platform_machine == 'ARM64' and extra == 'studio') or (python_full_version >= '3.10' and platform_machine == 'aarch64' and extra == 'studio') or (python_full_version >= '3.10' and platform_machine == 'amd64' and extra == 'studio') or (python_full_version >= '3.10' and platform_machine == 'arm64' and extra == 'studio') or (python_full_version >= '3.10' and platform_machine == 'x86_64' and extra == 'studio')
+  - urllib3>=2.8.0 ; python_full_version >= '3.10' and extra == 'studio'
+  - urllib3>=2.3.0 ; python_full_version < '3.10' and extra == 'studio'
+  - jinja2>=3.1.0 ; extra == 'studio'
+  - structlog>=24.1.0 ; extra == 'studio'
+  - diceware==1.0.1 ; extra == 'studio'
+  - json5>=0.9.25 ; extra == 'studio'
+  - ddgs==9.14.4 ; python_full_version >= '3.10' and extra == 'studio'
+  - ddgs==9.8.0 ; python_full_version < '3.10' and extra == 'studio'
+  - cryptography>=42.0.0 ; (platform_machine != 'ARM64' and extra == 'studio') or (sys_platform != 'win32' and extra == 'studio')
+  - cryptography>=42.0.0,<=46.0.3 ; platform_machine == 'ARM64' and sys_platform == 'win32' and extra == 'studio'
+  - httpx>=0.27.0 ; extra == 'studio'
+  - fastmcp>=3.0.2 ; extra == 'studio'
+  - gguf==0.19.0 ; python_full_version >= '3.10' and extra == 'studio'
+  - gguf==0.18.0 ; python_full_version < '3.10' and extra == 'studio'
+  - av>=12.3.0 ; extra == 'studio'
+  - sqlite-vec==0.1.9 ; (platform_machine != 'ARM64' and extra == 'studio') or (sys_platform != 'win32' and extra == 'studio')
+  - pymupdf==1.27.2.3 ; (platform_machine != 'ARM64' and extra == 'studio') or (sys_platform != 'win32' and extra == 'studio')
+  - pymupdf>=1.28.2 ; platform_machine == 'ARM64' and sys_platform == 'win32' and extra == 'studio'
+  - pymupdf4llm==0.3.4 ; extra == 'studio'
+  - python-docx==1.2.0 ; extra == 'studio'
+  - markdown-it-py>=3.0 ; extra == 'studio'
+  - boto3>=1.34.0 ; extra == 's3'
+  - triton>=3.0.0 ; 'linux' in sys_platform and extra == 'triton'
+  - triton-windows ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'triton') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'triton')
+  - triton-windows>=3.8.0.post28 ; platform_machine == 'ARM64' and sys_platform == 'win32' and extra == 'triton'
+  - unsloth-zoo>=2026.10.10 ; extra == 'huggingface'
+  - wheel>=0.42.0 ; extra == 'huggingface'
+  - packaging ; extra == 'huggingface'
+  - torchvision ; extra == 'huggingface'
+  - numpy ; extra == 'huggingface'
+  - tqdm ; extra == 'huggingface'
+  - psutil ; extra == 'huggingface'
+  - tyro ; extra == 'huggingface'
+  - protobuf ; extra == 'huggingface'
+  - sentencepiece>=0.2.0 ; extra == 'huggingface'
+  - datasets>=3.4.1,!=4.0.*,!=4.1.0,!=4.4.*,!=4.5.0,<5.0.0 ; extra == 'huggingface'
+  - accelerate>=0.34.1 ; extra == 'huggingface'
+  - peft!=0.11.0,>=0.18.0 ; extra == 'huggingface'
+  - huggingface-hub>=0.34.0 ; extra == 'huggingface'
+  - hf-transfer ; extra == 'huggingface'
+  - diffusers ; extra == 'huggingface'
+  - transformers>=4.52.4,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.17.0 ; extra == 'huggingface'
+  - trl>=0.18.2,!=0.19.0,<=1.15.0 ; extra == 'huggingface'
+  - sentence-transformers ; extra == 'huggingface'
+  - typer>=0.12.0 ; extra == 'huggingface'
+  - pydantic ; extra == 'huggingface'
+  - pyyaml ; extra == 'huggingface'
+  - nest-asyncio ; extra == 'huggingface'
+  - unsloth-zoo>=2026.10.10 ; extra == 'huggingfacenotorch'
+  - wheel>=0.42.0 ; extra == 'huggingfacenotorch'
+  - packaging ; extra == 'huggingfacenotorch'
+  - numpy ; extra == 'huggingfacenotorch'
+  - tqdm ; extra == 'huggingfacenotorch'
+  - psutil ; extra == 'huggingfacenotorch'
+  - protobuf ; extra == 'huggingfacenotorch'
+  - sentencepiece>=0.2.0 ; extra == 'huggingfacenotorch'
+  - datasets>=3.4.1,!=4.0.*,!=4.1.0,!=4.4.*,!=4.5.0,<5.0.0 ; extra == 'huggingfacenotorch'
+  - accelerate>=0.34.1 ; extra == 'huggingfacenotorch'
+  - peft!=0.11.0,>=0.18.0 ; extra == 'huggingfacenotorch'
+  - huggingface-hub>=0.34.0 ; extra == 'huggingfacenotorch'
+  - hf-transfer ; (platform_machine != 'ARM64' and extra == 'huggingfacenotorch') or (sys_platform != 'win32' and extra == 'huggingfacenotorch')
+  - diffusers>=0.39.0 ; python_full_version >= '3.10' and extra == 'huggingfacenotorch'
+  - diffusers ; python_full_version < '3.10' and extra == 'huggingfacenotorch'
+  - transformers>=4.52.4,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.17.0 ; extra == 'huggingfacenotorch'
+  - trl>=0.18.2,!=0.19.0,<=1.15.0 ; extra == 'huggingfacenotorch'
+  - sentence-transformers ; extra == 'huggingfacenotorch'
+  - unsloth[huggingfacenotorch] ; extra == 'amd'
+  - bitsandbytes>=0.50.0 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'amd') or (platform_machine == 'aarch64' and 'linux' in sys_platform and extra == 'amd') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'amd')
+  - bitsandbytes>=0.50.0 ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'amd') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'amd')
+  - unsloth-zoo>=2026.10.10 ; extra == 'amd'
+  - torchcodec>=0.11.0,<0.12.0 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch211')
+  - soundfile>=0.12.1 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch211')
+  - av>=12.3.0 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'audio-torch211') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch211')
+  - torchcodec>=0.10.0,<0.11.0 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch210')
+  - soundfile>=0.12.1 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch210')
+  - av>=12.3.0 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch210') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch210')
+  - torchcodec>=0.8.0,<0.10.0 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch290')
+  - soundfile>=0.12.1 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch290')
+  - av>=12.3.0 ; (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch290') or (python_full_version >= '3.10' and python_full_version < '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch290')
+  - torchcodec>=0.6.0,<0.8.0 ; (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch280')
+  - soundfile>=0.12.1 ; (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch280')
+  - av>=12.3.0 ; (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform == 'linux' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'audio-torch280') or (python_full_version >= '3.9' and python_full_version < '3.14' and platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'audio-torch280')
+  - unsloth[huggingface] ; extra == 'windows'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; sys_platform == 'win32' and extra == 'windows'
+  - xformers>=0.0.22.post7 ; platform_machine != 'ARM64' and sys_platform == 'win32' and extra == 'windows'
+  - unsloth[huggingface] ; extra == 'base'
+  - unsloth[huggingface] ; extra == 'eval'
+  - lm-eval>=0.4.4 ; extra == 'eval'
+  - xformers==0.0.22.post7 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118only') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118only') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118only') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118only')
+  - xformers==0.0.22.post7 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu121only') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu121only') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu121only') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu121only')
+  - xformers==0.0.23 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch211') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch211') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch211') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch211')
+  - xformers==0.0.23 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu121onlytorch211') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu121onlytorch211') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu121onlytorch211') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu121onlytorch211')
+  - xformers==0.0.23.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch212') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch212') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch212') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch212')
+  - xformers==0.0.23.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu121onlytorch212') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu121onlytorch212') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu121onlytorch212') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu121onlytorch212')
+  - xformers==0.0.24 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch220') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch220') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch220') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch220')
+  - xformers==0.0.24 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu121onlytorch220') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu121onlytorch220') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu121onlytorch220') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu121onlytorch220')
+  - xformers==0.0.27 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch230') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch230') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch230') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch230')
+  - xformers==0.0.27 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu121onlytorch230') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu121onlytorch230') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu121onlytorch230') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu121onlytorch230')
+  - xformers==0.0.27.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch240') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch240') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch240') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch240')
+  - xformers==0.0.27.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu121onlytorch240') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu121onlytorch240') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu121onlytorch240') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu121onlytorch240')
+  - xformers==0.0.28.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu124onlytorch240') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu124onlytorch240') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu124onlytorch240') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu124onlytorch240')
+  - xformers==0.0.28.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch250') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch250') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch250') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch250')
+  - xformers==0.0.28.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu121onlytorch250') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu121onlytorch250') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu121onlytorch250') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu121onlytorch250')
+  - xformers==0.0.28.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu124onlytorch250') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu124onlytorch250') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu124onlytorch250') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu124onlytorch250')
+  - xformers==0.0.29.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch251') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch251') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch251') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch251')
+  - xformers==0.0.29.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu121onlytorch251') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu121onlytorch251') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu121onlytorch251') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu121onlytorch251')
+  - xformers==0.0.29.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu124onlytorch251') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu124onlytorch251') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu124onlytorch251') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu124onlytorch251')
+  - xformers==0.0.29.post3 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch260') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch260') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch260') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch260')
+  - xformers==0.0.29.post3 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu124onlytorch260') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu124onlytorch260') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu124onlytorch260') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu124onlytorch260')
+  - xformers==0.0.29.post3 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch260') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch260') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch260') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch260')
+  - xformers==0.0.30 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch270') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch270') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch270') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch270')
+  - xformers==0.0.30 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch270') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch270') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch270') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch270')
+  - xformers==0.0.30 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu128onlytorch270') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu128onlytorch270') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu128onlytorch270') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu128onlytorch270')
+  - xformers==0.0.31.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch271') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch271') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch271') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch271')
+  - xformers==0.0.31.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch271') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch271') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch271') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch271')
+  - xformers==0.0.31.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu128onlytorch271') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu128onlytorch271') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu128onlytorch271') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu128onlytorch271')
+  - xformers==0.0.32.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu118onlytorch280') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu118onlytorch280') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu118onlytorch280') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu118onlytorch280')
+  - xformers==0.0.32.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch280') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch280') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch280') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch280')
+  - xformers==0.0.32.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu128onlytorch280') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu128onlytorch280') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu128onlytorch280') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu128onlytorch280')
+  - xformers==0.0.33.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch290') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch290') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch290') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch290')
+  - xformers==0.0.33.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu128onlytorch290') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu128onlytorch290') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu128onlytorch290') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu128onlytorch290')
+  - xformers==0.0.33.post1 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu130onlytorch290') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu130onlytorch290') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu130onlytorch290') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu130onlytorch290')
+  - xformers==0.0.33.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch291') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch291') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch291') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch291')
+  - xformers==0.0.33.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu128onlytorch291') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu128onlytorch291') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu128onlytorch291') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu128onlytorch291')
+  - xformers==0.0.33.post2 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu130onlytorch291') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu130onlytorch291') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu130onlytorch291') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu130onlytorch291')
+  - torch==2.10.0 ; extra == 'cu126onlytorch2100'
+  - xformers==0.0.34 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch2100') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch2100') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch2100') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch2100')
+  - torch==2.10.0 ; extra == 'cu128onlytorch2100'
+  - xformers==0.0.34 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu128onlytorch2100') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu128onlytorch2100') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu128onlytorch2100') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu128onlytorch2100')
+  - torch==2.10.0 ; extra == 'cu130onlytorch2100'
+  - xformers==0.0.34 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu130onlytorch2100') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu130onlytorch2100') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu130onlytorch2100') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu130onlytorch2100')
+  - torch==2.11.0+cu126 ; extra == 'cu126onlytorch2110'
+  - torchvision==0.26.0+cu126 ; extra == 'cu126onlytorch2110'
+  - torchaudio==2.11.0+cu126 ; extra == 'cu126onlytorch2110'
+  - xformers==0.0.35 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch2110') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch2110') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch2110') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch2110')
+  - torch==2.11.0+cu128 ; extra == 'cu128onlytorch2110'
+  - torchvision==0.26.0+cu128 ; extra == 'cu128onlytorch2110'
+  - torchaudio==2.11.0+cu128 ; extra == 'cu128onlytorch2110'
+  - xformers==0.0.35 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu128onlytorch2110') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu128onlytorch2110') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu128onlytorch2110') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu128onlytorch2110')
+  - torch==2.11.0+cu130 ; extra == 'cu130onlytorch2110'
+  - torchvision==0.26.0+cu130 ; extra == 'cu130onlytorch2110'
+  - torchaudio==2.11.0+cu130 ; extra == 'cu130onlytorch2110'
+  - xformers==0.0.35 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu130onlytorch2110') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu130onlytorch2110') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu130onlytorch2110') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu130onlytorch2110')
+  - torch==2.12.0+cu126 ; extra == 'cu126onlytorch2120'
+  - torchvision==0.27.0+cu126 ; extra == 'cu126onlytorch2120'
+  - torchaudio==2.11.0+cu126 ; extra == 'cu126onlytorch2120'
+  - xformers==0.0.35 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch2120') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch2120') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch2120') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch2120')
+  - torch==2.12.0+cu130 ; extra == 'cu130onlytorch2120'
+  - torchvision==0.27.0+cu130 ; extra == 'cu130onlytorch2120'
+  - torchaudio==2.11.0+cu130 ; extra == 'cu130onlytorch2120'
+  - xformers==0.0.35 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu130onlytorch2120') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu130onlytorch2120') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu130onlytorch2120') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu130onlytorch2120')
+  - torch==2.12.1+cu126 ; extra == 'cu126onlytorch2121'
+  - torchvision==0.27.1+cu126 ; extra == 'cu126onlytorch2121'
+  - torchaudio==2.11.0+cu126 ; extra == 'cu126onlytorch2121'
+  - xformers==0.0.35 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu126onlytorch2121') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu126onlytorch2121') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu126onlytorch2121') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu126onlytorch2121')
+  - torch==2.12.1+cu130 ; extra == 'cu130onlytorch2121'
+  - torchvision==0.27.1+cu130 ; extra == 'cu130onlytorch2121'
+  - torchaudio==2.11.0+cu130 ; extra == 'cu130onlytorch2121'
+  - xformers==0.0.35 ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'cu130onlytorch2121') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'cu130onlytorch2121') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'cu130onlytorch2121') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'cu130onlytorch2121')
+  - unsloth[huggingface] ; extra == 'cu118'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118'
+  - unsloth[cu118only] ; extra == 'cu118'
+  - unsloth[huggingface] ; extra == 'cu121'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121'
+  - unsloth[cu121only] ; extra == 'cu121'
+  - unsloth[huggingface] ; extra == 'cu118-torch211'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch211'
+  - unsloth[cu118onlytorch211] ; extra == 'cu118-torch211'
+  - unsloth[huggingface] ; extra == 'cu121-torch211'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-torch211'
+  - unsloth[cu121onlytorch211] ; extra == 'cu121-torch211'
+  - unsloth[huggingface] ; extra == 'cu118-torch212'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch212'
+  - unsloth[cu118onlytorch212] ; extra == 'cu118-torch212'
+  - unsloth[huggingface] ; extra == 'cu121-torch212'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-torch212'
+  - unsloth[cu121onlytorch212] ; extra == 'cu121-torch212'
+  - unsloth[huggingface] ; extra == 'cu118-torch220'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch220'
+  - unsloth[cu118onlytorch220] ; extra == 'cu118-torch220'
+  - unsloth[huggingface] ; extra == 'cu121-torch220'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-torch220'
+  - unsloth[cu121onlytorch220] ; extra == 'cu121-torch220'
+  - unsloth[huggingface] ; extra == 'cu118-torch230'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch230'
+  - unsloth[cu118onlytorch230] ; extra == 'cu118-torch230'
+  - unsloth[huggingface] ; extra == 'cu121-torch230'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-torch230'
+  - unsloth[cu121onlytorch230] ; extra == 'cu121-torch230'
+  - unsloth[huggingface] ; extra == 'cu118-torch240'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch240'
+  - unsloth[cu118onlytorch240] ; extra == 'cu118-torch240'
+  - unsloth[huggingface] ; extra == 'cu121-torch240'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-torch240'
+  - unsloth[cu121onlytorch240] ; extra == 'cu121-torch240'
+  - unsloth[huggingface] ; extra == 'cu124-torch240'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu124-torch240'
+  - unsloth[cu124onlytorch240] ; extra == 'cu124-torch240'
+  - unsloth[huggingface] ; extra == 'cu118-torch250'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch250'
+  - unsloth[cu118onlytorch250] ; extra == 'cu118-torch250'
+  - unsloth[huggingface] ; extra == 'cu121-torch250'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-torch250'
+  - unsloth[cu121onlytorch250] ; extra == 'cu121-torch250'
+  - unsloth[huggingface] ; extra == 'cu124-torch250'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu124-torch250'
+  - unsloth[cu124onlytorch250] ; extra == 'cu124-torch250'
+  - unsloth[huggingface] ; extra == 'cu118-torch251'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch251'
+  - unsloth[cu118onlytorch251] ; extra == 'cu118-torch251'
+  - unsloth[huggingface] ; extra == 'cu121-torch251'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-torch251'
+  - unsloth[cu121onlytorch251] ; extra == 'cu121-torch251'
+  - unsloth[huggingface] ; extra == 'cu124-torch251'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu124-torch251'
+  - unsloth[cu124onlytorch251] ; extra == 'cu124-torch251'
+  - unsloth[huggingface] ; extra == 'cu118-torch260'
+  - bitsandbytes>=0.45.1 ; extra == 'cu118-torch260'
+  - unsloth[cu118onlytorch260] ; extra == 'cu118-torch260'
+  - unsloth[huggingface] ; extra == 'cu124-torch260'
+  - bitsandbytes>=0.45.1 ; extra == 'cu124-torch260'
+  - unsloth[cu124onlytorch260] ; extra == 'cu124-torch260'
+  - unsloth[huggingface] ; extra == 'cu126-torch260'
+  - bitsandbytes>=0.45.1 ; extra == 'cu126-torch260'
+  - unsloth[cu126onlytorch260] ; extra == 'cu126-torch260'
+  - unsloth[huggingface] ; extra == 'cu118-torch270'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch270'
+  - unsloth[cu118onlytorch270] ; extra == 'cu118-torch270'
+  - unsloth[huggingface] ; extra == 'cu126-torch270'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch270'
+  - unsloth[cu126onlytorch270] ; extra == 'cu126-torch270'
+  - unsloth[huggingface] ; extra == 'cu128-torch270'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-torch270'
+  - unsloth[cu128onlytorch270] ; extra == 'cu128-torch270'
+  - unsloth[huggingface] ; extra == 'cu118-torch271'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch271'
+  - unsloth[cu118onlytorch271] ; extra == 'cu118-torch271'
+  - unsloth[huggingface] ; extra == 'cu126-torch271'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch271'
+  - unsloth[cu126onlytorch271] ; extra == 'cu126-torch271'
+  - unsloth[huggingface] ; extra == 'cu128-torch271'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-torch271'
+  - unsloth[cu128onlytorch271] ; extra == 'cu128-torch271'
+  - unsloth[huggingface] ; extra == 'cu118-torch280'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-torch280'
+  - unsloth[cu118onlytorch280] ; extra == 'cu118-torch280'
+  - unsloth[huggingface] ; extra == 'cu126-torch280'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch280'
+  - unsloth[cu126onlytorch280] ; extra == 'cu126-torch280'
+  - unsloth[huggingface] ; extra == 'cu128-torch280'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-torch280'
+  - unsloth[cu128onlytorch280] ; extra == 'cu128-torch280'
+  - unsloth[huggingface] ; extra == 'cu130-torch280'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-torch280'
+  - unsloth[cu130onlytorch280] ; extra == 'cu130-torch280'
+  - unsloth[huggingface] ; extra == 'cu126-torch290'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch290'
+  - unsloth[cu126onlytorch290] ; extra == 'cu126-torch290'
+  - unsloth[huggingface] ; extra == 'cu128-torch290'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-torch290'
+  - unsloth[cu128onlytorch290] ; extra == 'cu128-torch290'
+  - unsloth[huggingface] ; extra == 'cu130-torch290'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-torch290'
+  - unsloth[cu130onlytorch290] ; extra == 'cu130-torch290'
+  - unsloth[huggingface] ; extra == 'cu126-torch291'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch291'
+  - unsloth[cu126onlytorch291] ; extra == 'cu126-torch291'
+  - unsloth[huggingface] ; extra == 'cu128-torch291'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-torch291'
+  - unsloth[cu128onlytorch291] ; extra == 'cu128-torch291'
+  - unsloth[huggingface] ; extra == 'cu130-torch291'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-torch291'
+  - unsloth[cu130onlytorch291] ; extra == 'cu130-torch291'
+  - unsloth[huggingface] ; extra == 'cu126-torch2100'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch2100'
+  - unsloth[cu126onlytorch2100] ; extra == 'cu126-torch2100'
+  - unsloth[audio-torch210] ; extra == 'cu126-torch2100'
+  - unsloth[huggingface] ; extra == 'cu128-torch2100'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-torch2100'
+  - unsloth[cu128onlytorch2100] ; extra == 'cu128-torch2100'
+  - unsloth[audio-torch210] ; extra == 'cu128-torch2100'
+  - unsloth[huggingface] ; extra == 'cu130-torch2100'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-torch2100'
+  - unsloth[cu130onlytorch2100] ; extra == 'cu130-torch2100'
+  - unsloth[audio-torch210] ; extra == 'cu130-torch2100'
+  - unsloth[huggingface] ; extra == 'cu126-torch2110'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch2110'
+  - unsloth[cu126onlytorch2110] ; extra == 'cu126-torch2110'
+  - unsloth[huggingface] ; extra == 'cu128-torch2110'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-torch2110'
+  - unsloth[cu128onlytorch2110] ; extra == 'cu128-torch2110'
+  - unsloth[huggingface] ; extra == 'cu130-torch2110'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-torch2110'
+  - unsloth[cu130onlytorch2110] ; extra == 'cu130-torch2110'
+  - unsloth[huggingface] ; extra == 'cu126-torch2120'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch2120'
+  - unsloth[cu126onlytorch2120] ; extra == 'cu126-torch2120'
+  - unsloth[huggingface] ; extra == 'cu130-torch2120'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-torch2120'
+  - unsloth[cu130onlytorch2120] ; extra == 'cu130-torch2120'
+  - unsloth[huggingface] ; extra == 'cu126-torch2121'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-torch2121'
+  - unsloth[cu126onlytorch2121] ; extra == 'cu126-torch2121'
+  - unsloth[huggingface] ; extra == 'cu130-torch2121'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-torch2121'
+  - unsloth[cu130onlytorch2121] ; extra == 'cu130-torch2121'
+  - unsloth[huggingface] ; extra == 'kaggle'
+  - unsloth[huggingface] ; extra == 'kaggle-new'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'kaggle-new'
+  - unsloth[huggingface] ; extra == 'conda'
+  - unsloth[huggingface] ; extra == 'colab-torch211'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'colab-torch211'
+  - unsloth[cu121onlytorch211] ; extra == 'colab-torch211'
+  - packaging ; 'linux' in sys_platform and extra == 'flashattention'
+  - ninja ; 'linux' in sys_platform and extra == 'flashattention'
+  - flash-attn>=2.6.3 ; 'linux' in sys_platform and extra == 'flashattention'
+  - unsloth[huggingface] ; extra == 'colab-ampere-torch211'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'colab-ampere-torch211'
+  - unsloth[cu121onlytorch211] ; extra == 'colab-ampere-torch211'
+  - unsloth[flashattention] ; extra == 'colab-ampere-torch211'
+  - unsloth[huggingface] ; extra == 'colab-torch220'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'colab-torch220'
+  - unsloth[cu121onlytorch220] ; extra == 'colab-torch220'
+  - unsloth[huggingface] ; extra == 'colab-ampere-torch220'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'colab-ampere-torch220'
+  - unsloth[cu121onlytorch220] ; extra == 'colab-ampere-torch220'
+  - unsloth[flashattention] ; extra == 'colab-ampere-torch220'
+  - unsloth-zoo>=2026.10.10 ; extra == 'colab-new'
+  - packaging ; extra == 'colab-new'
+  - transformers>=4.52.4,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.0,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.17.0 ; extra == 'colab-new'
+  - datasets>=3.4.1,!=4.0.*,!=4.1.0,!=4.4.*,!=4.5.0,<5.0.0 ; extra == 'colab-new'
+  - sentencepiece>=0.2.0 ; extra == 'colab-new'
+  - tqdm ; extra == 'colab-new'
+  - psutil ; extra == 'colab-new'
+  - wheel>=0.42.0 ; extra == 'colab-new'
+  - numpy ; extra == 'colab-new'
+  - protobuf ; extra == 'colab-new'
+  - huggingface-hub>=0.34.0 ; extra == 'colab-new'
+  - hf-transfer ; extra == 'colab-new'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'colab-new'
+  - unsloth[triton] ; extra == 'colab-new'
+  - sentence-transformers ; extra == 'colab-new'
+  - typer>=0.12.0 ; extra == 'colab-new'
+  - pydantic ; extra == 'colab-new'
+  - pyyaml ; extra == 'colab-new'
+  - nest-asyncio ; extra == 'colab-new'
+  - accelerate>=0.34.1 ; extra == 'colab-no-deps'
+  - trl>=0.18.2,!=0.19.0,<=1.15.0 ; extra == 'colab-no-deps'
+  - peft>=0.18.0 ; extra == 'colab-no-deps'
+  - xformers ; (platform_machine == 'AMD64' and 'linux' in sys_platform and extra == 'colab-no-deps') or (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'colab-no-deps') or (platform_machine == 'x86_64' and 'linux' in sys_platform and extra == 'colab-no-deps') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'colab-no-deps')
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'colab-no-deps'
+  - protobuf ; extra == 'colab-no-deps'
+  - unsloth[cu121] ; extra == 'colab'
+  - unsloth[colab-ampere-torch220] ; extra == 'colab-ampere'
+  - unsloth[flashattention] ; extra == 'colab-ampere'
+  - unsloth[huggingface] ; extra == 'cu118-ampere'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere'
+  - unsloth[cu118only] ; extra == 'cu118-ampere'
+  - unsloth[flashattention] ; extra == 'cu118-ampere'
+  - unsloth[huggingface] ; extra == 'cu121-ampere'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-ampere'
+  - unsloth[cu121only] ; extra == 'cu121-ampere'
+  - unsloth[flashattention] ; extra == 'cu121-ampere'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch211'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch211'
+  - unsloth[cu118onlytorch211] ; extra == 'cu118-ampere-torch211'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch211'
+  - unsloth[huggingface] ; extra == 'cu121-ampere-torch211'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-ampere-torch211'
+  - unsloth[cu121onlytorch211] ; extra == 'cu121-ampere-torch211'
+  - unsloth[flashattention] ; extra == 'cu121-ampere-torch211'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch220'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch220'
+  - unsloth[cu118onlytorch220] ; extra == 'cu118-ampere-torch220'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch220'
+  - unsloth[huggingface] ; extra == 'cu121-ampere-torch220'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-ampere-torch220'
+  - unsloth[cu121onlytorch220] ; extra == 'cu121-ampere-torch220'
+  - unsloth[flashattention] ; extra == 'cu121-ampere-torch220'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch230'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch230'
+  - unsloth[cu118onlytorch230] ; extra == 'cu118-ampere-torch230'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch230'
+  - unsloth[huggingface] ; extra == 'cu121-ampere-torch230'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-ampere-torch230'
+  - unsloth[cu121onlytorch230] ; extra == 'cu121-ampere-torch230'
+  - unsloth[flashattention] ; extra == 'cu121-ampere-torch230'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch240'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch240'
+  - unsloth[cu118onlytorch240] ; extra == 'cu118-ampere-torch240'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch240'
+  - unsloth[huggingface] ; extra == 'cu121-ampere-torch240'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-ampere-torch240'
+  - unsloth[cu121onlytorch240] ; extra == 'cu121-ampere-torch240'
+  - unsloth[flashattention] ; extra == 'cu121-ampere-torch240'
+  - unsloth[huggingface] ; extra == 'cu124-ampere-torch240'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu124-ampere-torch240'
+  - unsloth[cu124onlytorch240] ; extra == 'cu124-ampere-torch240'
+  - unsloth[flashattention] ; extra == 'cu124-ampere-torch240'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch250'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch250'
+  - unsloth[cu118onlytorch250] ; extra == 'cu118-ampere-torch250'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch250'
+  - unsloth[huggingface] ; extra == 'cu121-ampere-torch250'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-ampere-torch250'
+  - unsloth[cu121onlytorch250] ; extra == 'cu121-ampere-torch250'
+  - unsloth[flashattention] ; extra == 'cu121-ampere-torch250'
+  - unsloth[huggingface] ; extra == 'cu124-ampere-torch250'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu124-ampere-torch250'
+  - unsloth[cu124onlytorch250] ; extra == 'cu124-ampere-torch250'
+  - unsloth[flashattention] ; extra == 'cu124-ampere-torch250'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch251'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch251'
+  - unsloth[cu118onlytorch251] ; extra == 'cu118-ampere-torch251'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch251'
+  - unsloth[huggingface] ; extra == 'cu121-ampere-torch251'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu121-ampere-torch251'
+  - unsloth[cu121onlytorch251] ; extra == 'cu121-ampere-torch251'
+  - unsloth[flashattention] ; extra == 'cu121-ampere-torch251'
+  - unsloth[huggingface] ; extra == 'cu124-ampere-torch251'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu124-ampere-torch251'
+  - unsloth[cu124onlytorch251] ; extra == 'cu124-ampere-torch251'
+  - unsloth[flashattention] ; extra == 'cu124-ampere-torch251'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch260'
+  - bitsandbytes>=0.45.1 ; extra == 'cu118-ampere-torch260'
+  - unsloth[cu118onlytorch260] ; extra == 'cu118-ampere-torch260'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch260'
+  - unsloth[huggingface] ; extra == 'cu124-ampere-torch260'
+  - bitsandbytes>=0.45.1 ; extra == 'cu124-ampere-torch260'
+  - unsloth[cu124onlytorch260] ; extra == 'cu124-ampere-torch260'
+  - unsloth[flashattention] ; extra == 'cu124-ampere-torch260'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch260'
+  - bitsandbytes>=0.45.1 ; extra == 'cu126-ampere-torch260'
+  - unsloth[cu126onlytorch260] ; extra == 'cu126-ampere-torch260'
+  - unsloth[flashattention] ; extra == 'cu126-ampere-torch260'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch270'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch270'
+  - unsloth[cu118onlytorch270] ; extra == 'cu118-ampere-torch270'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch270'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch270'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch270'
+  - unsloth[cu126onlytorch270] ; extra == 'cu126-ampere-torch270'
+  - unsloth[flashattention] ; extra == 'cu126-ampere-torch270'
+  - unsloth[huggingface] ; extra == 'cu128-ampere-torch270'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-ampere-torch270'
+  - unsloth[cu128onlytorch270] ; extra == 'cu128-ampere-torch270'
+  - unsloth[flashattention] ; extra == 'cu128-ampere-torch270'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch271'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch271'
+  - unsloth[cu118onlytorch271] ; extra == 'cu118-ampere-torch271'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch271'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch271'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch271'
+  - unsloth[cu126onlytorch271] ; extra == 'cu126-ampere-torch271'
+  - unsloth[flashattention] ; extra == 'cu126-ampere-torch271'
+  - unsloth[huggingface] ; extra == 'cu128-ampere-torch271'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-ampere-torch271'
+  - unsloth[cu128onlytorch271] ; extra == 'cu128-ampere-torch271'
+  - unsloth[flashattention] ; extra == 'cu128-ampere-torch271'
+  - unsloth[huggingface] ; extra == 'cu118-ampere-torch280'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu118-ampere-torch280'
+  - unsloth[cu118onlytorch280] ; extra == 'cu118-ampere-torch280'
+  - unsloth[flashattention] ; extra == 'cu118-ampere-torch280'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch280'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch280'
+  - unsloth[cu126onlytorch280] ; extra == 'cu126-ampere-torch280'
+  - unsloth[flashattention] ; extra == 'cu126-ampere-torch280'
+  - unsloth[huggingface] ; extra == 'cu128-ampere-torch280'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-ampere-torch280'
+  - unsloth[cu128onlytorch280] ; extra == 'cu128-ampere-torch280'
+  - unsloth[flashattention] ; extra == 'cu128-ampere-torch280'
+  - unsloth[huggingface] ; extra == 'cu130-ampere-torch280'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-ampere-torch280'
+  - unsloth[cu130onlytorch280] ; extra == 'cu130-ampere-torch280'
+  - unsloth[flashattention] ; extra == 'cu130-ampere-torch280'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch290'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch290'
+  - unsloth[cu126onlytorch290] ; extra == 'cu126-ampere-torch290'
+  - unsloth[huggingface] ; extra == 'cu128-ampere-torch290'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-ampere-torch290'
+  - unsloth[cu128onlytorch290] ; extra == 'cu128-ampere-torch290'
+  - unsloth[huggingface] ; extra == 'cu130-ampere-torch290'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-ampere-torch290'
+  - unsloth[cu130onlytorch290] ; extra == 'cu130-ampere-torch290'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch291'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch291'
+  - unsloth[cu126onlytorch291] ; extra == 'cu126-ampere-torch291'
+  - unsloth[huggingface] ; extra == 'cu128-ampere-torch291'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-ampere-torch291'
+  - unsloth[cu128onlytorch291] ; extra == 'cu128-ampere-torch291'
+  - unsloth[huggingface] ; extra == 'cu130-ampere-torch291'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-ampere-torch291'
+  - unsloth[cu130onlytorch291] ; extra == 'cu130-ampere-torch291'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch2100'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch2100'
+  - unsloth[cu126onlytorch2100] ; extra == 'cu126-ampere-torch2100'
+  - unsloth[audio-torch210] ; extra == 'cu126-ampere-torch2100'
+  - unsloth[huggingface] ; extra == 'cu128-ampere-torch2100'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-ampere-torch2100'
+  - unsloth[cu128onlytorch2100] ; extra == 'cu128-ampere-torch2100'
+  - unsloth[audio-torch210] ; extra == 'cu128-ampere-torch2100'
+  - unsloth[huggingface] ; extra == 'cu130-ampere-torch2100'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-ampere-torch2100'
+  - unsloth[cu130onlytorch2100] ; extra == 'cu130-ampere-torch2100'
+  - unsloth[audio-torch210] ; extra == 'cu130-ampere-torch2100'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch2110'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch2110'
+  - unsloth[cu126onlytorch2110] ; extra == 'cu126-ampere-torch2110'
+  - unsloth[huggingface] ; extra == 'cu128-ampere-torch2110'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu128-ampere-torch2110'
+  - unsloth[cu128onlytorch2110] ; extra == 'cu128-ampere-torch2110'
+  - unsloth[huggingface] ; extra == 'cu130-ampere-torch2110'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-ampere-torch2110'
+  - unsloth[cu130onlytorch2110] ; extra == 'cu130-ampere-torch2110'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch2120'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch2120'
+  - unsloth[cu126onlytorch2120] ; extra == 'cu126-ampere-torch2120'
+  - unsloth[huggingface] ; extra == 'cu130-ampere-torch2120'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-ampere-torch2120'
+  - unsloth[cu130onlytorch2120] ; extra == 'cu130-ampere-torch2120'
+  - unsloth[huggingface] ; extra == 'cu126-ampere-torch2121'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu126-ampere-torch2121'
+  - unsloth[cu126onlytorch2121] ; extra == 'cu126-ampere-torch2121'
+  - unsloth[huggingface] ; extra == 'cu130-ampere-torch2121'
+  - bitsandbytes>=0.45.5,!=0.46.0,!=0.48.0 ; extra == 'cu130-ampere-torch2121'
+  - unsloth[cu130onlytorch2121] ; extra == 'cu130-ampere-torch2121'
+  requires_python: '>=3.9,<3.15'
+- pypi: https://files.pythonhosted.org/packages/b8/be/ebfbe13da09354bcd966d87955aa9ed990545756140f976770444c0ecc3c/unsloth_zoo-2026.10.10-py3-none-any.whl
+  name: unsloth-zoo
+  version: 2026.10.10
+  sha256: e72aff6494d64add34cd09bd305641e6d94d1d4e0f580bb421e79e4f9fb42ddb
+  requires_dist:
+  - torch>=2.4.0,<2.15.0 ; platform_machine != 'arm64' or sys_platform != 'darwin'
+  - torchao>=0.13.0 ; platform_machine != 'arm64' or sys_platform != 'darwin'
+  - triton>=3.0.0 ; 'linux' in sys_platform
+  - accelerate>=0.34.1 ; platform_machine != 'arm64' or sys_platform != 'darwin'
+  - trl>=0.18.2,!=0.19.0,<=1.15.0 ; platform_machine != 'arm64' or sys_platform != 'darwin'
+  - peft!=0.11.0,>=0.18.0 ; platform_machine != 'arm64' or sys_platform != 'darwin'
+  - cut-cross-entropy ; (python_full_version >= '3.10' and platform_machine != 'arm64') or (python_full_version >= '3.10' and sys_platform != 'darwin')
+  - einops ; platform_machine != 'arm64' or sys_platform != 'darwin'
+  - mlx==0.32.4 ; platform_machine == 'arm64' and sys_platform == 'darwin'
+  - mlx-lm>=0.31.3,<=0.32.2 ; platform_machine == 'arm64' and sys_platform == 'darwin'
+  - mlx-vlm>=0.4.4,<=0.7.9 ; platform_machine == 'arm64' and sys_platform == 'darwin'
+  - packaging>=24.1
+  - transformers>=4.52.4,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.17.0
+  - datasets>=3.4.1,!=4.0.*,!=4.1.0,!=4.4.*,!=4.5.0,<5.0.0
+  - sentencepiece>=0.2.0
+  - tqdm
+  - psutil
+  - wheel>=0.42.0
+  - numpy
+  - protobuf
+  - huggingface-hub>=0.34.0
+  - hf-transfer
+  - pillow
+  - regex
+  - msgspec
+  - typing-extensions
+  - filelock
+  - requests
+  - certifi>=2026.10.19
+  - mlx==0.32.4 ; extra == 'mlx'
+  - mlx-lm>=0.31.3,<=0.32.2 ; extra == 'mlx'
+  - mlx-vlm>=0.4.4,<=0.7.9 ; extra == 'mlx'
+  - packaging>=24.1 ; extra == 'core'
+  - transformers>=4.52.4,!=4.53.0,!=4.54.0,!=4.55.0,!=4.55.1,!=4.57.4,!=4.57.5,!=5.0.0,!=5.1.0,<=5.17.0 ; extra == 'core'
+  - datasets>=3.4.1,!=4.0.*,!=4.1.0,!=4.4.*,!=4.5.0,<5.0.0 ; extra == 'core'
+  - sentencepiece>=0.2.0 ; extra == 'core'
+  - tqdm ; extra == 'core'
+  - psutil ; extra == 'core'
+  - wheel>=0.42.0 ; extra == 'core'
+  - numpy ; extra == 'core'
+  - accelerate>=0.34.1 ; extra == 'core'
+  - trl>=0.18.2,!=0.19.0,<=1.15.0 ; extra == 'core'
+  - peft!=0.11.0,>=0.18.0 ; extra == 'core'
+  - protobuf ; extra == 'core'
+  - huggingface-hub>=0.34.0 ; extra == 'core'
+  - hf-transfer ; extra == 'core'
+  - cut-cross-entropy ; python_full_version >= '3.10' and extra == 'core'
+  - pillow ; extra == 'core'
+  - regex ; extra == 'core'
+  - msgspec ; extra == 'core'
+  - typing-extensions ; extra == 'core'
+  - filelock ; extra == 'core'
+  - requests ; extra == 'core'
+  - certifi>=2026.10.19 ; extra == 'core'
+  - unsloth-zoo[core] ; extra == 'huggingface'
+  - triton-windows ; (platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'huggingface') or (platform_machine == 'x86_64' and sys_platform == 'win32' and extra == 'huggingface')
+  - unsloth-zoo[huggingface] ; extra == 'base'
+  - torch>=2.4.0 ; extra == 'intelgpu'
+  - triton>=3.0.0 ; 'linux' in sys_platform and extra == 'intelgpu'
+  - unsloth-zoo[core] ; extra == 'intelgpu'
+  requires_python: '>=3.9,<3.15'
+- pypi: https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl
+  name: urllib3
+  version: 2.8.0
+  sha256: 0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3
+  requires_dist:
+  - brotli>=1.2.0 ; platform_python_implementation == 'CPython' and extra == 'brotli'
+  - brotlicffi>=1.2.0.0 ; platform_python_implementation != 'CPython' and extra == 'brotli'
+  - h2>=4,<5 ; extra == 'h2'
+  - pysocks>=1.5.6,!=1.5.7,<2.0 ; extra == 'socks'
+  - backports-zstd>=1.0.0 ; python_full_version < '3.14' and extra == 'zstd'
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/38/0c/b54a4fdd7f90a3af8b02ebc9ce6712c2c208b7926a2f7bad95c33ebbe943/uvicorn-0.54.0-py3-none-any.whl
   name: uvicorn
   version: 0.54.0
@@ -1917,6 +4358,13 @@ packages:
   - matplotlib>=2.0.0
   - numpy>=1.9 ; extra == 'numpy'
   - wslink>=1.0.4 ; extra == 'web'
+- pypi: https://files.pythonhosted.org/packages/2e/29/69cfbb602cd91690c55d38ba9fe53e6a7e76a6fa647bf38f19c138d25449/wheel-0.48.0-py3-none-any.whl
+  name: wheel
+  version: 0.48.0
+  sha256: 3217dcc807155e45db462d7ef2431f5ddda0d7273b700d05a67b271ceb1287ab
+  requires_dist:
+  - packaging>=24.0
+  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/a5/d1/c0bbb1ee6c46906cac7495a5c4eecbf41ae74b7973c287e19a6ed68abf9a/wslink-2.6.0-py3-none-any.whl
   name: wslink
   version: 2.6.0
@@ -1927,6 +4375,19 @@ packages:
   - uv>=0.10.7,<0.12.0 ; extra == 'build'
   - cryptography ; extra == 'ssl'
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/a4/85/6d71f9b16f2ac647877e66ed4af723b3fbd477806ab8b8a89d39a362b85f/xformers-0.0.35-py39-none-manylinux_2_28_x86_64.whl
+  name: xformers
+  version: 0.0.35
+  sha256: ccc73c7db9890224ab05f5fb60e2034f9e6c8672a10be0cf00e95cbbae3eda7c
+  requires_dist:
+  - torch>=2.10
+  - numpy
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/b2/c6/3a85fc0b821ed2dfcf6fb7cfdf07e0b261ada40374583a50abb3480f2863/xxhash-4.0.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: xxhash
+  version: 4.0.2
+  sha256: 7c7c95dba490be3b4e5a2fa5595b4d4f088fe7b8726e5998b8c1d83b1f9eb3e4
+  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/bc/7b/ca212cbe170ac8b96e45317ecbcf9c3c3ecf0cdec98d5b088a9c4088929b/yarl-1.25.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
   name: yarl
   version: 1.25.1
@@ -1935,6 +4396,30 @@ packages:
   - idna>=2.0
   - multidict>=4.0
   - propcache>=0.2.1
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/b8/44/7bd2007260da11cccca29ba2d4c345f1287aa663db38ee7cefeabf6386a5/zipp-4.1.2-py3-none-any.whl
+  name: zipp
+  version: 4.1.2
+  sha256: b30cb6cd253122169c47de245ca24a86bac2a5d3802ba15bf7ba6414eb9e144d
+  requires_dist:
+  - pytest>=6,!=8.1.* ; extra == 'test'
+  - jaraco-itertools ; extra == 'test'
+  - jaraco-functools ; extra == 'test'
+  - more-itertools ; extra == 'test'
+  - big-o ; extra == 'test'
+  - pytest-ignore-flaky ; extra == 'test'
+  - jaraco-test ; extra == 'test'
+  - sphinx>=3.5 ; extra == 'doc'
+  - jaraco-packaging>=9.3 ; extra == 'doc'
+  - rst-linker>=1.9 ; extra == 'doc'
+  - furo ; extra == 'doc'
+  - sphinx-lint ; extra == 'doc'
+  - jaraco-tidelift>=1.4 ; extra == 'doc'
+  - pytest-checkdocs>=2.14 ; extra == 'check'
+  - pytest-ruff>=0.2.1 ; sys_platform != 'cygwin' and extra == 'check'
+  - pytest-cov ; extra == 'cover'
+  - pytest-enabler>=3.4 ; extra == 'enabler'
+  - pytest-mypy>=1.0.1 ; platform_python_implementation != 'PyPy' and extra == 'type'
   requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_7.conda
   sha256: 47d682b9f6d6ec9eb1a6e6c3e75ea6273e899e78fb7fc59f81d39745009fbc60

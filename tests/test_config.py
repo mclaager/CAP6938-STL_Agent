@@ -38,7 +38,7 @@ def test_new_settings_file_lists_everything_but_sets_nothing():
     text = settings_path().read_text()
     assert text == commented_defaults()
     assert tomllib.loads(text) == {"providers": {name: {} for name in PROVIDERS}}  # only empty tables
-    assert (s.provider, s.max_attempts, s.top_k, s.gate_max_rounds) == ("anthropic", 4, 3, 2)
+    assert (s.provider, s.max_attempts, s.top_k, s.gate_max_rounds) == ("gemini", 4, 3, 2)
     assert set(s.sources.values()) == {"default"}
 
 
@@ -85,7 +85,7 @@ def test_missing_settings_are_added_commented_out(write_settings):
     write_settings('# my notes\ntop_k = 1\n\n[providers.ollama]\nmodel = "mine"\n')
     text = settings_path().read_text()
     assert text.startswith('# my notes\ntop_k = 1\n')  # the user's lines are untouched
-    assert '# max_attempts = 4' in text and '# provider = "anthropic"' in text
+    assert '# max_attempts = 4' in text and '# provider = "gemini"' in text
     assert '[providers.gemini]' in text
     data = tomllib.loads(text)
     assert data["top_k"] == 1 and data["providers"]["ollama"] == {"model": "mine"}
@@ -114,7 +114,7 @@ def test_set_and_unset_edit_one_line_and_keep_comments():
     for key in ("provider", "providers.ollama.model", "providers.ollama.rpm", "gate_picks"):
         unset_setting(key)
     assert settings_path().read_text() == before
-    assert settings().provider == "anthropic"
+    assert settings().provider == "gemini"
 
 
 def test_set_setting_rejects_bad_values_and_forms_it_cannot_edit(write_settings):

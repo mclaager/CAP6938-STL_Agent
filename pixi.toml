@@ -36,9 +36,28 @@ references = "python -m eval.references"
 gate-specs = "python -m eval.gate_specs"
 size-check = "python -m eval.size_check"
 settings = "python -m stl_agent.config"
+ft-requests = "python -m finetune.make_requests"
+ft-collect = "python -m finetune.collect"
+ft-export = "python -m finetune.export"
 
 [feature.cap6938.dependencies]
 python = "3.12.*"
 
+# Fine-tuning (#46): PyTorch + Unsloth on an NVIDIA GPU. Its own environment, so the app stays PyTorch-free (#19).
+[feature.finetune.system-requirements]
+libc = "2.35"
+cuda = "12"
+
+[feature.finetune.dependencies]
+python = "3.12.*"
+
+[feature.finetune.pypi-dependencies]
+unsloth = ">=2026.10"
+torch = ">=2.10, <2.15"  # unsloth 2026.10 needs < 2.15
+
+[feature.finetune.tasks]
+ft-train = "python -m finetune.train"
+
 [environments]
 cap6938 = { features = ["cap6938"], no-default-feature = true }
+finetune = { features = ["finetune"], no-default-feature = true }
