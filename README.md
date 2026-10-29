@@ -116,4 +116,4 @@ when only a part's size is off. Open work is tracked in
 judge model, whether retrieved examples make the model skip requested features, running the visual judge during
 builds (optional), editing a built part instead of rebuilding it, and for combined parts: checking that downloaded
 models are the right object, showing each piece, and copies of a piece; and building organic shapes with signed
-distance functions instead of downloading them.
+distance functions instead of downloading them; and fine-tuning a small local model on verified builds.

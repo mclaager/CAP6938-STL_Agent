@@ -1,4 +1,5 @@
-"""The app's settings panel (the ⚙ sidebar): model settings, Thingiverse picking and the size-check message.
+"""The app's settings panel (the ⚙ sidebar): model settings, Thingiverse picking, organic
+shapes (download or sculpt) and the size-check message.
 
 Model settings: provider, model, gate model and server address, saved to the settings file. Fields hold the
 current value; an empty field (or the default value) leaves the setting at its default. "Test connection"
@@ -140,6 +141,15 @@ def save_pick(mode: str) -> str:
     return out + " " + thingiverse_status() if out == "Saved." else out
 
 
+# Organic shapes (#42): download them from Thingiverse or sculpt them with SDF code.
+ORGANIC_CHOICES = [("Download an existing model from Thingiverse", "thingiverse"),
+                   ("Sculpt it from rounded shapes in code (experimental)", "sdf")]
+
+
+def save_organic(mode: str) -> str:
+    return save_choice("organic_builder", ORGANIC_CHOICES, mode)
+
+
 # Builds section: the repair message when a part fails only the size check (#23, eval/results/size-check.md).
 SIZE_CHOICES = [("Ask whether the script or its size estimate is wrong, with the measured size", "measured"),
                 ("Ask without the measured size (fewer wrong-size parts pass, fewer right ones too)", "ask"),
@@ -219,6 +229,12 @@ def build_panel(demo: gr.Blocks, cog: gr.Button) -> gr.Sidebar:
         pick_in = gr.Radio(PICK_CHOICES, label="Picking models")
         pick_md = gr.Markdown()
 
+        gr.Markdown("## Organic shapes\nAnimals, figurines and other sculpted objects, alone or as a piece of a "
+                    "joined part. Sculpting needs no Thingiverse token; if it fails, Thingiverse is searched instead. "
+                    "Saved when you change it.")
+        organic_in = gr.Radio(ORGANIC_CHOICES, label="Organic objects")
+        organic_md = gr.Markdown()
+
         gr.Markdown("## Builds\nEach part is checked against the size the model said it would be. When that is "
                     "the only problem, either the script or the model's estimate is wrong. Saved when you change it.")
         size_in = gr.Radio(SIZE_CHOICES, label="When only the size is off")
@@ -240,6 +256,8 @@ def build_panel(demo: gr.Blocks, cog: gr.Button) -> gr.Sidebar:
     save_btn.click(save_settings, inputs=[provider_in, model_in, gate_in, url_in], outputs=settings_md, **quiet)
     demo.load(load_thingiverse, outputs=[pick_in, pick_md], **quiet)
     pick_in.input(save_pick, inputs=pick_in, outputs=pick_md, **quiet)
+    demo.load(lambda: settings().organic_builder, outputs=organic_in, **quiet)
+    organic_in.input(save_organic, inputs=organic_in, outputs=organic_md, **quiet)
     demo.load(lambda: settings().size_feedback, outputs=size_in, **quiet)
     size_in.input(save_size_feedback, inputs=size_in, outputs=size_md, **quiet)
     return panel

@@ -61,6 +61,69 @@ Learn the style from the examples, but adapt geometry and dimensions to the new 
 than copying. When fixing an error, change only what is needed and reply in the same format.
 """
 
+# Organic shapes (#42): the model writes a script with stl_agent.sdf (fogleman/sdf-style names), meshed by the
+# sandbox. The API below is the whole library, so the model has no reason to guess at other names.
+SYSTEM_PROMPT_SDF = """\
+You are a 3D modeller who turns a plain-English description of an organic or sculpted object (an animal,
+a character, a plant, food, a figurine) into a Python script that builds it from signed distance
+functions. The script is executed, meshed to STL, and checked automatically. Units are millimetres.
+
+OUTPUT FORMAT (follow exactly)
+PLAN:
+- 2-6 short bullets: the main volumes (body, head, limbs...) with sizes and positions, the pose, any
+  assumption you made.
+BBOX: X, Y, Z
+```python
+<complete script>
+```
+BBOX is the overall bounding-box size of the FINISHED part in mm (three numbers, any axis order).
+
+If the request is not a solid object at all (a picture, a logo, an effect), reply with ONE line instead:
+UNSUPPORTED: <short reason>
+If it is merely underspecified, pick a sensible size (most figurines 40-80 mm tall), state it in PLAN,
+and proceed.
+
+THE LIBRARY (everything there is; points and sizes are (x, y, z) tuples in mm)
+Shapes:
+  sphere(radius, center=(0, 0, 0))
+  ellipsoid((rx, ry, rz))               radii, centred on the origin
+  box(size, center=(0, 0, 0))           full size: a number or (x, y, z)
+  rounded_box((x, y, z), radius)        centred on the origin, edges rounded
+  capsule(a, b, radius)                 rod with round ends from point a to point b
+  capped_cylinder(a, b, radius)         flat ends
+  capped_cone(a, b, ra, rb)             radius ra at a, rb at b (rb near 0 for a point)
+  rounded_cone(r1, r2, h)               along +Z from the origin, ball ends of radius r1 and r2
+  torus(r1, r2)                         ring in the XY plane: r1 to the tube's middle, r2 the tube
+Combining:
+  a | b   join          a - b   cut b out of a          a & b   keep only the overlap
+  union(a, b, c, ...)   join many; union(..., k=r) blends them all
+  .k(r) on the shape being joined or cut blends it in with a fillet of about r mm: body | head.k(5).
+  Blend body parts together; leave blends off where an edge should stay crisp.
+Transforms (each returns a new shape):
+  .translate((x, y, z))   .rotate(angle, axis)  angle in RADIANS (math.radians), axis X, Y, Z or a vector
+  .orient(axis)  turn the shape's +Z toward axis      .scale(s) or .scale((sx, sy, sz))
+  .mirror(Y)     reflected copy; build one side, then side | side.mirror(Y) for a left-right pair
+  .elongate((x, y, z))  stretch through the middle    .shell(t)  hollow skin t thick
+  .dilate(r)  grow by r
+There is no text, no sweep along a curve, no mesh import, no surface noise.
+
+SCRIPT RULES
+- Start with `from sdf import *`. Only `math` and `numpy as np` may also be imported. No file I/O.
+- Z is up. The object stands on z = 0: let the lowest parts sink a little below it, then cut everything
+  below with `- box(200, center=(0, 0, -100))` for a flat base it can be printed on.
+- Put the main sizes in named variables at the top (mm). Build the large volumes first, then attached
+  features, then cuts (eyes, mouth) last.
+- Everything must touch: the final shape must be one connected solid. Overlap joined parts by a few mm.
+- Features thinner than 2 mm will not print; make tails, ears, legs and stems at least 2-3 mm thick.
+- Pass the final shape to `show_object(result)`.
+
+Learn the style from the examples, but adapt the shapes and sizes to the new request rather than copying.
+When fixing an error, change only what is needed and reply in the same format.
+"""
+
+LANGUAGES = {"cadquery": SYSTEM_PROMPT, "sdf": SYSTEM_PROMPT_SDF}
+CODE_NAMES = {"cadquery": "CadQuery code", "sdf": "an SDF script"}  # for the log
+
 
 def format_examples(examples: list[dict]) -> str:
     blocks = []
@@ -194,11 +257,14 @@ def generate_cad(
     size_feedback: str | None = None,
     example_ids: list[str] | None = None,
     exec_timeout: float = 60.0,
+    language: str = "cadquery",
 ) -> GenResult:
     """Run the full generate -> execute -> validate -> repair loop. `max_attempts` / `top_k` / `api_hints` /
-    `size_feedback` left as None come from the current settings."""
+    `size_feedback` left as None come from the current settings. `language` "sdf" builds organic shapes with
+    stl_agent.sdf (#42); pass a retriever over the SDF examples (retrieval.make_retriever(path=SDF_EXAMPLES_PATH))."""
+    system = LANGUAGES[language]
     max_attempts = max_attempts or settings().max_attempts
-    api_hints = settings().api_hints if api_hints is None else api_hints
+    api_hints = (settings().api_hints if api_hints is None else api_hints) and language == "cadquery"  # CadQuery's API
     size_feedback = size_feedback or settings().size_feedback
     top_k = settings().top_k if top_k is None else top_k
     t0 = time.time()
@@ -225,8 +291,8 @@ def generate_cad(
 
     for attempt in range(1, max_attempts + 1):
         res.attempts = attempt
-        log(f"Attempt {attempt}/{max_attempts}: asking the model for CadQuery code...")
-        reply = llm.complete(SYSTEM_PROMPT, messages)
+        log(f"Attempt {attempt}/{max_attempts}: asking the model for {CODE_NAMES[language]}...")
+        reply = llm.complete(system, messages)
         messages.append({"role": "assistant", "content": reply})
         parsed = parse_response(reply)
         # The full reply and reasoning are kept for error analysis (the code is also stored on its own below).
@@ -254,7 +320,7 @@ def generate_cad(
             continue
 
         log("Executing code in sandbox...")
-        ex = run_cadquery(parsed.code, out_dir=out_dir / f"attempt_{attempt}", timeout=exec_timeout)
+        ex = run_cadquery(parsed.code, out_dir=out_dir / f"attempt_{attempt}", timeout=exec_timeout, language=language)
         rec["code"] = parsed.code
 
         if not ex.success:

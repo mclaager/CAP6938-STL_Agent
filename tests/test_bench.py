@@ -101,3 +101,33 @@ def test_repeats_run_resume_and_compare(tmp_path, monkeypatch):
                   log=lambda m: None, repeats=2)
     assert (s.ran, s.skipped) == (0, 4)
     assert "better on a (100% vs 50%)" in bench.summarize(rows)
+
+
+def test_organic_suite_runs_sdf_and_thingiverse_configs(tmp_path, monkeypatch):
+    import trimesh
+
+    from stl_agent.config import SDF_EXAMPLES_PATH
+    from stl_agent.sources import thingiverse as tv
+    from stl_agent.sources.thingiverse import Candidate
+
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    cases = bench.load_cases(bench.ORGANIC_CASES_PATH)[:1]
+    assert cases[0]["category"] == "organic" and cases[0]["search"]
+
+    def fake_download(thing_id, dest, client=None):
+        trimesh.creation.icosphere().export(dest)
+        return dest, []
+
+    monkeypatch.setattr(tv, "search", lambda term: [Candidate(id=1, name="cat", url="u", thumbnail="", author="a",
+                                                               license="CC-BY")])
+    monkeypatch.setattr(tv, "download_stl", fake_download)
+    ball = "BBOX: 20, 20, 20\n```python\nfrom sdf import *\nshow_object(sphere(10))\n```"
+    llm = ScriptedLLM([ball])
+    results = tmp_path / "r.jsonl"
+    s = bench.run(cases, ["sdf", "thingiverse"], llm, "m", None, results, budget=4, max_attempts=1, log=lambda m: None)
+    assert s.ran == 2 and s.requests == 1  # the download costs no LLM request
+    sdf_row, tv_row = bench.read_results(results)
+    assert sdf_row["built"] and sdf_row["library"] == bench.library_id(SDF_EXAMPLES_PATH)
+    assert all(i.startswith("sdf_") for i in sdf_row["retrieved"])
+    assert tv_row["built"] and tv_row["requests"] == 0 and bench._lib_key("thingiverse", tv_row["library"]) == "any"
+    assert {c["id"] for c in bench.all_cases()} >= {"s01", "o01"}

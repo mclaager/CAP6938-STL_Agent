@@ -14,6 +14,7 @@ Design notes:
   can't take down the UI.
 - The code may either call show_object(x) (the CQ-editor convention used in the
   RAG examples) or just leave the final shape in a variable named `result`.
+- `language="sdf"` runs a script built with stl_agent.sdf (organic shapes, #42) instead of CadQuery.
 - Tracebacks are trimmed to the frames from the generated code so the repair
   prompt contains signal, not 40 lines of CadQuery internals.
 - This is a *safety-lite* sandbox (process isolation + timeout + memory cap on
@@ -42,6 +43,8 @@ _RUNNER = textwrap.dedent(
 
     code_path, stl_path, result_path, mem_mb = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
     font_dir = sys.argv[5] if len(sys.argv) > 5 else None
+    language = sys.argv[6] if len(sys.argv) > 6 else "cadquery"
+    package_root = sys.argv[7] if len(sys.argv) > 7 else None
 
     # Memory cap (POSIX only; silently skipped on Windows).
     # RLIMIT_DATA, not RLIMIT_AS: OpenCascade spawns one worker thread per CPU for booleans, and
@@ -86,42 +89,64 @@ _RUNNER = textwrap.dedent(
             return after.co_qualname
         return None
 
-    try:
-        import cadquery as cq
-
-        # Text: CadQuery defaults to font="Arial", which is missing on most Linux systems, and
-        # OpenCascade then renders every glyph as a box. Unless the code gives an explicit
-        # fontPath, use the bundled Liberation Sans (metric-compatible with Arial).
-        if font_dir:
-            import inspect, os
-            _make_text = cq.Compound.makeText
-            _sig = inspect.signature(_make_text)
-            _files = {"regular": "LiberationSans-Regular.ttf", "bold": "LiberationSans-Bold.ttf",
-                      "italic": "LiberationSans-Italic.ttf"}
-
-            def _make_text_with_font(*args, **kwargs):
-                bound = _sig.bind(*args, **kwargs)
-                if bound.arguments.get("fontPath") is None:
-                    kind = bound.arguments.get("kind", "regular")
-                    bound.arguments["fontPath"] = os.path.join(font_dir, _files.get(kind, _files["regular"]))
-                return _make_text(*bound.args, **bound.kwargs)
-
-            cq.Compound.makeText = _make_text_with_font
-
-        # math is allowed by the prompt; pre-load it so a forgotten import doesn't waste an attempt.
+    def run_sdf():
+        # SDF scripts (#42): `import sdf` / `from sdf import *` give stl_agent.sdf, and its names are also
+        # predefined, as are math and numpy (np).
+        sys.path.insert(0, package_root)
+        from stl_agent import sdf
         import math
-        ns = {"__name__": "__generated__", "show_object": show_object, "cq": cq, "math": math}
-        exec(compile(source, FILENAME, "exec"), ns)
+        import numpy as np
 
+        sys.modules["sdf"] = sdf
+        ns = {"__name__": "__generated__", "show_object": show_object, "math": math, "np": np, "sdf": sdf}
+        ns.update({name: getattr(sdf, name) for name in sdf.__all__})
+        exec(compile(source, FILENAME, "exec"), ns)
         obj = shown[-1] if shown else ns.get("result")
         if obj is None:
             raise ValueError("No shape produced: call show_object(shape) or assign the final shape to a variable named `result`.")
+        if not isinstance(obj, sdf.SDF3):
+            raise TypeError(f"show_object needs an sdf shape (sphere, capsule, ... joined with | - &), got {type(obj).__name__}.")
+        sdf.save(obj, stl_path)
 
-        # Normalise to something exportable
-        if isinstance(obj, cq.Workplane):
-            if not obj.vals():
-                raise ValueError("The final Workplane is empty (no solids). A previous operation likely removed all geometry.")
-        cq.exporters.export(obj, stl_path)
+    try:
+        if language == "sdf":
+            run_sdf()
+        else:
+            import cadquery as cq
+
+            # Text: CadQuery defaults to font="Arial", which is missing on most Linux systems, and
+            # OpenCascade then renders every glyph as a box. Unless the code gives an explicit
+            # fontPath, use the bundled Liberation Sans (metric-compatible with Arial).
+            if font_dir:
+                import inspect, os
+                _make_text = cq.Compound.makeText
+                _sig = inspect.signature(_make_text)
+                _files = {"regular": "LiberationSans-Regular.ttf", "bold": "LiberationSans-Bold.ttf",
+                          "italic": "LiberationSans-Italic.ttf"}
+
+                def _make_text_with_font(*args, **kwargs):
+                    bound = _sig.bind(*args, **kwargs)
+                    if bound.arguments.get("fontPath") is None:
+                        kind = bound.arguments.get("kind", "regular")
+                        bound.arguments["fontPath"] = os.path.join(font_dir, _files.get(kind, _files["regular"]))
+                    return _make_text(*bound.args, **bound.kwargs)
+
+                cq.Compound.makeText = _make_text_with_font
+
+            # math is allowed by the prompt; pre-load it so a forgotten import doesn't waste an attempt.
+            import math
+            ns = {"__name__": "__generated__", "show_object": show_object, "cq": cq, "math": math}
+            exec(compile(source, FILENAME, "exec"), ns)
+
+            obj = shown[-1] if shown else ns.get("result")
+            if obj is None:
+                raise ValueError("No shape produced: call show_object(shape) or assign the final shape to a variable named `result`.")
+
+            # Normalise to something exportable
+            if isinstance(obj, cq.Workplane):
+                if not obj.vals():
+                    raise ValueError("The final Workplane is empty (no solids). A previous operation likely removed all geometry.")
+            cq.exporters.export(obj, stl_path)
         out["ok"] = True
     except BaseException as e:  # noqa: BLE001 - we want everything, incl. SystemExit
         out["error_type"] = type(e).__name__
@@ -156,8 +181,10 @@ def run_cadquery(
     stl_name: str = "model.stl",
     timeout: float = 60.0,
     mem_mb: int = 2048,
+    language: str = "cadquery",
 ) -> ExecResult:
-    """Execute generated CadQuery code in a subprocess and export an STL."""
+    """Execute generated code in a subprocess and export an STL. `language`: "cadquery", or "sdf" for a
+    script built with stl_agent.sdf (#42)."""
     out_dir = Path(out_dir) if out_dir else Path(tempfile.mkdtemp(prefix="cadgen_"))
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -171,7 +198,8 @@ def run_cadquery(
     for p in (result_path, stl_path):
         p.unlink(missing_ok=True)
 
-    cmd = [sys.executable, str(runner_path), str(code_path), str(stl_path), str(result_path), str(mem_mb), str(FONT_DIR)]
+    cmd = [sys.executable, str(runner_path), str(code_path), str(stl_path), str(result_path), str(mem_mb), str(FONT_DIR), language,
+           str(Path(__file__).resolve().parents[1])]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired as e:

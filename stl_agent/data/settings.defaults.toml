@@ -42,6 +42,11 @@ thingiverse_results = 6
 # part (#10; auto takes the first result that allows derivatives and downloads).
 thingiverse_pick = "manual"
 
+# Organic or sculpted objects (an animal, a figurine) and organic pieces of combined parts: "thingiverse"
+# (download an existing model, as above) or "sdf" (sculpt it from rounded shapes in code, #42; experimental;
+# needs no Thingiverse token, and falls back to Thingiverse if the build fails).
+organic_builder = "thingiverse"
+
 # Visual judge for evaluation (#8, eval/judge.py only): "llm".
 judge = "llm"
 

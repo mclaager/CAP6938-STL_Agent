@@ -168,3 +168,11 @@ def test_size_feedback_saves_and_default_stays_commented():
     panel.save_size_feedback("measured")
     assert settings().sources["size_feedback"] == "default"
     assert panel.save_size_feedback("never").startswith("Not saved")
+
+
+def test_organic_builder_saves():
+    from stl_agent.config import settings
+
+    assert settings().organic_builder == "thingiverse"
+    assert panel.save_organic("sdf") == "Saved." and settings().organic_builder == "sdf"
+    assert panel.save_organic("blender").startswith("Not saved")

@@ -10,6 +10,12 @@ it inside free-tier daily quotas; run it again the next day to continue. Configs
 per case, so a partial run still gives paired RAG / no-RAG comparisons.
 
 The harness calls `generate_cad` directly (no intake gate); gate evaluation is issue #12.
+
+    python -m eval.bench run --suite organic [--config sdf sdf-norag thingiverse]
+
+runs the organic cases (eval/organic_cases.json, #42): "sdf" sculpts them with SDF code, and "thingiverse"
+records the first Thingiverse model that downloads for each case's search words (no LLM requests), for the
+visual judge to compare.
 """
 
 from __future__ import annotations
@@ -22,11 +28,13 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from stl_agent.config import EXAMPLES_PATH, OUTPUT_DIR, ROOT, add_set_argument, override_settings, settings
+from stl_agent.config import (EXAMPLES_PATH, OUTPUT_DIR, ROOT, SDF_EXAMPLES_PATH, add_set_argument, override_settings,
+                               settings)
 from stl_agent.generate import generate_cad
 
 EVAL_DIR = Path(__file__).parent
 CASES_PATH = EVAL_DIR / "cases.json"
+ORGANIC_CASES_PATH = EVAL_DIR / "organic_cases.json"  # #42
 RESULTS_DIR = EVAL_DIR / "results"
 
 # name -> generate_cad keyword arguments
@@ -44,7 +52,12 @@ CONFIGS = {
     # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag) and rag-ext (built-in library
     # plus a Text-to-CadQuery pool, removed: no gain, see eval/results/external-rag.md).
     "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char", api_hints=False, size_feedback="fix"),
+    # Organic cases (#42): SDF scripts with the SDF example library ("sdf" retriever), or without examples.
+    "sdf": dict(language="sdf", use_rag=True, top_k=3, retriever="sdf", size_feedback="measured"),
+    "sdf-norag": dict(language="sdf", use_rag=False, size_feedback="measured"),
+    "thingiverse": dict(download=True),  # no generation: the first Thingiverse model that downloads
 }
+SUITES = {"main": (CASES_PATH, ["rag", "norag"]), "organic": (ORGANIC_CASES_PATH, ["sdf", "sdf-norag"])}
 
 
 def library_id(path: Path = EXAMPLES_PATH) -> str:
@@ -54,8 +67,15 @@ def library_id(path: Path = EXAMPLES_PATH) -> str:
     return f"lib{len(json.loads(data))}-{hashlib.sha1(data).hexdigest()[:6]}"
 
 
+def library_for(config: str) -> str:
+    """The example library a config retrieves from: the SDF one for SDF configs."""
+    return library_id(SDF_EXAMPLES_PATH) if CONFIGS.get(config, {}).get("retriever") == "sdf" else library_id()
+
+
 def _lib_key(config: str, library: str) -> str:
-    return "any" if not CONFIGS.get(config, {}).get("use_rag", True) else library  # no-RAG ignores the library
+    """no-RAG and download configs ignore the library."""
+    cfg = CONFIGS.get(config, {})
+    return "any" if not cfg.get("use_rag", True) or cfg.get("download") else library
 
 BBOX_REL_TOL, BBOX_ABS_TOL = 0.03, 1.0  # per dimension: within 3% or 1 mm, whichever is larger
 
@@ -70,6 +90,36 @@ def _repo_relative(path) -> str | None:
 
 def load_cases(path: Path = CASES_PATH) -> list[dict]:
     return json.loads(Path(path).read_text())["cases"]
+
+
+def all_cases() -> list[dict]:
+    """The main and the organic cases, for looking a result's case up by id."""
+    return load_cases() + load_cases(ORGANIC_CASES_PATH)
+
+
+def download_first(case: dict, out_dir: Path):
+    """The "thingiverse" config: the first result for the case's search words that downloads, as a GenResult
+    (no LLM requests). Downloaded meshes are often not watertight; that shows as a best-effort part."""
+    from stl_agent.generate import GenResult
+    from stl_agent.sandbox import validate_mesh
+    from stl_agent.sources import thingiverse as tv
+
+    t0, res = time.time(), GenResult(success=False)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for c in tv.search(case["search"]):
+        try:
+            path, _ = tv.download_stl(c.id, out_dir / "model.stl")
+        except tv.ThingiverseError:
+            continue
+        res.validation = validate_mesh(str(path))
+        res.success, res.stl_path, res.code = res.validation.valid, str(path), f"# {c.credit()}\n"
+        res.error = None if res.success else "Downloaded mesh: " + "; ".join(res.validation.issues)
+        (out_dir / "source.json").write_text(json.dumps(c.to_dict(), indent=1))
+        break
+    else:
+        res.error = f"No Thingiverse result downloaded for {case['search']!r}."
+    res.seconds = time.time() - t0
+    return res
 
 
 def bbox_matches(actual, expected) -> bool | None:
@@ -139,7 +189,6 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
         library: str | None = None) -> RunSummary:
     """Run every (repeat, case, config) not yet in the results file. Repeats go in the outer loop, so a
     partial run covers all cases evenly; rows from before repeats existed count as repeat 0."""
-    library = library or library_id()
     max_attempts = max_attempts or settings().max_attempts
     done = {(r["case"], r["config"], r.get("rep", 0), _lib_key(r["config"], r.get("library", "lib9")))
             for r in read_results(results_path)}
@@ -149,7 +198,8 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
     retrievers = {"tfidf": retriever}  # other kinds are built on first use
 
     for case, config, rep in ((c, k, n) for n in range(repeats) for c in cases for k in configs):
-        if (case["id"], config, rep, _lib_key(config, library)) in done:
+        lib = library or library_for(config)
+        if (case["id"], config, rep, _lib_key(config, lib)) in done:
             summary.skipped += 1
             continue
         if counter.requests + max_attempts > budget:
@@ -159,22 +209,26 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
 
         log(f"[{case['id']} / {config} / rep {rep}] {case['request'][:60]}")
         before = (counter.requests, llm.input_tokens, llm.output_tokens)
-        out_dir = OUTPUT_DIR / "bench" / model / library / config / case["id"] / f"rep{rep}"
+        out_dir = OUTPUT_DIR / "bench" / model / lib / config / case["id"] / f"rep{rep}"
         try:
             kw = dict(CONFIGS[config])
             kind = kw.pop("retriever", "tfidf")
-            if kind not in retrievers:
-                from stl_agent.retrieval import make_retriever
+            if kw.pop("download", False):
+                res = download_first(case, out_dir)
+            else:
+                if kind not in retrievers:
+                    from stl_agent.retrieval import make_retriever
 
-                retrievers[kind] = make_retriever(kind)
-            res = generate_cad(case["request"], counter, retrievers[kind], log=lambda m: None, out_dir=out_dir,
-                               max_attempts=max_attempts, **kw)
+                    retrievers[kind] = (make_retriever(path=SDF_EXAMPLES_PATH) if kind == "sdf"
+                                        else make_retriever(kind))
+                res = generate_cad(case["request"], counter, retrievers[kind], log=lambda m: None, out_dir=out_dir,
+                                   max_attempts=max_attempts, **kw)
         except Exception as e:  # quota exhausted, timeouts, network: stop without recording a result
             summary.stopped = f"error, stopping: {type(e).__name__}: {e}"
             summary.requests = counter.requests
             return summary
 
-        row = dict(case=case["id"], config=config, rep=rep, model=model, library=library,
+        row = dict(case=case["id"], config=config, rep=rep, model=model, library=lib,
                    category=case["category"], expect=case["expect"],
                    **score(case, res),
                    requests=counter.requests - before[0],
@@ -246,7 +300,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="run benchmark cases")
-    r.add_argument("--config", nargs="+", default=["rag", "norag"], choices=sorted(CONFIGS))
+    r.add_argument("--suite", choices=sorted(SUITES), default="main",
+                   help="main: eval/cases.json; organic: eval/organic_cases.json (#42)")
+    r.add_argument("--config", nargs="+", choices=sorted(CONFIGS), help="default: rag norag, or sdf sdf-norag for organic")
     r.add_argument("--cases", nargs="+", help="case ids (default: all)")
     r.add_argument("--category", nargs="+", help="only these categories")
     r.add_argument("--budget", type=int, default=18, help="max LLM requests this run (default 18)")
@@ -267,7 +323,9 @@ def main(argv=None):
     from stl_agent.llm import make_llm
     from stl_agent.retrieval import ExampleRetriever
 
-    cases = load_cases()
+    cases_path, default_configs = SUITES[args.suite]
+    cases = load_cases(cases_path)
+    configs = args.config or default_configs
     if args.cases:
         cases = [c for c in cases if c["id"] in args.cases]
     if args.category:
@@ -275,7 +333,7 @@ def main(argv=None):
     llm = make_llm(model=args.model) if args.model else make_llm()
     model = getattr(llm, "model", "unknown")
     path = RESULTS_DIR / f"{model}.jsonl"
-    s = run(cases, args.config, llm, model, ExampleRetriever.from_file(), path, args.budget, args.max_attempts,
+    s = run(cases, configs, llm, model, ExampleRetriever.from_file(), path, args.budget, args.max_attempts,
             repeats=args.repeats)
     print(f"\nRan {s.ran}, skipped {s.skipped} already done, used {s.requests} requests. Results: {path}")
     if s.stopped:

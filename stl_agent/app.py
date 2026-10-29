@@ -10,6 +10,8 @@ Requests the gate rules out of scope (sculpted or organic shapes) get a Thingive
 THINGIVERSE_TOKEN is set: the results show as a gallery, and clicking one downloads it (`run_fetch`).
 A "composite" plan (#10: pieces to download or generate, then join) is built by `run_assembly`; with
 thingiverse_pick = "manual", Build first shows a gallery per downloaded piece for the user to pick from.
+With organic_builder = "sdf" (#42), organic objects and pieces are sculpted with SDF code instead
+(`pipeline.sculpt_organic`); a failed sculpted part falls back to the Thingiverse search.
 The settings panel (⚙) is in settings_panel.py.
 """
 
@@ -60,8 +62,10 @@ def new_state() -> dict:
     # candidates: Thingiverse results shown in the gallery (sources.thingiverse.Candidate)
     # pieces: a composite plan (#10); picks: piece id -> chosen candidate (None: build its fallback);
     # picking: the piece whose results the gallery shows; assemble: all picked, ready to build
+    # language: "sdf" when the spec is an organic object to sculpt (#42); search: its Thingiverse search words,
+    # used if sculpting fails
     return {"conversation": [], "rounds": 0, "spec": None, "name": "", "example_ids": None, "candidates": [],
-            "pieces": [], "picks": {}, "picking": None, "assemble": False}
+            "pieces": [], "picks": {}, "picking": None, "assemble": False, "language": "cadquery", "search": ""}
 
 
 def gallery_update(candidates: list | None = None):
@@ -120,14 +124,14 @@ RELATION_WORDS = {"on_top": "on top of", "under": "under", "inside": "inside"}
 
 def describe_piece(p: dict) -> str:
     """'cat (from Thingiverse, 30 mm tall), on top of tree'"""
-    how = "from Thingiverse" if p["source"] == "thingiverse" else "built with CadQuery"
+    how = {"thingiverse": "from Thingiverse", "sdf": "sculpted"}.get(p["source"], "built with CadQuery")
     size = f", {p['height_mm']:g} mm tall" if p.get("height_mm") else ""
     text = f"**{p['id']}** ({how}{size})"
     if p.get("place"):
         w = p["place"]
         rel = f"{w['side']} of" if w["relation"] == "beside" else RELATION_WORDS[w["relation"]]
         text += f", {rel} {w['on']}"
-    return text + (f": {p['spec']}" if p["source"] == "cadquery" else "")
+    return text + (f": {p['spec']}" if p["source"] in ("cadquery", "sdf") else "")
 
 
 def format_decision(d) -> str:
@@ -146,6 +150,9 @@ def format_decision(d) -> str:
                      + "\n".join(f"{i}. {describe_piece(p)}" for i, p in enumerate(d.pieces, 1)))
     if d.scope == "simplified":
         parts.append(f"This will be a simplified geometric version ({d.scope_reason}).")
+    if d.scope == "organic":
+        parts.append("This will be sculpted from smooth rounded shapes (experimental; change this under ⚙ Settings), "
+                     "so small details are simplified.")
     if d.assumptions:
         parts.append("Assumptions:\n" + "\n".join(f"- {a.get('param')}: {a.get('default')}" for a in d.assumptions))
     if d.note:
@@ -195,6 +202,7 @@ def on_message(message: str, chat: list, state: dict):
     elif d.action != OUT_OF_SCOPE:
         state["spec"], state["name"] = d.spec, d.name
         state["example_ids"], state["pieces"] = d.example_ids, d.pieces
+        state["language"], state["search"] = ("sdf" if d.scope == "organic" else "cadquery"), d.search
     state["conversation"].append({"role": "assistant", "content": reply})
     chat.append({"role": "assistant", "content": reply})
     yield "", chat, state, gr.Button(interactive=state["spec"] is not None), gallery_update(state["candidates"])
@@ -273,6 +281,20 @@ def next_pick(state: dict) -> tuple[list[str], bool]:
     return lines, False
 
 
+def _thingiverse_instead(chat: list, state: dict):
+    """After a failed sculpted build: search Thingiverse for the object. Returns (chat, state, build_button,
+    log, gallery)."""
+    from .gate import OUT_OF_SCOPE, Decision
+
+    d = Decision(action=OUT_OF_SCOPE, spec=state["spec"], scope="out_of_scope",
+                 scope_reason="sculpting it didn't work.", search=state.get("search") or state.get("name", ""))
+    reply = search_thingiverse(d, state)
+    state["conversation"].append({"role": "assistant", "content": reply})
+    chat = chat + [{"role": "assistant", "content": reply}]
+    log = "Sculpting failed; searched Thingiverse instead."
+    return chat, state, gr.Button(interactive=state.get("spec") is not None), log, gallery_update(state["candidates"])
+
+
 def _assembly_job(state: dict):
     picks = state["picks"] if settings().thingiverse_pick == "manual" else None
     return lambda log: run_assembly(state["pieces"], log, name=state.get("name"), picks=picks)
@@ -287,9 +309,15 @@ def on_build(chat: list, state: dict):
 
     pieces = state.get("pieces") or []
     if not pieces:
-        job = lambda log: run_pipeline(spec, log, name=state.get("name"), example_ids=state.get("example_ids"))
+        language = state.get("language", "cadquery")
+        job = lambda log: run_pipeline(spec, log, name=state.get("name"), example_ids=state.get("example_ids"),
+                                       language=language)
+        out = None
         for out in _stream(job, chat, state, "part"):
             yield *out, gr.skip()
+        if language == "sdf" and not state.get("result") and thingiverse.has_token():
+            # Sculpting failed: offer existing models instead, as for any organic object.
+            yield _thingiverse_instead(out[0], state)
         return
 
     if any(p["source"] == "thingiverse" for p in pieces) and not thingiverse.has_token():
@@ -373,7 +401,17 @@ def show_result(state: dict):
         preview = make_preview(stl)
     except Exception:  # the viewer can show the raw STL if conversion fails
         preview = stl
-    return state, preview, download_button(stl), result["code"], result["report"]
+    code = gr.Code(value=result["code"], label=code_label(result["report"]))
+    return state, preview, download_button(stl), code, result["report"]
+
+
+def code_label(report: dict) -> str:
+    """The code panel's title: what kind of code the result came from."""
+    if "source" in report:  # run_fetch
+        return "Source (downloaded, no code)"
+    if report.get("pieces"):
+        return "Code for each piece"
+    return "SDF script (sculpted)" if report.get("language") == "sdf" else "CadQuery"
 
 
 def on_example(evt: gr.SelectData):
@@ -421,8 +459,8 @@ LAUNCH_KW = dict(css=CSS, head=HEAD)
 
 with gr.Blocks(title="Text-to-STL Agent") as demo:
     with gr.Row(equal_height=True):
-        gr.Markdown("# Text-to-STL CAD Agent\nDescribe a part. The agent asks about missing details, then generates "
-                    "CadQuery code and an STL.")
+        gr.Markdown("# Text-to-STL CAD Agent\nDescribe a part. The agent asks about missing details, then writes "
+                    "code for it (CadQuery, or an SDF script for sculpted shapes) and builds an STL.")
         cog = gr.Button("⚙", scale=0, min_width=48, elem_id="settings-cog")
     state = gr.State(new_state())
 
@@ -447,7 +485,7 @@ with gr.Blocks(title="Text-to-STL Agent") as demo:
             download = download_button()
             with gr.Tabs():
                 with gr.Tab("Generated code"):
-                    code_box = gr.Code(language="python", label="CadQuery", elem_id="code-box")
+                    code_box = gr.Code(language="python", label="Code", elem_id="code-box")
                 with gr.Tab("Validation report"):
                     report_box = gr.JSON(height=RESULT_HEIGHT, max_height=RESULT_HEIGHT)
 

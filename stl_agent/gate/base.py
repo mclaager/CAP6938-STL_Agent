@@ -32,6 +32,9 @@ class Decision:
     note: str = ""  # e.g. why the gate fell back to proceeding
     name: str = ""  # short file-name slug for the part, e.g. "flange-80mm-6-holes"
     search: str = ""  # a few words to find an existing model of it on a model site, e.g. "horse statue"
+    # An organic object (scope out_of_scope): what it looks like, for sculpting it with SDF shapes (#42); empty
+    # for logos, pictures and non-objects. Used when the organic_builder setting is "sdf".
+    organic_spec: str = ""
     # scope "composite": the pieces to make and join, checked by parse_pieces (first one is the base).
     pieces: list[dict] = field(default_factory=list)
     # Gate-picked library examples (gate_picks setting): None = the gate wasn't asked to pick,
@@ -86,6 +89,7 @@ def parse_pieces(raw) -> tuple[list[dict], list[str]]:
             search = [search] if isinstance(search, str) else search if isinstance(search, list) else []
             p["search"] = [" ".join(str(s).split()) for s in search if str(s).strip()][:MAX_SEARCHES]
             p["fallback_spec"] = str(item.get("fallback_spec") or "").strip()
+            p["organic_spec"] = str(item.get("organic_spec") or "").strip()
         else:
             notes.append(f"Dropped {pid}: unknown source {source!r}.")
             continue
@@ -111,7 +115,8 @@ def parse_pieces(raw) -> tuple[list[dict], list[str]]:
 
 
 def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_rounds: int | None = None) -> Decision:
-    """The decision rules. Kept separate from the LLM call so they can be tested directly."""
+    """The decision rules. Kept separate from the LLM call so they can be tested directly. Turning organic
+    objects into SDF builds (organic_builder setting) happens later, in pipeline.run_gate."""
     max_rounds = settings().gate_max_rounds if max_rounds is None else max_rounds
     scope = str(report.get("scope", "in_scope")).strip().lower()
     if scope not in SCOPES:
@@ -122,6 +127,7 @@ def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_
     d = Decision(action=PROCEED, spec=spec, scope=scope, scope_reason=str(report.get("scope_reason") or ""),
                  assumptions=unknowns, name=slugify(str(report.get("name") or "")))
     d.search = " ".join(str(report.get("search") or "").split()) or d.name.replace("-", " ")
+    d.organic_spec = str(report.get("organic_spec") or "").strip()
     if "examples" in report:
         picks = report["examples"] if isinstance(report["examples"], list) else []
         d.example_ids = list(dict.fromkeys(str(x).strip() for x in picks if str(x).strip()))
@@ -135,6 +141,7 @@ def decide_from_report(report: dict, fallback_spec: str, rounds_asked: int, max_
             else:
                 d.scope = "out_of_scope"
                 d.search = only["search"][0] if only and only["search"] else d.search
+                d.organic_spec = (only or {}).get("organic_spec") or d.organic_spec
             d.pieces = []
             notes.append("The piece plan had fewer than 2 usable pieces, so this is not built as a combination.")
         d.note = " ".join(notes)

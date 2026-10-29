@@ -36,6 +36,7 @@ PACKAGE_DIR = Path(__file__).parent
 ROOT = PACKAGE_DIR.parent
 DATA_DIR = PACKAGE_DIR / "data"
 EXAMPLES_PATH = DATA_DIR / "examples.json"
+SDF_EXAMPLES_PATH = DATA_DIR / "sdf_examples.json"  # organic shapes, built with stl_agent.sdf (#42)
 FONT_DIR = DATA_DIR / "fonts"  # bundled Liberation Sans (SIL OFL, see fonts/LICENSE)
 OUTPUT_DIR = ROOT / "outputs"
 
@@ -61,14 +62,15 @@ DEFAULTS_PATH = DATA_DIR / "settings.defaults.toml"
 # Schema: every setting and its type. Settings in OPTIONAL may be left unset (TOML has no null).
 TOP_FIELDS = {
     "provider": str, "max_attempts": int, "api_hints": bool, "size_feedback": str, "top_k": int, "retriever": str, "gate": str,
-    "gate_max_rounds": int, "gate_picks": bool, "thingiverse_results": int, "thingiverse_pick": str, "judge": str, "judge_provider": str,
+    "gate_max_rounds": int, "gate_picks": bool, "thingiverse_results": int, "thingiverse_pick": str,
+    "organic_builder": str, "judge": str, "judge_provider": str,
     "judge_threshold": (int, float),
 }
 PROVIDER_FIELDS = {"base_url": str, "model": str, "gate_model": str, "judge_model": str, "rpm": int,
                    "timeout": (int, float)}
 OPTIONAL = {"judge_provider"}
 OPTIONAL_PROVIDER = {"base_url", "gate_model", "judge_model", "rpm", "timeout"}
-_LOWERCASE = {"provider", "size_feedback", "retriever", "gate", "judge", "judge_provider", "thingiverse_pick"}
+_LOWERCASE = {"provider", "size_feedback", "retriever", "gate", "judge", "judge_provider", "thingiverse_pick", "organic_builder"}
 
 
 @dataclass
@@ -84,6 +86,7 @@ class Settings:
     gate_picks: bool
     thingiverse_results: int
     thingiverse_pick: str
+    organic_builder: str
     judge: str
     judge_threshold: float
     providers: dict[str, dict]  # name -> {"model": ..., "base_url": ...}; unset keys are missing

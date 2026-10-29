@@ -14,8 +14,10 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 app` — Gradio UI (`stl_agent/app.py`) at http://127.0.0.1:7860
 - `pixi run -e cap6938 test` — pytest suite in `tests/` (no LLM calls)
 - `pixi run -e cap6938 examples` — rebuild and verify `stl_agent/data/examples.json`
+- `pixi run -e cap6938 sdf-examples` — rebuild and verify `stl_agent/data/sdf_examples.json` (organic shapes, #42)
 - `pixi run -e cap6938 bench run [--model M] [--category simple] [--budget 18]` — benchmark (#7);
-  `pixi run -e cap6938 bench report` prints markdown tables from `eval/results/`
+  `pixi run -e cap6938 bench report` prints markdown tables from `eval/results/`;
+  `bench run --suite organic [--config sdf sdf-norag thingiverse]` runs the organic cases (#42)
 - `pixi run -e cap6938 retrieval-eval` — offline retrieval scores (no LLM requests, seconds)
 - `pixi run -e cap6938 references` — build every reference solution and check it against `eval/cases.json`
 - `pixi run -e cap6938 gate-specs` — save the gate's specs for the casual retrieval queries (one gate request each)
@@ -51,7 +53,8 @@ Providers (`provider`): `anthropic` (default, needs `ANTHROPIC_API_KEY`), `gemin
 defaults to a 4096-token context and drops the start of longer prompts without an error; raise it with
 `OLLAMA_CONTEXT_LENGTH` on the Ollama service. Other settings: `max_attempts`, `api_hints` (wrong-call hints in repair feedback, default off),
 `size_feedback` (repair message when only the size is off: `measured` default, `ask`, `fix`; also in the settings panel), `top_k`, `retriever`, `gate`
-(`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, `thingiverse_results`, `thingiverse_pick` (`manual`/`auto`), and for the visual judge `judge_provider`,
+(`llm`, `off`, `jev` stub), `gate_max_rounds`, `gate_picks`, `thingiverse_results`, `thingiverse_pick` (`manual`/`auto`),
+`organic_builder` (`thingiverse` default, or `sdf`: sculpt organic objects with code, #42), and for the visual judge `judge_provider`,
 `providers.<p>.judge_model` (Gemini default `gemini-3.1-flash-lite`, a different model from the one that built
 most benchmark parts) and `judge_threshold`. The gate uses the build model unless `providers.<p>.gate_model` is
 set (with Gemini, another model has its own daily quota, so gate checks don't use up builds).
@@ -71,9 +74,16 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
 `stl_agent/` is the Python package:
 
 - `generate.py` — prompts, response parsing, and the generate → execute → validate → repair loop
-  (`generate_cad`, `GenResult`). No caching or saving: the benchmark calls it directly.
+  (`generate_cad`, `GenResult`). No caching or saving: the benchmark calls it directly. `language="sdf"` uses
+  `SYSTEM_PROMPT_SDF` (the whole `sdf.py` API is listed in it) and runs the script as SDF (#42); the caller passes a
+  retriever over `data/sdf_examples.json`.
 - `pipeline.py` — the app's entry points: `run_gate(conversation, rounds)`, `run_pipeline(request, log, name)`,
-  `run_fetch`, `run_assembly`, with the LLM, gate and retriever cached until `reset_backends()`.
+  `run_fetch`, `run_assembly`, with the LLM, gate and retrievers cached until `reset_backends()`.
+  `sculpt_organic` (in `run_gate`, with `organic_builder = "sdf"`) turns an out-of-scope object with an
+  `organic_spec` into a build (scope `organic`, `run_pipeline(..., language="sdf")`) and Thingiverse pieces with one
+  into `sdf` pieces; it runs before the token check, so sculpting needs no Thingiverse token. A failed sculpted
+  piece falls back to an automatic Thingiverse pick, then its `fallback_spec`; in the app, a failed sculpted part
+  shows the Thingiverse search instead.
 - `config.py` — paths, `.env` loading (API keys), and settings: `Settings`, `settings()`, the settings file
   (create, validate, `set_setting` / `unset_setting`), `--set` overrides. Defaults in `data/settings.defaults.toml`.
 - `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`. Every backend
@@ -86,6 +96,14 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   (no gain; see `eval/results/retrieval-lib26.md`). Adding a public dataset (Text-to-CadQuery) as extra examples was
   also tried and removed (`eval/results/external-rag.md`). Keep the app lightweight (#19): no PyTorch.
 - `sandbox.py` — `run_cadquery` (isolated execution with timeout) and `validate_mesh` (trimesh checks).
+  `language="sdf"` runs an SDF script instead: `import sdf` / `from sdf import *` resolve to `stl_agent.sdf`.
+- `sdf.py` — signed distance function modeling for organic shapes (#42). fogleman/sdf's names and operators
+  (`sphere`, `capsule`, `a | b`, `.k(r)` blends, `.translate`, `.orient`, `.mirror`...) on our own small library
+  (fogleman/sdf is not on PyPI and pulls in four more packages). `to_mesh` uses manifold3d's `level_set` (always
+  closed): level_set asks for one point at a time, so points are answered from 16³ blocks evaluated with numpy,
+  on the grid level_set samples (each axis split into floor(length / edge) cells, measured, not documented); a
+  point off that grid is evaluated alone, so a wrong grid is correct but ~10x slower (a test checks). Where two
+  parts just touch, an STL reader merges two vertices into a non-watertight pinch, so it retries on a shifted grid.
 - `api_check.py` — extra repair feedback when a script fails (`api_hints` setting): reads the script with `ast`
   and checks each CadQuery call it can resolve against the installed CadQuery (`inspect`): missing methods (with
   close real names), arguments that don't fit the signature, a tuple where a number goes. Only used after a
@@ -96,8 +114,9 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   out_of_scope. `llm_gate.py` is the LLM backend, `jev.py` a stub (#12). Each gate check is one LLM request.
   Scope `composite` (#10, joined objects where one is sculpted) adds a `pieces` plan, checked by
   `base.parse_pieces`: base first, each piece `cadquery` (spec) or `thingiverse` (1-3 search phrases plus a
-  `fallback_spec`), `height_mm`, and `place` (`on` an earlier piece, relation `on_top`/`under`/`beside`/`inside`).
-  Fewer than 2 valid pieces falls back to `in_scope` or `out_of_scope`.
+  `fallback_spec`, and an `organic_spec` for sculpting it), `height_mm`, and `place` (`on` an earlier piece, relation `on_top`/`under`/`beside`/`inside`).
+  Fewer than 2 valid pieces falls back to `in_scope` or `out_of_scope`. For an out-of-scope object the gate also
+  writes `organic_spec` (what it looks like, for sculpting; empty for logos, pictures and non-objects).
 - `sources/thingiverse.py` — Thingiverse search and download (#9), plain httpx, Bearer app token
   (`THINGIVERSE_TOKEN`, optional: without it `pipeline.run_gate` turns plans with Thingiverse pieces into
   `out_of_scope`, so the app declines them as before #9/#10). `search(term)` returns
@@ -138,12 +157,15 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   Layout CSS (fixed-height code/report, log stretched to line up with them) is passed via
   `demo.launch(**LAUNCH_KW)`; launching without it loses that layout.
 - `settings_panel.py` — the settings sidebar, built and wired by `build_panel(demo, cog)`. Its Thingiverse section
-  sets `thingiverse_pick` (saved on change, `save_pick`) and shows whether `THINGIVERSE_TOKEN` is set. Model settings
+  sets `thingiverse_pick` (saved on change, `save_pick`) and shows whether `THINGIVERSE_TOKEN` is set; the Organic
+  shapes and Builds sections set `organic_builder` and `size_feedback` (radio buttons saved on change, `save_choice`). Model settings
   picks provider, model, gate model and server address: the model dropdown lists the server's chat models
   (`llm.list_models`); "Test connection" sends one tiny request without saving (`make_llm(timeout=90, quick=True)`:
   no retries, so a busy model fails fast); "Save" writes the settings file (values equal to the default stay
   commented out) and calls `reset_backends()`, so the next request uses them.
 - `data/examples.json` — few-shot library, generated by `scripts/make_examples.py` (the source of truth; edit that, not the JSON).
+- `data/sdf_examples.json` — SDF few-shot library (11 organic objects), generated by `scripts/make_sdf_examples.py`,
+  which checks each is one watertight solid standing on z = 0. None is an organic benchmark subject (a test checks).
 - `data/fonts/` — bundled Liberation Sans (SIL OFL). The sandbox uses it for any `text()` call without
   an explicit `fontPath`, because CadQuery's default "Arial" is missing on Linux and renders as boxes.
 
@@ -154,6 +176,9 @@ Elsewhere:
   calls `generate_cad` directly (no gate), appends one line per (case, config) to
   `eval/results/<model>.jsonl` (committed), skips pairs already done, and stops before exceeding
   `--budget` requests, so a full run can be spread over several days of free-tier quota.
+  `organic_cases.json` (#42, `--suite organic`): organic requests with no expected size, scored by the visual
+  judge; configs `sdf` / `sdf-norag` (SDF scripts with or without the SDF examples; rows record the SDF library's
+  id) and `thingiverse` (the first Thingiverse model that downloads for the case's `search`, no LLM requests).
   `--repeats N` runs each pair N times (LLM output varies run to run; with 3 repeats a one-run
   difference on a single case is still noise). Configs: `rag`, `norag`, `rag-hints` (rag plus `api_hints`; the others pin it off, as all
   earlier rows had it off), `rag-k1` / `rag-k5` (1 or 5
@@ -178,7 +203,7 @@ Elsewhere:
 - `eval/retrieval.py` + `eval/retrieval_labels.json` — offline retrieval evaluation (#20): hit@1, recall@3,
   MRR and latency per retriever, against hand-labelled relevant examples (original 19 cases only).
 - `tests/` — gate rules, sandbox smoke tests, app chat flow, benchmark harness, retrieval (all offline).
-- `scripts/` — maintenance scripts (`make_examples.py`).
+- `scripts/` — maintenance scripts (`make_examples.py`, `make_sdf_examples.py`).
 - `outputs/` (gitignored) — finished parts at the top: `<name>.stl` (name from the gate), a colored
   `<name>.preview.glb` for the viewer, and `<name>.source.json` for downloads. Working folders (each attempt's
   script and STL, `report.json`) go in `outputs/runs/` (`run_<time>`, `assembly_<time>`); benchmark runs in
@@ -215,3 +240,5 @@ Open work is in GitHub issues, with the original course timeline's target dates 
 - #40 Show each piece of a combined part in the UI (per-piece code and STL downloads)
 - #41 Copies of a piece in a combined part (`copy_of`, spread placement, distinct models when asked)
 - #42 Build organic shapes with SDF modeling (own small library meshed by manifold3d, `organic_builder` setting)
+- #46 Fine-tune a small local model on verified CadQuery builds (teacher runs filtered by the mesh checks; no code using our own `sdf.py`)
+- #47 SDF prompt: the flat-base rule cuts objects in half (lift onto z = 0 first, then trim)

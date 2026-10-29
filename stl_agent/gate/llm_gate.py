@@ -19,6 +19,7 @@ Read the conversation and reply with ONE JSON object in a ```json block, nothing
   "spec": "complete, self-contained description of the part to build, with every dimension in mm, including everything the user said in later messages",
   "name": "short file name for the part: 2-5 lowercase words joined by hyphens, e.g. flange-80mm-6-holes",
   "search": "2-4 plain words to find an existing 3D model of this object on a model site, no sizes, e.g. horse statue",
+  "organic_spec": "only for a single organic or sculpted object (out_of_scope): what it looks like, for sculpting it from rounded shapes: pose, main body parts and their proportions, overall height in mm; empty otherwise, and for logos, pictures and non-objects",
   "unknowns": [
     {"param": "name", "default": "value you would use", "critical": true | false,
      "question": "short question to ask the user about it"}
@@ -43,14 +44,17 @@ SCOPE
 COMPOSITE (only when scope is composite): add a "pieces" list, in build order, the base first:
   "pieces": [
     {"id": "tree", "source": "thingiverse", "search": ["oak tree", "tree"], "height_mm": 120,
-     "fallback_spec": "stylized tree: 15 mm cylinder trunk 50 mm tall under a 70 mm sphere canopy"},
+     "fallback_spec": "stylized tree: 15 mm cylinder trunk 50 mm tall under a 70 mm sphere canopy",
+     "organic_spec": "oak tree 120 mm tall: thick trunk splitting into two branches, a broad rounded canopy"},
     {"id": "cat", "source": "thingiverse", "search": ["sitting cat", "cat"], "height_mm": 30,
-     "fallback_spec": "stylized sitting cat: ...", "place": {"on": "tree", "relation": "on_top"}},
+     "fallback_spec": "stylized sitting cat: ...", "organic_spec": "sitting cat 30 mm tall, tail curled around its front paws, ears up",
+     "place": {"on": "tree", "relation": "on_top"}},
     {"id": "plate", "source": "cadquery", "spec": "40x12x3 mm plate with the raised text TOM",
      "place": {"on": "tree", "relation": "beside", "side": "front"}}
   ]
 - source: "thingiverse" for organic/sculpted pieces (give "search": 1-3 short phrases, most specific
-  first, and "fallback_spec": a simplified geometric version to build if no model is found), or
+  first, "fallback_spec": a simplified geometric version to build if no model is found, and
+  "organic_spec": what it looks like, as for a single organic object), or
   "cadquery" for geometric pieces (give "spec" with every dimension in mm).
 - height_mm: the piece's height; downloaded models are scaled to it.
 - place (every piece after the first): "on" is an earlier piece's id; "relation" is "on_top" (rests

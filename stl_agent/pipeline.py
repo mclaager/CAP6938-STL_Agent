@@ -1,7 +1,7 @@
 """App entry points: the intake gate, building a part, Thingiverse downloads and combined parts.
 
     run_gate(conversation, rounds_asked) -> gate.Decision   (proceed / clarify / out_of_scope)
-    run_pipeline(request, log, name=None) -> (stl_path, final_code, report_dict)
+    run_pipeline(request, log, name=None, language="cadquery") -> (stl_path, final_code, report_dict)
     run_fetch(candidate, log, name=None) -> (stl_path, report_dict)   (download from Thingiverse, #9)
     run_assembly(pieces, log, name=None, picks=None) -> (stl_path, code, report_dict)   (combined part, #10)
 
@@ -16,7 +16,7 @@ import shutil
 import time
 from pathlib import Path
 
-from .config import EXAMPLES_PATH, OUTPUT_DIR, ignored_env_vars, settings, settings_path
+from .config import EXAMPLES_PATH, OUTPUT_DIR, SDF_EXAMPLES_PATH, ignored_env_vars, settings, settings_path
 from .generate import GenResult, generate_cad
 from .llm import make_llm, provider_config
 from .retrieval import BaseRetriever, make_retriever
@@ -26,6 +26,7 @@ from .sandbox import validate_mesh
 # Cached backends and app entry points
 # ---------------------------------------------------------------------------
 _retriever: BaseRetriever | None = None
+_sdf_retriever: BaseRetriever | None = None  # over the SDF examples (#42)
 _llm = None
 _gate = None
 
@@ -45,8 +46,8 @@ def describe_settings() -> str:
 
 def reset_backends() -> None:
     """Forget the cached LLM, gate and retriever, so the next request builds them from current settings."""
-    global _retriever, _llm, _gate
-    _retriever = _llm = _gate = None
+    global _retriever, _sdf_retriever, _llm, _gate
+    _retriever = _sdf_retriever = _llm = _gate = None
 
 
 def get_llm():
@@ -70,7 +71,23 @@ def run_gate(conversation: list[dict], rounds_asked: int = 0):
         # A separate gate model (e.g. Gemini's) has its own free-tier quota, so gate checks don't use up builds.
         llm = make_llm(model=cfg["gate_model"]) if cfg["gate_model"] != cfg["model"] else get_llm()
         _gate = make_gate(llm, library=library)
-    return without_downloads_unless_token(_gate.decide(conversation, rounds_asked))
+    return without_downloads_unless_token(sculpt_organic(_gate.decide(conversation, rounds_asked)))
+
+
+def sculpt_organic(d):
+    """organic_builder = "sdf" (#42): an organic object the gate described becomes a build (scope "organic",
+    built with SDF code), and so does each Thingiverse piece of a combined part that has a description
+    (source "sdf"; its search and fallback stay, for when the build fails)."""
+    from .gate import OUT_OF_SCOPE, PROCEED
+
+    if settings().organic_builder != "sdf":
+        return d
+    if d.action == OUT_OF_SCOPE and d.organic_spec:
+        d.action, d.scope, d.spec = PROCEED, "organic", d.organic_spec
+    for p in d.pieces:
+        if p["source"] == "thingiverse" and p.get("organic_spec"):
+            p.update(source="sdf", spec=p["organic_spec"])
+    return d
 
 
 def without_downloads_unless_token(d):
@@ -95,10 +112,11 @@ def unique_stl_path(name: str, folder: Path | None = None) -> Path:
     return path
 
 
-def run_pipeline(request: str, log, name: str | None = None,
-                 example_ids: list[str] | None = None) -> tuple[str, str, dict]:
-    """`name` is a file-name slug (the gate supplies one); otherwise it's made from the request."""
-    res = _generate(request, log, example_ids=example_ids)
+def run_pipeline(request: str, log, name: str | None = None, example_ids: list[str] | None = None,
+                 language: str = "cadquery") -> tuple[str, str, dict]:
+    """`name` is a file-name slug (the gate supplies one); otherwise it's made from the request.
+    `language` "sdf" sculpts an organic object (#42)."""
+    res = _generate(request, log, example_ids=example_ids, language=language)
     if res.unsupported or res.stl_path is None:
         raise RuntimeError(res.error or "Generation failed.")
 
@@ -109,12 +127,16 @@ def run_pipeline(request: str, log, name: str | None = None,
     shutil.copy(res.stl_path, final_stl)
     log(f"Saved {final_stl.name}")
     log("Done." if res.success else "Done (with warnings; see report).")
-    return str(final_stl), res.code or "", _panel_report(res)
+    return str(final_stl), res.code or "", {**_panel_report(res), "language": language}
 
 
-def _generate(request: str, log, **kw) -> GenResult:
-    """generate_cad with the app's cached LLM and retriever."""
-    global _retriever
+def _generate(request: str, log, language: str = "cadquery", **kw) -> GenResult:
+    """generate_cad with the app's cached LLM and retriever (the SDF examples' for language "sdf")."""
+    global _retriever, _sdf_retriever
+    if language == "sdf":
+        if _sdf_retriever is None:
+            _sdf_retriever = make_retriever(path=SDF_EXAMPLES_PATH)
+        return generate_cad(request, get_llm(), _sdf_retriever, log=log, language="sdf", **kw)
     if _retriever is None:
         _retriever = make_retriever()  # the retriever setting
     return generate_cad(request, get_llm(), _retriever, log=log, **kw)
@@ -178,7 +200,9 @@ def run_assembly(pieces: list[dict], log, name: str | None = None,
 
     `picks`: piece id -> the user's Thingiverse candidate, or None when a search found nothing (the piece is
     then built from its fallback_spec). Pieces not in `picks` are picked automatically (find_model).
-    Thingiverse pieces are fetched first, so a missing model costs no generation requests.
+    Thingiverse pieces are fetched first, so a missing model costs no generation requests. "sdf" pieces
+    (organic_builder setting, #42) are sculpted; if that fails, a Thingiverse model is picked automatically,
+    else the fallback_spec is built.
     """
     import trimesh
 
@@ -218,7 +242,35 @@ def run_assembly(pieces: list[dict], log, name: str | None = None,
         rows[p["id"]]["model"] = c.credit()
         codes.append(f"# --- {p['id']}: downloaded, not generated ---\n# {c.credit()}")
 
-    for p in plan:  # 2. generated pieces
+    for p in plan:  # 2. sculpted pieces; one that fails becomes a download or its fallback
+        if p["source"] != "sdf":
+            continue
+        log(f"{p['id']}: sculpting with SDF shapes...")
+        res = _generate(p["spec"], log, out_dir=folder / p["id"], language="sdf")
+        if not (res.unsupported or res.stl_path is None):
+            paths[p["id"]] = Path(res.stl_path)
+            rows[p["id"]].update(source="sdf", attempts=res.attempts)
+            if not res.success:
+                rows[p["id"]]["warning"] = res.error
+                log(f"{p['id']}: {res.error}")
+            codes.append(f"# --- {p['id']} (sculpted) ---\n{res.code or ''}")
+            continue
+        log(f"{p['id']}: sculpting failed ({res.error}).")
+        c, path = find_model(p, log, folder) if tv.has_token() else (None, None)
+        if c is not None:
+            paths[p["id"]] = path
+            credits.append({"piece": p["id"], **c.to_dict()})
+            rows[p["id"]].update(source="thingiverse (sculpting failed)", model=c.credit())
+            codes.append(f"# --- {p['id']}: downloaded, not generated ---\n# {c.credit()}")
+            p["source"] = "thingiverse"
+        elif p.get("fallback_spec"):
+            log(f"{p['id']}: building a simplified one instead.")
+            p.update(source="cadquery", spec=p["fallback_spec"], fallback=True)
+            rows[p["id"]]["source"] = "cadquery (sculpting failed)"
+        else:
+            raise RuntimeError(f"Could not build the {p['id']}: {res.error or 'generation failed.'}")
+
+    for p in plan:  # 3. generated pieces
         if p["source"] != "cadquery":
             continue
         log(f"{p['id']}: generating with CadQuery...")
@@ -236,8 +288,9 @@ def run_assembly(pieces: list[dict], log, name: str | None = None,
     meshes = {}
     for p in plan:
         m = trimesh.load(paths[p["id"]], force="mesh")
-        # Downloaded models (and their stand-ins) come in any size: scale them to the planned height.
-        if p.get("height_mm") and (p["source"] == "thingiverse" or p.get("fallback")):
+        # Downloaded models (and their stand-ins) come in any size, and sculpted ones roughly: scale them to the
+        # planned height.
+        if p.get("height_mm") and (p["source"] in ("thingiverse", "sdf") or p.get("fallback")):
             m = assembly.scale_to_height(m, p["height_mm"])
         meshes[p["id"]] = m
     placed = assembly.place(meshes, plan)
