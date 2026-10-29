@@ -94,6 +94,17 @@ def test_rate_limiter_spaces_requests():
     assert slept == [50.5] and now[0] == 60.5
 
 
+def test_clients_of_one_model_share_its_rate_limit():
+    """The rpm setting is per model, not per client: parallel workers each make a client (finetune.collect)."""
+    from stl_agent.llm import OpenAICompatLLM
+
+    a = OpenAICompatLLM("http://x/v1", "k", "m1", rpm=7)
+    b = OpenAICompatLLM("http://x/v1/", "k", "m1", rpm=7)
+    c = OpenAICompatLLM("http://x/v1", "k", "m2", rpm=7)
+    assert a.pacer is b.pacer and a.pacer is not c.pacer
+    assert OpenAICompatLLM("http://x/v1", "k", "m1").pacer is None
+
+
 def test_repeats_run_resume_and_compare(tmp_path, monkeypatch):
     monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
     results = tmp_path / "r.jsonl"
