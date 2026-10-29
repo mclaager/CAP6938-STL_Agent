@@ -42,6 +42,38 @@ run in Ollama as `cad-qwen3.5:4b-v1` with the stock `qwen3.5:4b` renderer, parse
   The untuned model had m03 once; the student lost it.
 - gemma4:12b is still better (22) but needs 8 GB and ~5 minutes per case.
 
+## Visual judge (gemini-3.1-flash-lite, prompt v2, renders v2, pass at 0.5)
+
+Same 36 runs per model. "Right size and shape" = the benchmark's size check passes and the judge passes the part,
+as in `rag-copying.md`. The other local models had only been judged by local judges before; they were judged here
+with the same Gemini judge so the numbers compare.
+
+| model | right size | right size and shape | right size, wrong shape |
+|---|---|---|---|
+| **cad-qwen3.5:4b-v1** | 16 | **8** | 8 |
+| qwen3.5:4b (untuned) | 6 | 2 | 4 |
+| qwen3.5:9b | 9 | 2 | 7 |
+| ornith:9b | 16 | 10 | 6 |
+| gemma4:12b | 22 | 16 | 6 |
+
+- 4x the untuned model on size and shape, but half the student's right-size parts have a wrong shape (a missing or
+  misplaced feature), so on shape it is a little behind ornith:9b, where it tied on size.
+- Its passes are on simple and medium cases: s03 3, s04 3, m02 1, m15 1.
+
+## Gate and general replies (`finetune/general_check.py`, `general-check.jsonl`)
+
+10 gate conversations (complete, vague, organic, composite, picture, two-turn) and 5 general prompts, 3 runs each.
+
+| | cad-qwen3.5:4b-v1 |
+|---|---|
+| gate reply valid JSON | 30 / 30 |
+| gate scope as expected | 27 / 30 (horse on a plinth twice `out_of_scope` instead of `composite`; "Make me a bracket." once `out_of_scope`) |
+| general prompts passed | 14 / 15 (both Python functions pass their tests 3/3; one haiku rambled into syllable counting) |
+| CadQuery or PLAN/BBOX in non-CAD replies | 0 / 15 |
+
+The fine-tune did not narrow the model the way C3D-v0 and the 3D-Coder were narrowed. The untuned model's run of
+this check is still to come.
+
 ## Caveats
 
 - **Style samples:** the request generator was shown three benchmark requests of the same category as style samples.
