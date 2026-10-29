@@ -64,15 +64,35 @@ with the same Gemini judge so the numbers compare.
 
 10 gate conversations (complete, vague, organic, composite, picture, two-turn) and 5 general prompts, 3 runs each.
 
-| | cad-qwen3.5:4b-v1 |
-|---|---|
-| gate reply valid JSON | 30 / 30 |
-| gate scope as expected | 27 / 30 (horse on a plinth twice `out_of_scope` instead of `composite`; "Make me a bracket." once `out_of_scope`) |
-| general prompts passed | 14 / 15 (both Python functions pass their tests 3/3; one haiku rambled into syllable counting) |
-| CadQuery or PLAN/BBOX in non-CAD replies | 0 / 15 |
+| | cad-qwen3.5:4b-v1 | qwen3.5:4b (untuned) |
+|---|---|---|
+| gate reply valid JSON | 30 / 30 | 30 / 30 |
+| gate scope as expected | 27 / 30 | 28 / 30 |
+| general prompts passed | 14 / 15 | 14 / 15 |
+| CadQuery or PLAN/BBOX in non-CAD replies | 0 / 15 | 0 / 15 |
+| mean seconds per gate / general reply | 27 / 49 | 32 / 31 |
 
-The fine-tune did not narrow the model the way C3D-v0 and the 3D-Coder were narrowed. The untuned model's run of
-this check is still to come.
+- Both models call the horse on a plinth `out_of_scope` instead of `composite` twice; the student also called
+  "Make me a bracket." `out_of_scope` once (within noise). Both fail one haiku (rambling into syllable counting).
+- Both Python functions pass their tests in every run for both models.
+- The fine-tune did not narrow the model the way C3D-v0 and the 3D-Coder were narrowed.
+
+## Organic suite (SDF, `--suite organic --config sdf`, 12 cases x 2 runs)
+
+Run on the code from #48 (SDF flat-base fix). The training data had no SDF code, so this checks whether the
+CadQuery fine-tune helped or hurt sculpting. Scored by the same Gemini judge.
+
+| model | built | best-effort mesh | nothing | judged right object |
+|---|---|---|---|---|
+| cad-qwen3.5:4b-v1 | 3 | 13 | 8 | 2 (o10 twice) |
+| qwen3.5:4b (untuned) | 1 | 10 | 13 | 0 |
+| gemini-3.5-flash-lite (`organic-sdf.md`, for scale) | | | | 15 of 24 built and passed |
+
+- Neither 4B model can sculpt yet: the judge calls most parts "arbitrary geometric shapes". The fine-tune did not
+  make it worse.
+- The scripts import `sdf` correctly (69 of 70 attempts) but guess the API: `cylinder()` (does not exist),
+  `translate(x, y, z)` instead of a tuple, `ellipsoid(a, b, c)`, multiplying a shape by a number, undefined
+  variables. Round 2 adds SDF training data for this (plan in #46).
 
 ## Caveats
 
