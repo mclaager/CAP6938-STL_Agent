@@ -20,6 +20,7 @@ def test_parse_batch_keeps_good_items_only():
     ]})
     items = make_requests.parse_batch("Here you go:\n" + reply)
     assert [i["expected_bbox_mm"] for i in items] == [[20.0, 20.0, 20.0], None, None]
+    assert make_requests.parse_batch('{"requests": [{"request": "x", bbox: 1}]}') == []  # bad JSON
 
 
 def test_near_copy_filter_drops_benchmark_copies_and_repeats():

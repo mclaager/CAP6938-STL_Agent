@@ -114,7 +114,10 @@ class NearCopyFilter:
 
 def parse_batch(reply: str) -> list[dict]:
     """The {"request", "bbox"} items of a reply; malformed items are skipped."""
-    data = parse_json_object(reply) or {}
+    try:
+        data = parse_json_object(reply) or {}
+    except ValueError:  # malformed JSON: skip the batch
+        return []
     out = []
     for item in data.get("requests") or []:
         if not isinstance(item, dict) or not isinstance(item.get("request"), str):
