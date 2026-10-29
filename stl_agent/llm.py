@@ -40,6 +40,7 @@ class AnthropicLLM(LLM):
         self.client = anthropic.Anthropic(timeout=timeout, max_retries=max_retries, **kw)
         self.model = model or provider_config("anthropic")["model"]
         self.max_tokens, self.temperature = max_tokens, temperature
+        self.effort: str | None = None  # "low" ... "max": how much the model thinks; None = the model's default
         self.input_tokens = self.output_tokens = 0
         self.last_truncated = False
 
@@ -49,6 +50,8 @@ class AnthropicLLM(LLM):
         # Newer SDK/model versions don't accept sampling params; only send if explicitly requested.
         if self.temperature is not None:
             kwargs["temperature"] = self.temperature
+        if self.effort:
+            kwargs["output_config"] = {"effort": self.effort}
         resp = self.client.messages.create(**kwargs)
         self.input_tokens += resp.usage.input_tokens
         self.output_tokens += resp.usage.output_tokens
