@@ -105,12 +105,14 @@ Transforms (each returns a new shape):
   .mirror(Y)     reflected copy; build one side, then side | side.mirror(Y) for a left-right pair
   .elongate((x, y, z))  stretch through the middle    .shell(t)  hollow skin t thick
   .dilate(r)  grow by r
+  .on_ground(sink=1.5)  stand it on z = 0 with a small flat footprint (always the last step)
 There is no text, no sweep along a curve, no mesh import, no surface noise.
 
 SCRIPT RULES
 - Start with `from sdf import *`. Only `math` and `numpy as np` may also be imported. No file I/O.
-- Z is up. The object stands on z = 0: let the lowest parts sink a little below it, then cut everything
-  below with `- box(200, center=(0, 0, -100))` for a flat base it can be printed on.
+- Z is up. Build the object wherever is convenient, then finish with `result = shape.on_ground()`: it moves
+  the shape so its lowest point is 1.5 mm below z = 0 and cuts off what is below, a flat footprint to
+  print on. Never cut at z = 0 yourself: a shape built around the origin would lose its lower half.
 - Put the main sizes in named variables at the top (mm). Build the large volumes first, then attached
   features, then cuts (eyes, mouth) last.
 - Everything must touch: the final shape must be one connected solid. Overlap joined parts by a few mm.
@@ -135,13 +137,20 @@ def format_examples(examples: list[dict]) -> str:
     return "\n\n".join(blocks)
 
 
-def build_first_user_message(request: str, examples: list[dict]) -> str:
+# #29: with examples, the model sometimes builds the closest example and leaves out a requested feature it
+# lacks (a clamp ring built as the washer example, with no gap). Benchmark config "rag-features" tests this line.
+FEATURE_NOTE = ("The examples may lack features this request asks for. Build every feature the request names "
+                "(each hole, slot, gap, groove, step, marking...), even if no example has it.\n\n")
+
+
+def build_first_user_message(request: str, examples: list[dict], feature_note: bool = False) -> str:
     if not examples:  # RAG off (e.g. the benchmark's no-RAG baseline)
         return f"Handle this request. Reply in the required format.\n\nRequest: {request}"
     return (
         "Here are solved examples of similar requests:\n\n"
         f"{format_examples(examples)}\n\n"
         "---\nNow handle this request. Reply in the required format.\n\n"
+        f"{FEATURE_NOTE if feature_note else ''}"
         f"Request: {request}"
     )
 
@@ -258,10 +267,12 @@ def generate_cad(
     example_ids: list[str] | None = None,
     exec_timeout: float = 60.0,
     language: str = "cadquery",
+    feature_note: bool = False,
 ) -> GenResult:
     """Run the full generate -> execute -> validate -> repair loop. `max_attempts` / `top_k` / `api_hints` /
     `size_feedback` left as None come from the current settings. `language` "sdf" builds organic shapes with
-    stl_agent.sdf (#42); pass a retriever over the SDF examples (retrieval.make_retriever(path=SDF_EXAMPLES_PATH))."""
+    stl_agent.sdf (#42); pass a retriever over the SDF examples (retrieval.make_retriever(path=SDF_EXAMPLES_PATH)).
+    `feature_note` adds FEATURE_NOTE after the examples (#29 experiment, benchmark only)."""
     system = LANGUAGES[language]
     max_attempts = max_attempts or settings().max_attempts
     api_hints = (settings().api_hints if api_hints is None else api_hints) and language == "cadquery"  # CadQuery's API
@@ -286,7 +297,7 @@ def generate_cad(
     source = "chosen by the intake gate" if use_rag and picked else "retrieved"
     log(f"Using {len(examples)} example(s) {source}: {', '.join(res.retrieved_ids) or 'none'}")
 
-    messages = [{"role": "user", "content": build_first_user_message(request, examples)}]
+    messages = [{"role": "user", "content": build_first_user_message(request, examples, feature_note)}]
     best: tuple[ExecResult, ValidationReport, str] | None = None  # best-effort fallback
 
     for attempt in range(1, max_attempts + 1):

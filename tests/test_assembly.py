@@ -124,7 +124,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(pipeline, "_generate", lambda req, log, **kw: order.append("gen") or gen(req, log, **kw))
 
     results = {"rearing horse": [], "horse": [cand(1, derivatives=False), cand(2)]}
-    monkeypatch.setattr(tv, "search", lambda phrase: searched.append(phrase) or results.get(phrase, []))
+    monkeypatch.setattr(tv, "search", lambda phrase, **kw: searched.append(phrase) or results.get(phrase, []))
 
     def fake_download(thing_id, dest, client=None):
         order.append(f"download {thing_id}")
@@ -146,6 +146,28 @@ def test_auto_pick_tries_phrases_and_skips_no_derivatives(env):
     assert "model 2 by maker" in report["pieces"][1]["model"] and "model 2 by maker" in code
     credits = json.loads(Path(stl).with_suffix(".source.json").read_text())
     assert credits["pieces"][0]["piece"] == "horse" and credits["pieces"][0]["id"] == 2
+
+
+def test_auto_pick_skips_results_that_are_not_the_piece(env, monkeypatch):
+    """#39: a search that only finds other things (the cat placed on a Bulbasaur) moves on to the next phrase."""
+    from stl_agent.sources import thingiverse as tv
+
+    pool = {"rearing horse": [tv.Candidate(id=8, name="Rearing unicorn", url="u", thumbnail="", author="a",
+                                           license="CC-BY", allows_derivatives=True)],
+            "horse": [tv.Candidate(id=9, name="Pony", url="u", thumbnail="", author="a", license="CC-BY",
+                                   allows_derivatives=True, tags=["horse", "pony"])]}
+    calls = []
+
+    def search(phrase, words=None, strict=False, **kw):
+        calls.append((phrase, words, strict))
+        return [c for c in pool[phrase] if not strict or tv.match(c, words)]
+
+    monkeypatch.setattr(tv, "search", search)
+    log = []
+    env["pipeline"].run_assembly(PLAN, log.append)
+    assert calls == [("rearing horse", {"horse"}, True), ("horse", {"horse"}, True)]
+    assert env["order"] == ["download 9", "gen"]  # the pony tagged "horse", not the unicorn
+    assert any("no result for 'rearing horse' is named or tagged horse" in line for line in log)
 
 
 def test_no_model_builds_the_fallback(env):

@@ -52,10 +52,14 @@ CONFIGS = {
     # rag-t20 / rag-t30 (similarity cutoffs, removed: they never beat plain rag) and rag-ext (built-in library
     # plus a Text-to-CadQuery pool, removed: no gain, see eval/results/external-rag.md).
     "rag-char": dict(use_rag=True, top_k=3, retriever="tfidf-char", api_hints=False, size_feedback="fix"),
+    # #29: rag plus a line asking for every requested feature even if the examples lack it (generate.FEATURE_NOTE).
+    "rag-features": dict(use_rag=True, top_k=3, api_hints=False, size_feedback="fix", feature_note=True),
     # Organic cases (#42): SDF scripts with the SDF example library ("sdf" retriever), or without examples.
     "sdf": dict(language="sdf", use_rag=True, top_k=3, retriever="sdf", size_feedback="measured"),
     "sdf-norag": dict(language="sdf", use_rag=False, size_feedback="measured"),
     "thingiverse": dict(download=True),  # no generation: the first Thingiverse model that downloads
+    # ...the first named or tagged as the case's subject (#39), as the app's automatic pick does
+    "thingiverse-check": dict(download=True, check=True),
 }
 SUITES = {"main": (CASES_PATH, ["rag", "norag"]), "organic": (ORGANIC_CASES_PATH, ["sdf", "sdf-norag"])}
 
@@ -67,14 +71,29 @@ def library_id(path: Path = EXAMPLES_PATH) -> str:
     return f"lib{len(json.loads(data))}-{hashlib.sha1(data).hexdigest()[:6]}"
 
 
+def sdf_prompt_id() -> str:
+    """Names the SDF system prompt version, e.g. "sdfp-1a2b3c" (#47 changed it). Rows from before this existed
+    have none."""
+    from stl_agent.generate import SYSTEM_PROMPT_SDF
+
+    return "sdfp-" + hashlib.sha1(SYSTEM_PROMPT_SDF.encode()).hexdigest()[:6]
+
+
 def library_for(config: str) -> str:
-    """The example library a config retrieves from: the SDF one for SDF configs."""
-    return library_id(SDF_EXAMPLES_PATH) if CONFIGS.get(config, {}).get("retriever") == "sdf" else library_id()
+    """The example library a config retrieves from: the SDF one for SDF configs, plus the SDF prompt version
+    ("lib11-5cd03c+sdfp-1a2b3c", or "norag+sdfp-1a2b3c" without examples)."""
+    cfg = CONFIGS.get(config, {})
+    if cfg.get("language") == "sdf":
+        lib = library_id(SDF_EXAMPLES_PATH) if cfg.get("use_rag", True) else "norag"
+        return f"{lib}+{sdf_prompt_id()}"
+    return library_id()
 
 
 def _lib_key(config: str, library: str) -> str:
-    """no-RAG and download configs ignore the library."""
+    """no-RAG and download configs ignore the library, except SDF ones: their key holds the prompt version."""
     cfg = CONFIGS.get(config, {})
+    if cfg.get("language") == "sdf":
+        return library
     return "any" if not cfg.get("use_rag", True) or cfg.get("download") else library
 
 BBOX_REL_TOL, BBOX_ABS_TOL = 0.03, 1.0  # per dimension: within 3% or 1 mm, whichever is larger
@@ -97,16 +116,18 @@ def all_cases() -> list[dict]:
     return load_cases() + load_cases(ORGANIC_CASES_PATH)
 
 
-def download_first(case: dict, out_dir: Path):
+def download_first(case: dict, out_dir: Path, check: bool = False):
     """The "thingiverse" config: the first result for the case's search words that downloads, as a GenResult
-    (no LLM requests). Downloaded meshes are often not watertight; that shows as a best-effort part."""
+    (no LLM requests). Downloaded meshes are often not watertight; that shows as a best-effort part.
+    `check` ("thingiverse-check", #39): only results named or tagged as the case's subject."""
     from stl_agent.generate import GenResult
     from stl_agent.sandbox import validate_mesh
     from stl_agent.sources import thingiverse as tv
 
     t0, res = time.time(), GenResult(success=False)
     out_dir.mkdir(parents=True, exist_ok=True)
-    for c in tv.search(case["search"]):
+    words = tv.object_words(case.get("subject", ""), case["search"]) if check else None
+    for c in tv.search(case["search"], words=words, strict=check):
         try:
             path, _ = tv.download_stl(c.id, out_dir / "model.stl")
         except tv.ThingiverseError:
@@ -117,7 +138,8 @@ def download_first(case: dict, out_dir: Path):
         (out_dir / "source.json").write_text(json.dumps(c.to_dict(), indent=1))
         break
     else:
-        res.error = f"No Thingiverse result downloaded for {case['search']!r}."
+        res.error = (f"No Thingiverse result downloaded for {case['search']!r}"
+                     + (f" named or tagged {'/'.join(sorted(words))}." if check else "."))
     res.seconds = time.time() - t0
     return res
 
@@ -214,7 +236,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
             kw = dict(CONFIGS[config])
             kind = kw.pop("retriever", "tfidf")
             if kw.pop("download", False):
-                res = download_first(case, out_dir)
+                res = download_first(case, out_dir, check=kw.pop("check", False))
             else:
                 if kind not in retrievers:
                     from stl_agent.retrieval import make_retriever

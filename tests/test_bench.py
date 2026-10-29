@@ -56,6 +56,17 @@ def test_norag_prompt_has_no_empty_examples_header(tmp_path, monkeypatch):
     assert "solved examples" not in first and first.endswith("Request: block a")
 
 
+def test_rag_features_adds_the_feature_note_only_there(tmp_path, monkeypatch):
+    from stl_agent.generate import FEATURE_NOTE
+
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    llm = ScriptedLLM([GOOD, GOOD])
+    bench.run(CASES[:1], ["rag", "rag-features"], llm, "m", ExampleRetriever.from_file(), tmp_path / "r.jsonl",
+              budget=2, max_attempts=1, log=lambda m: None)
+    plain, noted = (call[0]["content"] for call in llm.calls)
+    assert FEATURE_NOTE not in plain and noted.endswith(FEATURE_NOTE + "Request: block a")
+
+
 def test_retry_delay_parsing():
     from stl_agent.llm import MAX_QUOTA_WAIT, _retry_delay
 
@@ -118,7 +129,7 @@ def test_organic_suite_runs_sdf_and_thingiverse_configs(tmp_path, monkeypatch):
         trimesh.creation.icosphere().export(dest)
         return dest, []
 
-    monkeypatch.setattr(tv, "search", lambda term: [Candidate(id=1, name="cat", url="u", thumbnail="", author="a",
+    monkeypatch.setattr(tv, "search", lambda term, **kw: [Candidate(id=1, name="cat", url="u", thumbnail="", author="a",
                                                                license="CC-BY")])
     monkeypatch.setattr(tv, "download_stl", fake_download)
     ball = "BBOX: 20, 20, 20\n```python\nfrom sdf import *\nshow_object(sphere(10))\n```"
@@ -127,7 +138,10 @@ def test_organic_suite_runs_sdf_and_thingiverse_configs(tmp_path, monkeypatch):
     s = bench.run(cases, ["sdf", "thingiverse"], llm, "m", None, results, budget=4, max_attempts=1, log=lambda m: None)
     assert s.ran == 2 and s.requests == 1  # the download costs no LLM request
     sdf_row, tv_row = bench.read_results(results)
-    assert sdf_row["built"] and sdf_row["library"] == bench.library_id(SDF_EXAMPLES_PATH)
+    assert sdf_row["built"] and sdf_row["library"] == f"{bench.library_id(SDF_EXAMPLES_PATH)}+{bench.sdf_prompt_id()}"
+    # SDF rows without examples still depend on the SDF prompt (#47), unlike CadQuery no-RAG rows
+    assert bench._lib_key("sdf-norag", bench.library_for("sdf-norag")) == f"norag+{bench.sdf_prompt_id()}"
+    assert bench._lib_key("sdf-norag", "lib26-cdabac") != bench._lib_key("sdf-norag", bench.library_for("sdf-norag"))
     assert all(i.startswith("sdf_") for i in sdf_row["retrieved"])
     assert tv_row["built"] and tv_row["requests"] == 0 and bench._lib_key("thingiverse", tv_row["library"]) == "any"
     assert {c["id"] for c in bench.all_cases()} >= {"s01", "o01"}

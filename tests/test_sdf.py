@@ -71,6 +71,25 @@ def test_mesh_samples_its_grid_not_point_by_point(monkeypatch):
 def test_empty_shape_is_an_error():
     with pytest.raises(ValueError, match="empty"):
         sdf.to_mesh(sphere(5) - sphere(6))
+    with pytest.raises(ValueError, match="empty"):
+        (sphere(5) - sphere(6)).on_ground()
+
+
+def test_lowest_z_is_measured_not_read_from_the_bounds():
+    rod = capsule((0, 0, 0), (30, 0, 0), 5).rotate(math.radians(40), Y)  # its box reaches lower than it does
+    true_low = -30 * math.sin(math.radians(40)) - 5
+    assert rod.bounds()[0][2] < true_low - 1
+    assert sdf.lowest_z(rod) == pytest.approx(true_low, abs=0.05)
+
+
+@pytest.mark.parametrize("lift", [0, -30, 25])
+def test_on_ground_keeps_the_whole_object_wherever_it_was_built(lift):
+    """#47: a ball built around the origin (or anywhere) keeps all but a 1.5 mm cap, standing on z = 0."""
+    m = sdf.to_mesh(sphere(20).translate((0, 0, lift)).on_ground())
+    assert m.is_watertight and m.bounds[0][2] == pytest.approx(0, abs=0.05)
+    assert m.extents[2] == pytest.approx(40 - 1.5, abs=0.1)
+    assert m.volume == pytest.approx(4 / 3 * math.pi * 20 ** 3 - math.pi * 1.5 ** 2 * (60 - 1.5) / 3, rel=0.01)
+    assert sdf.to_mesh(sphere(20).on_ground(sink=4)).extents[2] == pytest.approx(36, abs=0.1)
 
 
 # ---------------------------------------------------------------------------
@@ -222,7 +241,7 @@ def assembly(monkeypatch, tmp_path):
 
     monkeypatch.setattr(pipeline, "OUTPUT_DIR", tmp_path)
     monkeypatch.setattr(pipeline, "_generate", fake_generate)
-    monkeypatch.setattr(tv, "search", lambda phrase: calls["searched"].append(phrase) or [_cand(3)])
+    monkeypatch.setattr(tv, "search", lambda phrase, **kw: calls["searched"].append(phrase) or [_cand(3)])
     monkeypatch.setattr(tv, "download_stl", fake_download)
     plan = [{"id": "box", "source": "cadquery", "spec": "40 mm cube", "height_mm": None},
             {"id": "cat", "source": "sdf", "spec": "sitting cat", "search": ["cat"], "height_mm": 30,
@@ -277,7 +296,7 @@ def test_app_sculpts_an_organic_object_and_falls_back_to_thingiverse(sculpt, mon
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: sculpt_organic(decide_from_report(HORSE, "x", rounds)))
     monkeypatch.setattr(app, "run_pipeline", fake_pipeline)
     monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
-    monkeypatch.setattr(thingiverse, "search", lambda term: [_cand(1)])
+    monkeypatch.setattr(thingiverse, "search", lambda term, **kw: [_cand(1)])
 
     state = app.new_state()
     _, chat, state, build, _ = list(app.on_message("a horse", [], state))[-1]

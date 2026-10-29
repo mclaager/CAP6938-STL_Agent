@@ -25,7 +25,7 @@ UP = Z
 
 __all__ = ["SDF3", "X", "Y", "Z", "UP", "ORIGIN", "sphere", "ellipsoid", "box", "rounded_box", "capsule",
            "capped_cylinder", "capped_cone", "rounded_cone", "torus", "union", "difference", "intersection",
-           "to_mesh", "save"]
+           "to_mesh", "save", "lowest_z"]
 
 
 def _vec(v, n=3) -> np.ndarray:
@@ -123,6 +123,18 @@ class SDF3:
 
     def bounds(self) -> tuple[np.ndarray, np.ndarray]:
         return self.lo.copy(), self.hi.copy()
+
+    # -- printing ----------------------------------------------------------------------------------------
+    def on_ground(self, sink: float = 1.5) -> SDF3:
+        """Stand the shape on z = 0 for printing: move it up or down so its lowest point is `sink` mm below
+        z = 0, then cut off everything below z = 0, leaving a small flat footprint (#47). It measures the
+        shape, so it works wherever the shape was built (cutting at z = 0 without lifting first halves a
+        shape built around the origin)."""
+        moved = self.translate((0, 0, -sink - lowest_z(self)))
+        lo, hi = moved.lo, moved.hi
+        ground = box(a=(lo[0] - 1, lo[1] - 1, lo[2] - 1), b=(hi[0] + 1, hi[1] + 1, 0))
+        cut = difference(moved, ground)
+        return SDF3(cut.f, (lo[0], lo[1], 0), hi, self._k)
 
 
 def _rotation(axis: np.ndarray, angle: float) -> np.ndarray:
@@ -353,6 +365,32 @@ MAX_CELLS = 400  # grid steps along the longest side at most
 def default_edge(shape: SDF3) -> float:
     """Triangle edge length: about 1/80 of the largest side, at least 0.25 mm."""
     return max(float((shape.hi - shape.lo).max()) / 80, 0.25)
+
+
+def lowest_z(shape: SDF3, edge: float | None = None) -> float:
+    """Height of the shape's lowest point, measured: its bounding box is often lower than the shape (blends
+    and rotations pad it). Scans horizontal layers of points `edge` apart from the bottom of the box up, then
+    narrows down the gap between the last empty layer and the first one with a point inside."""
+    lo, hi = shape.bounds()
+    edge = float(edge or default_edge(shape))
+    xs = np.arange(lo[0], hi[0] + edge, edge)
+    ys = np.arange(lo[1], hi[1] + edge, edge)
+    gx, gy = (a.ravel() for a in np.meshgrid(xs, ys, indexing="ij"))
+
+    def inside(z: float) -> bool:
+        return bool(shape.f(np.column_stack([gx, gy, np.full(gx.size, z)])).min() <= 0)
+
+    below = None
+    for z in np.arange(lo[2], hi[2] + edge, edge):
+        if inside(z):
+            if below is None:
+                return float(z)
+            for _ in range(10):  # bisect between the empty layer and this one
+                mid = (below + z) / 2
+                below, z = (below, mid) if inside(mid) else (mid, z)
+            return float(z)
+        below = float(z)
+    raise ValueError("The shape is empty: nothing is inside it (check signs, sizes and difference order).")
 
 
 def to_mesh(shape: SDF3, edge: float | None = None):

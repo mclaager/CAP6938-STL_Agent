@@ -66,7 +66,7 @@ def test_out_of_scope_shows_thingiverse_results(monkeypatch):
     terms = []
     monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
-    monkeypatch.setattr(thingiverse, "search", lambda term: terms.append(term) or [candidate(1), candidate(2)])
+    monkeypatch.setattr(thingiverse, "search", lambda term, **kw: terms.append(term) or [candidate(1), candidate(2)])
     state = app.new_state()
     _, chat, state, build, gallery = last(app.on_message("a statue of a horse", [], state))
     assert terms == ["horse statue"]
@@ -91,12 +91,36 @@ def test_out_of_scope_auto_downloads_without_gallery(monkeypatch, tmp_path):
     reload_settings()
     monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
-    monkeypatch.setattr(thingiverse, "search", lambda term: [candidate(1), candidate(2)])
+    monkeypatch.setattr(thingiverse, "search", lambda term, **kw: [candidate(1), candidate(2)])
     monkeypatch.setattr(app, "run_fetch", fake_fetch)
     state = app.new_state()
     _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state))
     assert fetched == [1, 2] and not gallery.visible  # first one failed, second downloaded
     assert "Horse 2" in chat[-1]["content"] and state["result"]["stl"].endswith("horse-statue.stl")
+
+
+def test_auto_pick_without_a_matching_result_shows_the_gallery(monkeypatch):
+    """#39: auto mode downloads only a result named or tagged as the object; if none is, the user picks."""
+    from stl_agent.config import reload_settings, set_setting
+    from stl_agent.sources import thingiverse
+
+    calls = []
+
+    def search(term, words=None, strict=False, **kw):
+        calls.append((term, words, strict))
+        return [] if strict else [candidate(1)]
+
+    set_setting("thingiverse_pick", "auto")
+    reload_settings()
+    monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
+    monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(HORSE, "x", rounds))
+    monkeypatch.setattr(thingiverse, "search", search)
+    monkeypatch.setattr(app, "run_fetch", lambda *a, **k: pytest.fail("downloaded a result that isn't a horse"))
+    state = app.new_state()
+    _, chat, state, _, gallery = last(app.on_message("a statue of a horse", [], state))
+    assert calls == [("horse statue", {"horse"}, True), ("horse statue", {"horse"}, False)]
+    assert gallery.visible and [c.id for c in state["candidates"]] == [1]
+    assert 'named or tagged "horse"' in chat[-1]["content"]
 
 
 def test_out_of_scope_without_token_declines_as_before(monkeypatch):
@@ -162,7 +186,7 @@ def composite(monkeypatch, tmp_path):
 
     results = {"oak tree": [], "tree": [candidate(1), candidate(2)], "cat": [candidate(3)]}
     monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
-    monkeypatch.setattr(thingiverse, "search", lambda phrase: list(results.get(phrase, [])))
+    monkeypatch.setattr(thingiverse, "search", lambda phrase, **kw: list(results.get(phrase, [])))
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report(COMPOSITE, "x", rounds))
     monkeypatch.setattr(app, "run_assembly", fake_assembly)
     state = app.new_state()
