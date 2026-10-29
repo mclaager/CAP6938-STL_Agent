@@ -56,6 +56,8 @@ CONFIGS = {
     "sdf": dict(language="sdf", use_rag=True, top_k=3, retriever="sdf", size_feedback="measured"),
     "sdf-norag": dict(language="sdf", use_rag=False, size_feedback="measured"),
     "thingiverse": dict(download=True),  # no generation: the first Thingiverse model that downloads
+    # ...the first named or tagged as the case's subject (#39), as the app's automatic pick does
+    "thingiverse-check": dict(download=True, check=True),
 }
 SUITES = {"main": (CASES_PATH, ["rag", "norag"]), "organic": (ORGANIC_CASES_PATH, ["sdf", "sdf-norag"])}
 
@@ -97,16 +99,18 @@ def all_cases() -> list[dict]:
     return load_cases() + load_cases(ORGANIC_CASES_PATH)
 
 
-def download_first(case: dict, out_dir: Path):
+def download_first(case: dict, out_dir: Path, check: bool = False):
     """The "thingiverse" config: the first result for the case's search words that downloads, as a GenResult
-    (no LLM requests). Downloaded meshes are often not watertight; that shows as a best-effort part."""
+    (no LLM requests). Downloaded meshes are often not watertight; that shows as a best-effort part.
+    `check` ("thingiverse-check", #39): only results named or tagged as the case's subject."""
     from stl_agent.generate import GenResult
     from stl_agent.sandbox import validate_mesh
     from stl_agent.sources import thingiverse as tv
 
     t0, res = time.time(), GenResult(success=False)
     out_dir.mkdir(parents=True, exist_ok=True)
-    for c in tv.search(case["search"]):
+    words = tv.object_words(case.get("subject", ""), case["search"]) if check else None
+    for c in tv.search(case["search"], words=words, strict=check):
         try:
             path, _ = tv.download_stl(c.id, out_dir / "model.stl")
         except tv.ThingiverseError:
@@ -117,7 +121,8 @@ def download_first(case: dict, out_dir: Path):
         (out_dir / "source.json").write_text(json.dumps(c.to_dict(), indent=1))
         break
     else:
-        res.error = f"No Thingiverse result downloaded for {case['search']!r}."
+        res.error = (f"No Thingiverse result downloaded for {case['search']!r}"
+                     + (f" named or tagged {'/'.join(sorted(words))}." if check else "."))
     res.seconds = time.time() - t0
     return res
 
@@ -214,7 +219,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
             kw = dict(CONFIGS[config])
             kind = kw.pop("retriever", "tfidf")
             if kw.pop("download", False):
-                res = download_first(case, out_dir)
+                res = download_first(case, out_dir, check=kw.pop("check", False))
             else:
                 if kind not in retrievers:
                     from stl_agent.retrieval import make_retriever

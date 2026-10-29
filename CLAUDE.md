@@ -120,8 +120,11 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
 - `sources/thingiverse.py` — Thingiverse search and download (#9), plain httpx, Bearer app token
   (`THINGIVERSE_TOKEN`, optional: without it `pipeline.run_gate` turns plans with Thingiverse pieces into
   `out_of_scope`, so the app declines them as before #9/#10). `search(term)` returns
-  `Candidate`s (author, license, `allows_derivatives`, thumbnail; NSFW dropped; count from
-  `thingiverse_results`); `download_stl` takes the thing's largest STL via `download_url` (302 to the
+  `Candidate`s (author, license, `allows_derivatives`, thumbnail, tags; NSFW dropped; count from
+  `thingiverse_results`); `search(term, words=object_words(id, phrases), strict=...)` checks a result is the object (#39): its name
+  or tags hold the object word (from the piece id or name, minus kinds of model like statue/low-poly), name
+  matches first. Automatic picks are strict (nothing matching: next phrase, then the fallback or the gallery);
+  galleries are only ranked. Benchmark config `thingiverse-check` is `thingiverse` with the strict check; `download_stl` takes the thing's largest STL via `download_url` (302 to the
   CDN). Cloudflare 403s default User-Agents (curl, httpx) on both API and CDN, so the client sends
   `USER_AGENT`. Tests use `httpx.MockTransport` (`client=` argument), never the network.
   `pipeline.run_fetch` saves it to `outputs/<name>.stl` plus `<name>.source.json` (attribution) and runs

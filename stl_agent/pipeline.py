@@ -176,13 +176,19 @@ def run_fetch(candidate, log, name: str | None = None) -> tuple[str, dict]:
 # Combined parts (#10)
 # ---------------------------------------------------------------------------
 def find_model(piece: dict, log, folder: Path):
-    """Automatic pick for a Thingiverse piece: the first result, over its search phrases in order, that allows
-    derivatives (the combined part is one) and downloads. Returns (candidate, stl path) or (None, None)."""
+    """Automatic pick for a Thingiverse piece: the first result, over its search phrases in order, that is the
+    piece (its name or tags hold the piece's object word, #39; name matches first), allows derivatives (the
+    combined part is one) and downloads. Returns (candidate, stl path) or (None, None)."""
     from .sources import thingiverse as tv
 
-    for phrase in piece.get("search") or []:
-        log(f"{piece['id']}: searching Thingiverse for '{phrase}'...")
-        for c in tv.search(phrase):
+    phrases = piece.get("search") or []
+    words = tv.object_words(piece["id"], phrases)
+    for phrase in phrases:
+        log(f"{piece['id']}: searching Thingiverse for '{phrase}' (results named or tagged {'/'.join(sorted(words))})...")
+        found = tv.search(phrase, words=words, strict=True)
+        if not found:
+            log(f"{piece['id']}: no result for '{phrase}' is named or tagged {'/'.join(sorted(words))}")
+        for c in found:
             if not c.allows_derivatives:
                 continue
             try:
