@@ -43,8 +43,11 @@ RUNS_PATH = DATA_DIR / "runs.jsonl"
 CONVERSATIONS_PATH = DATA_DIR / "conversations.jsonl"
 
 # Dollars per million tokens (input, output), for the running cost line and --max-usd. Thinking is billed as output.
-PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-opus-5-5": (4.0, 20.0), "claude-haiku-5-5": (0.10, 0.50)}
-RUN_RESERVE_USD = 0.15  # a run still in progress is assumed to cost up to this much
+PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-opus-5-5": (4.0, 20.0), "claude-haiku-5-5": (0.10, 0.50),
+          # Gemini paid tier (third-party price lists, Oct 2026; Google's page is the authority)
+          "gemini-3.5-flash-lite": (0.30, 2.50), "gemini-3.1-flash-lite": (0.25, 1.50)}
+# A run still in progress is assumed to cost up to max_attempts requests of 12k input and 3k output tokens.
+RESERVE_TOKENS = (12_000, 3_000)
 
 # Pinned so every collected conversation has the same repair messages, whatever the user's settings say.
 GEN_KW = dict(use_rag=True, top_k=3, api_hints=False, size_feedback="measured")
@@ -144,7 +147,8 @@ def main(argv=None) -> None:
     ap.add_argument("--judge-model", default="gemini-3.1-flash-lite")
     ap.add_argument("--judge-provider", default="gemini")
     ap.add_argument("--requests", type=Path, default=None, help="default: requests.jsonl in the data folder")
-    ap.add_argument("--max-usd", type=float, default=None, help="stop before spending more than this (Claude only)")
+    ap.add_argument("--max-usd", type=float, default=None,
+                    help="stop before spending more than this on builds (models in PRICES; judging not counted)")
     ap.add_argument("--effort", default=None, choices=["low", "medium", "high", "xhigh", "max"],
                     help="Claude's thinking effort (default: the model's own)")
     ap.add_argument("--data-dir", type=Path, default=None,
@@ -191,9 +195,10 @@ def main(argv=None) -> None:
     out_root = OUTPUT_DIR / "finetune" / args.kind / teacher.replace("/", "_")
     lock = threading.Lock()
     state = {"reserved": 0, "used": 0, "kept": 0, "ran": 0, "stop": "", "usd": 0.0, "running": 0}
-    price = PRICES.get(teacher) if provider == "anthropic" else None
+    price = PRICES.get(teacher)
+    reserve = max_attempts * (RESERVE_TOKENS[0] * price[0] + RESERVE_TOKENS[1] * price[1]) / 1e6 if price else 0.0
     if args.max_usd is not None and not price:
-        raise SystemExit(f"--max-usd needs a known Claude price; {provider}/{teacher} is not in PRICES")
+        raise SystemExit(f"--max-usd needs a known price; {provider}/{teacher} is not in PRICES")
     local = threading.local()
 
     def worker(req: dict) -> None:
@@ -201,7 +206,7 @@ def main(argv=None) -> None:
             if state["stop"] or state["used"] + state["reserved"] + max_attempts > args.budget:
                 state["stop"] = state["stop"] or "budget"
                 return
-            if args.max_usd is not None and state["usd"] + (state["running"] + 1) * RUN_RESERVE_USD > args.max_usd:
+            if args.max_usd is not None and state["usd"] + (state["running"] + 1) * reserve > args.max_usd:
                 state["stop"] = state["stop"] or f"spending cap ${args.max_usd:.2f}"
                 return
             state["reserved"] += max_attempts
