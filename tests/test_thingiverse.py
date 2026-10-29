@@ -28,8 +28,9 @@ def client(handler):
                         headers={"Authorization": "Bearer t0ken", "User-Agent": tv.USER_AGENT})
 
 
-def search_api(hits, files=None, licenses=None, seen=None):
-    """Mock API for search: the hits, each thing's files (default: one STL) and details (its license)."""
+def search_api(hits, files=None, licenses=None, seen=None, details=None):
+    """Mock API for search: the hits, each thing's files (default: one STL) and details (its license, plus
+    `details[thing]`, e.g. tags)."""
     def handler(request):
         if seen is not None:
             seen.append(request)
@@ -40,7 +41,7 @@ def search_api(hits, files=None, licenses=None, seen=None):
         if path.endswith("/files"):
             return httpx.Response(200, json=(files or {}).get(thing, [file(thing, f"t{thing}.stl", 100)]))
         return httpx.Response(200, json={"id": thing, "license": (licenses or {}).get(thing, "CC-BY"),
-                                         "allows_derivatives": thing != 3})
+                                         "allows_derivatives": thing != 3, **(details or {}).get(thing, {})})
     return client(handler)
 
 
@@ -66,6 +67,55 @@ def test_search_stops_at_setting_count():
     found = tv.search("horse", client=search_api([hit(i) for i in range(1, 20)], seen=seen))
     assert len(found) == 6  # thingiverse_results default
     assert len(seen) == 1 + 6 * 2  # no requests for hits past the sixth
+
+
+# ---------------------------------------------------------------------------
+# Is a result the requested object? (#39)
+# ---------------------------------------------------------------------------
+def test_object_words_skip_kinds_of_model_and_sizes():
+    assert tv.object_words("tree", ["low-poly tree", "tree"]) == {"tree"}
+    assert tv.object_words("horse-statue", "horse statue") == {"horse"}
+    assert tv.object_words("cat", ["sitting cat"]) == {"cat"}
+    assert tv.object_words("flower-60mm", "tulip flower") == {"tulip"}  # nothing left in the name: the phrase
+    assert tv.object_words("", "apple fruit") == {"apple"}
+    assert tv.object_words("", "figurine") == {"figurine"}  # only generic words: still something to look for
+
+
+def cand(name, tags=()):
+    return tv.Candidate(id=1, name=name, url="u", thumbnail="", author="a", license="l", tags=list(tags))
+
+
+def test_match_checks_name_then_tags_in_singular_and_plural():
+    assert tv.match(cand("Low Poly Tree"), {"tree"}) == tv.NAME_MATCH
+    assert tv.match(cand("Oak Trees set"), {"tree"}) == tv.NAME_MATCH
+    assert tv.match(cand("Butterflies"), {"butterfly"}) == tv.NAME_MATCH
+    assert tv.match(cand("Foxes"), {"fox"}) == tv.NAME_MATCH
+    assert tv.match(cand("Low-Poly Bulbasaur", ["bulbasaur", "low-poly", "nintendo"]), {"tree"}) == 0
+    assert tv.match(cand("Nature scene", ["forest", "pine tree"]), {"tree"}) == tv.TAG_MATCH
+    assert tv.match(cand("Street lamp"), {"tree"}) == 0  # whole words only
+
+
+# The search from the issue: "low-poly tree" ranks low-poly Pokémon above trees.
+POKEMON = [hit(1, name="Low-Poly Bulbasaur"), hit(2, name="Low-Poly Charmander"), hit(3, name="Low poly forest"),
+           hit(4, name="Low poly tree sculptures"), hit(5, name="Low-Poly Squirtle")]
+POKEMON_TAGS = {1: {"tags": [{"name": "bulbasaur"}, {"name": "low-poly"}]}, 3: {"tags": [{"name": "tree"}]}}
+
+
+def test_strict_search_keeps_only_the_object_name_matches_first():
+    seen = []
+    found = tv.search("low-poly tree", n=5, words={"tree"}, strict=True,
+                      client=search_api(POKEMON, details=POKEMON_TAGS, seen=seen))
+    assert [(c.id, c.match) for c in found] == [(4, tv.NAME_MATCH), (3, tv.TAG_MATCH)]
+    assert found[1].tags == ["tree"]
+    assert seen[0].url.params["per_page"] == str(tv.POOL)  # a larger pool: few hits match
+    files = [r for r in seen if r.url.path.endswith("/files")]
+    assert [r.url.path for r in files] == ["/things/3/files", "/things/4/files"]  # non-matches cost one request
+
+
+def test_ranked_search_keeps_everything_but_lists_matches_first():
+    found = tv.search("low-poly tree", n=5, words={"tree"}, client=search_api(POKEMON, details=POKEMON_TAGS))
+    assert [c.id for c in found] == [4, 3, 1, 2, 5]
+    assert [c.id for c in tv.search("low-poly tree", n=5, client=search_api(POKEMON))] == [1, 2, 3, 4, 5]
 
 
 def test_missing_token(monkeypatch):

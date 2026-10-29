@@ -95,13 +95,21 @@ def search_thingiverse(d, state: dict) -> str:
     reason = d.scope_reason or "it needs sculpted or organic geometry."
     if not thingiverse.has_token():  # Thingiverse is optional: decline as before
         return format_decision(d)
+    auto = settings().thingiverse_pick == "auto"
+    words = thingiverse.object_words(d.name, d.search)
     try:
-        state["candidates"] = thingiverse.search(d.search)
+        # Auto: only results named or tagged as the object (#39). The gallery shows those first.
+        state["candidates"] = thingiverse.search(d.search, words=words, strict=auto)
+        if auto and not state["candidates"]:  # nothing matched: let the user pick from everything found
+            auto = False
+            state["candidates"] = thingiverse.search(d.search, words=words)
+            reason += (f"\n\nNo result is named or tagged \"{'/'.join(sorted(words))}\", so pick one yourself"
+                       " (or none).")
     except thingiverse.ThingiverseError as e:
         return format_decision(d) + f"\n\nThingiverse search failed: {e}"
     if not state["candidates"]:
         return format_decision(d) + f"\n\nThingiverse has nothing for \"{d.search}\" either."
-    if settings().thingiverse_pick == "auto":  # no gallery: take the first result that downloads
+    if auto:  # no gallery: take the first result that downloads
         failed = []
         for c in state["candidates"]:
             try:
@@ -270,11 +278,20 @@ def next_pick(state: dict) -> tuple[list[str], bool]:
     for p in state["pieces"]:
         if p["source"] != "thingiverse" or p["id"] in state["picks"]:
             continue
+        # The first phrase with a result named or tagged as the piece (#39, listed first); if none has one,
+        # the first phrase with any results.
+        words, first = thingiverse.object_words(p["id"], p["search"]), None
         for phrase in p["search"]:
-            if candidates := thingiverse.search(phrase):
-                state["candidates"], state["picking"] = candidates, p["id"]
-                lines.append(f"Pick the **{p['id']}** from the Thingiverse results for \"{phrase}\" (below the chat).")
-                return lines, True
+            candidates = thingiverse.search(phrase, words=words)
+            first = first or (candidates and (phrase, candidates))
+            if candidates and candidates[0].match:
+                first = (phrase, candidates)
+                break
+        if first:
+            phrase, state["candidates"] = first
+            state["picking"] = p["id"]
+            lines.append(f"Pick the **{p['id']}** from the Thingiverse results for \"{phrase}\" (below the chat).")
+            return lines, True
         state["picks"][p["id"]] = None
         lines.append(f"No Thingiverse model found for the {p['id']}; a simplified one will be built instead.")
     state["candidates"], state["picking"] = [], None

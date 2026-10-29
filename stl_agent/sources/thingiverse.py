@@ -4,6 +4,8 @@ API: https://www.thingiverse.com/developers/swagger. Needs an app token (THINGIV
 thingiverse.com/apps/create); without one, every request is refused. Generation works without it.
 
     search(term) -> [Candidate]                  only things with a downloadable STL, with their license
+    search(term, words=..., strict=True)         ...whose name or tags hold one of the object words (#39)
+    object_words(id_or_name, phrases) -> words   the object a piece or request asks for
     download_stl(thing_id, dest) -> (path, other STL names)
 
 Cloudflare in front of the API and the file CDN answers 403 to default client User-Agents (curl's,
@@ -15,8 +17,9 @@ Every function takes an optional `client` (an httpx.Client) so tests can pass on
 from __future__ import annotations
 
 import os
+import re
 from contextlib import nullcontext
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from urllib.parse import quote
 
@@ -29,6 +32,7 @@ TOKEN_VAR = "THINGIVERSE_TOKEN"
 MAX_BYTES = 100 * 1024 * 1024  # skip files larger than this
 TIMEOUT = 30
 USER_AGENT = "stl-agent/0.1 (CAP 6938 course project)"  # any non-default value passes Cloudflare
+POOL = 30  # hits looked at when results must match the object (#39): often only 1-2 of 10 do
 
 
 class ThingiverseError(RuntimeError):
@@ -45,6 +49,8 @@ class Candidate:
     license: str
     allows_derivatives: bool = False  # matters when parts are combined (#10): the result is a derivative
     is_ai: bool = False
+    tags: list[str] = field(default_factory=list)
+    match: int = 0  # how it matched the object words (#39): NAME_MATCH, TAG_MATCH or 0 (not checked / none)
 
     def credit(self) -> str:
         """Attribution line: name, author, license and link."""
@@ -113,35 +119,107 @@ def _candidate(hit: dict) -> Candidate:
         license=str(hit.get("license") or "unknown license"),
         allows_derivatives=bool(hit.get("allows_derivatives")),
         is_ai=bool(hit.get("is_ai")),
+        tags=[str(t.get("name") if isinstance(t, dict) else t) for t in hit.get("tags") or []],
     )
 
 
-def search(term: str, n: int | None = None, client: httpx.Client | None = None) -> list[Candidate]:
+# ---------------------------------------------------------------------------------------------------------
+# Is a result the requested object? (#39)
+# ---------------------------------------------------------------------------------------------------------
+# Thingiverse ranks on every word of the search, so "low-poly tree" returns low-poly Pokémon. A result is kept
+# when its name or tags hold the object word: "tree", not "low-poly". Words that say what kind of model it is,
+# or a category, are not object words.
+GENERIC = {"statue", "figurine", "figure", "model", "sculpture", "toy", "print", "printable", "miniature", "mini",
+           "decoration", "ornament", "low", "poly", "lowpoly", "cute", "small", "big", "large", "simple", "stylized",
+           "sitting", "standing", "realistic", "cartoon", "flower", "fruit", "plant", "animal", "the", "and", "with",
+           "for", "of", "a", "an", "mm"}
+NAME_MATCH, TAG_MATCH = 2, 1
+
+
+def _words(text: str) -> list[str]:
+    return re.findall(r"[a-z]+", text.lower())
+
+
+def _forms(word: str) -> set[str]:
+    """The word in singular and plural: tree/trees, fox/foxes, butterfly/butterflies, leaf stays leaf."""
+    out = {word, word + "s", word + "es"}
+    if word.endswith("ies"):
+        out.add(word[:-3] + "y")
+    elif word.endswith("es"):
+        out |= {word[:-2], word[:-1]}
+    elif word.endswith("s"):
+        out.add(word[:-1])
+    if word.endswith("y"):
+        out.add(word[:-1] + "ies")
+    return out
+
+
+def object_words(id_or_name: str, phrases: list[str] | str = ()) -> set[str]:
+    """What a piece or request is: the words of its id or file name ("tree", "horse-statue" -> horse) that
+    aren't sizes or kinds of model. If that leaves nothing, the last such word of each search phrase."""
+    phrases = [phrases] if isinstance(phrases, str) else list(phrases)
+    words = {w for w in _words(id_or_name) if w not in GENERIC and len(w) > 2}
+    if not words:
+        for phrase in phrases:
+            content = [w for w in _words(phrase) if w not in GENERIC] or _words(phrase)
+            words |= set(content[-1:])
+    return words
+
+
+def match(c: Candidate, words: set[str]) -> int:
+    """NAME_MATCH when an object word (or its plural/singular) is in the name, TAG_MATCH when only in a tag."""
+    forms = set().union(*(_forms(w) for w in words)) if words else set()
+    if forms & set(_words(c.name)):
+        return NAME_MATCH
+    if forms & {w for t in c.tags for w in _words(t)}:
+        return TAG_MATCH
+    return 0
+
+
+def search(term: str, n: int | None = None, client: httpx.Client | None = None, words: set[str] | None = None,
+           strict: bool = False) -> list[Candidate]:
     """Things matching `term`, most relevant first, that have an STL small enough to download. NSFW things
     are left out. `n` None: the thingiverse_results setting.
 
+    `words` (#39, from object_words): results whose name holds one of them come first, then tag matches, then
+    the rest. With `strict`, only matches are kept, from up to POOL hits.
+
     Search hits have no license (the docs' example does; the real API doesn't) and no file list, so each kept
-    hit costs two more requests (~0.15 s each): its files, then its details for the license.
+    hit costs two more requests (~0.15 s each): its files, then its details for the license and tags. With
+    `strict`, details come first, so a hit that doesn't match costs one.
     """
     n = settings().thingiverse_results if n is None else n
     term = " ".join(term.split())
     if not term or n <= 0:
         return []
+    strict = strict and bool(words)
     out: list[Candidate] = []
     with _client(client) as c:
         data = _json(_get(c, f"/search/{quote(term, safe='')}/",
-                          params={"type": "things", "sort": "relevant", "per_page": n * 2}))
+                          params={"type": "things", "sort": "relevant", "per_page": max(n * 2, POOL) if strict else n * 2}))
         hits = data.get("hits") if isinstance(data, dict) else data  # documented: {"total", "hits"}
         for hit in hits or []:
-            if len(out) == n:
+            if strict and sum(x.match == NAME_MATCH for x in out) >= n or not strict and len(out) == n:
                 break
             if not isinstance(hit, dict) or "id" not in hit or hit.get("is_nsfw"):
                 continue
-            if not downloadable(stl_files(hit["id"], c)):  # e.g. only .obj or .3mf
-                continue
-            details = _json(_get(c, f"/things/{int(hit['id'])}"))
-            out.append(_candidate({**hit, **details} if isinstance(details, dict) else hit))
-    return out
+            if strict:
+                cand = _details(c, hit)
+                cand.match = match(cand, words)
+                if not cand.match or not downloadable(stl_files(hit["id"], c)):
+                    continue
+            else:
+                if not downloadable(stl_files(hit["id"], c)):  # e.g. only .obj or .3mf
+                    continue
+                cand = _details(c, hit)
+                cand.match = match(cand, words) if words else 0
+            out.append(cand)
+    return sorted(out, key=lambda x: -x.match)[:n]  # stable: Thingiverse's order within each kind of match
+
+
+def _details(client: httpx.Client, hit: dict) -> Candidate:
+    details = _json(_get(client, f"/things/{int(hit['id'])}"))
+    return _candidate({**hit, **details} if isinstance(details, dict) else hit)
 
 
 def stl_files(thing_id: int, client: httpx.Client | None = None) -> list[dict]:

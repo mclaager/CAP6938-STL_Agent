@@ -241,7 +241,7 @@ def assembly(monkeypatch, tmp_path):
 
     monkeypatch.setattr(pipeline, "OUTPUT_DIR", tmp_path)
     monkeypatch.setattr(pipeline, "_generate", fake_generate)
-    monkeypatch.setattr(tv, "search", lambda phrase: calls["searched"].append(phrase) or [_cand(3)])
+    monkeypatch.setattr(tv, "search", lambda phrase, **kw: calls["searched"].append(phrase) or [_cand(3)])
     monkeypatch.setattr(tv, "download_stl", fake_download)
     plan = [{"id": "box", "source": "cadquery", "spec": "40 mm cube", "height_mm": None},
             {"id": "cat", "source": "sdf", "spec": "sitting cat", "search": ["cat"], "height_mm": 30,
@@ -296,7 +296,7 @@ def test_app_sculpts_an_organic_object_and_falls_back_to_thingiverse(sculpt, mon
     monkeypatch.setattr(app, "run_gate", lambda conv, rounds: sculpt_organic(decide_from_report(HORSE, "x", rounds)))
     monkeypatch.setattr(app, "run_pipeline", fake_pipeline)
     monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
-    monkeypatch.setattr(thingiverse, "search", lambda term: [_cand(1)])
+    monkeypatch.setattr(thingiverse, "search", lambda term, **kw: [_cand(1)])
 
     state = app.new_state()
     _, chat, state, build, _ = list(app.on_message("a horse", [], state))[-1]
