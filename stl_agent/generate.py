@@ -102,7 +102,6 @@ Combining:
 Transforms (each returns a new shape):
   .translate((x, y, z))   .rotate(angle, axis)  angle in RADIANS (math.radians), axis X, Y, Z or a vector
   .orient(axis)  turn the shape's +Z toward axis      .scale(s) or .scale((sx, sy, sz))
-  .mirror(Y)     reflected copy; build one side, then side | side.mirror(Y) for a left-right pair
   .elongate((x, y, z))  stretch through the middle    .shell(t)  hollow skin t thick
   .dilate(r)  grow by r
 There is no text, no sweep along a curve, no mesh import, no surface noise.
@@ -115,6 +114,8 @@ SCRIPT RULES
   lower half.
 - Put the main sizes in named variables at the top (mm). Build the large volumes first, then attached
   features, then cuts (eyes, mouth) last.
+- Left-right pairs (ears, arms, legs, eyes): write a function of the side, `def side(s):` with s = 1 or -1,
+  multiplying each y position (and each tilt about X) by s, then join side(1) and side(-1).
 - Everything must touch: the final shape must be one connected solid. Overlap joined parts by a few mm.
 - Features thinner than 2 mm will not print; make tails, ears, legs and stems at least 2-3 mm thick.
 - Pass the final shape to `show_object(result)`.

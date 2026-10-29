@@ -127,12 +127,10 @@ leg = capsule((0, 0, 0), (12, 0, 0), 5)         # legs stick forward from the hi
 arm = capsule((0, 0, 0), (5, 0, -12), 4)        # arms hang down along the front of the body
 eye = sphere(1.3)
 
-half = union(                                   # one side (+Y); mirrored below
-    ear.translate((0, 8, 44)),
-    leg.translate((2, 7, 5)),
-    arm.translate((3, 11, 24)),
-)
-bear = union(body, head.k(4), snout.k(2), half.k(3), half.mirror(Y).k(3))
+def side(s):                                    # s = 1 for the +Y side, -1 for the -Y side
+    return union(ear.translate((0, 8 * s, 44)), leg.translate((2, 7 * s, 5)), arm.translate((3, 11 * s, 24)))
+
+bear = union(body, head.k(4), snout.k(2), side(1).k(3), side(-1).k(3))
 bear = bear - eye.translate((8, 4, 39)) - eye.translate((8, -4, 39))
 
 result = bear
@@ -146,14 +144,17 @@ from sdf import *
 
 body = ellipsoid((14, 11, 13)).translate((-2, 0, 11))
 head = ellipsoid((8, 7, 7)).translate((10, 0, 26))
-haunch = ellipsoid((8, 4, 7)).translate((-4, 8, 8))
-foot = ellipsoid((7, 3, 2.5)).translate((4, 8, 2))
+haunch = ellipsoid((8, 4, 7))
+foot = ellipsoid((7, 3, 2.5))
 ear = ellipsoid((3, 1.5, 10)).rotate(math.radians(-10), Y)  # lean back a little
 tail = sphere(4).translate((-16, 0, 10))
 eye = sphere(1.2)
 
-half = union(haunch, foot.k(2), ear.translate((7, 3.5, 38)))
-rabbit = union(body, head.k(5), half.k(3), half.mirror(Y).k(3), tail.k(2))
+def side(s):  # s = 1 for the +Y side, -1 for the -Y side
+    return union(haunch.translate((-4, 8 * s, 8)), foot.translate((4, 8 * s, 2)).k(2),
+                 ear.translate((7, 3.5 * s, 38)))
+
+rabbit = union(body, head.k(5), side(1).k(3), side(-1).k(3), tail.k(2))
 rabbit = rabbit - eye.translate((16, 3.5, 28)) - eye.translate((16, -3.5, 28))
 
 result = rabbit
@@ -168,12 +169,15 @@ from sdf import *
 body = ellipsoid((13, 12, 20)).translate((0, 0, 20))
 head = sphere(9).translate((1, 0, 42))
 beak = capped_cone((0, 0, 0), (7, 0, 0), 2.5, 0.4).translate((8, 0, 41))
-flipper = ellipsoid((4, 1.5, 12)).rotate(math.radians(-15), X)   # tilt the bottom outward
-foot = ellipsoid((6, 3.5, 1.5)).translate((6, 5, 1.5))
+flipper = ellipsoid((4, 1.5, 12))
+foot = ellipsoid((6, 3.5, 1.5))
 eye = sphere(1.2)
 
-half = union(flipper.translate((0, 12, 24)), foot)
-penguin = union(body, head.k(6), beak.k(1), half.k(2), half.mirror(Y).k(2))
+def side(s):  # s = 1 for the +Y side, -1 for the -Y side; the tilt about X flips with the side
+    tilted = flipper.rotate(math.radians(-15 * s), X)   # bottom of the flipper leans outward
+    return union(tilted.translate((0, 12 * s, 24)), foot.translate((6, 5 * s, 1.5)))
+
+penguin = union(body, head.k(6), beak.k(1), side(1).k(2), side(-1).k(2))
 penguin = penguin - eye.translate((8, 4, 45)) - eye.translate((8, -4, 45))
 
 result = penguin
