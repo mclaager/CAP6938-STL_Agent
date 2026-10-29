@@ -240,3 +240,4 @@ Open work is in GitHub issues, with the original course timeline's target dates 
 - #40 Show each piece of a combined part in the UI (per-piece code and STL downloads)
 - #41 Copies of a piece in a combined part (`copy_of`, spread placement, distinct models when asked)
 - #42 Build organic shapes with SDF modeling (own small library meshed by manifold3d, `organic_builder` setting)
+- #46 Fine-tune a small local model on verified CadQuery/SDF builds (teacher runs filtered by the mesh checks and judge)
