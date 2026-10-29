@@ -131,6 +131,10 @@ def main(argv=None) -> None:
     ap.add_argument("--workers", type=int, default=4, help="requests built at the same time")
     ap.add_argument("--limit", type=int, default=None,
                     help="run at most N requests: other teachers' failures first, then requests nobody has run")
+    ap.add_argument("--max-total", type=int, default=None,
+                    help="stop once this teacher has run N requests in all (counting earlier days)")
+    ap.add_argument("--style", default=None,
+                    help="only requests written with this style (e.g. library: round 2 CadQuery requests)")
     ap.add_argument("--prefer-hard", action="store_true",
                     help="take not-yet-run requests hardest first (for the Sonnet fallback)")
     ap.add_argument("--max-attempts", type=int, default=None, help="default: the max_attempts setting")
@@ -162,7 +166,8 @@ def main(argv=None) -> None:
     old = [json.loads(line) for line in runs_path.read_text().splitlines() if line.strip()] if runs_path.exists() else []
     done = {r["id"] for r in old if r["kept"] or r.get("teacher") == teacher}  # kept by anyone, or tried by this one
     failed_elsewhere = {r["id"] for r in old if not r["kept"]} - done
-    left = [r for r in read_requests(args.requests) if r["id"] not in done]
+    left = [r for r in read_requests(args.requests) if r["id"] not in done
+            and (args.style is None or r.get("style") == args.style)]
     # A fallback teacher takes the other teachers' failures first, then requests nobody has run yet (hardest first
     # with --prefer-hard), until --limit or --max-usd: a cap that also works as a spending floor.
     retry = [r for r in left if r["id"] in failed_elsewhere]
@@ -170,7 +175,11 @@ def main(argv=None) -> None:
     if args.prefer_hard:
         rank = {"hard": 0, "medium": 1, "casual": 2, "simple": 3}
         fresh.sort(key=lambda r: rank.get(r.get("category"), 4))
-    todo = (retry + fresh)[: args.limit]
+    limit = args.limit
+    if args.max_total is not None:  # this teacher's runs over all days, so the same command can be rerun daily
+        ran_before = sum(1 for r in old if r.get("teacher") == teacher)
+        limit = min(limit if limit is not None else 10**9, max(0, args.max_total - ran_before))
+    todo = (retry + fresh)[:limit]
     use_judge = (args.judge or ("on" if sdf else "off")) == "on"
     threshold = settings().judge_threshold
     print(f"{len(todo)} requests to run ({len(done)} already done), teacher {provider}/{teacher}, "
