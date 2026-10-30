@@ -1,12 +1,16 @@
-"""Write varied CadQuery part requests for fine-tuning data (#46).
+"""Write varied part requests for fine-tuning data (#46).
 
-    python -m finetune.make_requests --target 600 [--batch 20] [--set provider=anthropic]
+    python -m finetune.make_requests --target 600 [--batch 20] [--style library] [--set provider=anthropic]
+    python -m finetune.make_requests --kind organic --target 450      # SDF requests (round 2)
 
 A large model (the `provider` setting) writes requests in batches. Each batch asks for one area (kitchen,
-electronics, ...) and one benchmark category (simple / medium / hard / casual), in the style of
-eval/cases.json. A request is dropped when it is too close (TF-IDF cosine) to a benchmark case or a library
-example, so the student never trains on the test set or on copies of the examples it will be shown,
-or to a request already kept. Appends to finetune/data/requests.jsonl; run again to add more.
+electronics, ...; for organic: farm animals, fruit, ...) and one category, with three style samples: benchmark
+requests (`--style benchmark`, round 1) or example-library requests (`--style library`, the default: the student
+is shown those at inference anyway, so the training requests don't learn the benchmark's wording). A request is
+dropped when it is too close (TF-IDF cosine) to a benchmark case or a library example, so the student never trains
+on the test set or on copies of the examples it will be shown, or to a request already kept. Organic requests that
+name an organic benchmark subject (eval/organic_cases.json `subject`) are dropped too.
+CadQuery requests append to finetune/data/requests.jsonl, organic ones to finetune/data/sdf/requests.jsonl.
 """
 
 from __future__ import annotations
@@ -17,11 +21,12 @@ import random
 import re
 from pathlib import Path
 
-from stl_agent.config import EXAMPLES_PATH, add_set_argument, override_settings, settings
+from stl_agent.config import EXAMPLES_PATH, SDF_EXAMPLES_PATH, add_set_argument, override_settings, settings
 from stl_agent.replies import parse_json_object
 
 DATA_DIR = Path(__file__).parent / "data"
 REQUESTS_PATH = DATA_DIR / "requests.jsonl"
+SDF_DATA_DIR = DATA_DIR / "sdf"
 CASES_PATHS = [Path(__file__).parent.parent / "eval" / "cases.json",
                Path(__file__).parent.parent / "eval" / "organic_cases.json"]
 
@@ -74,13 +79,64 @@ Rules:
 Reply with JSON only: {{"requests": [{{"request": "...", "bbox": [x, y, z] or null}}, ...]}}"""
 
 
+AREAS_ORGANIC = [
+    "farm animals (no horses)", "pets (dogs, rabbits, hamsters, guinea pigs; no cats)", "wild animals of the forest", "safari animals",
+    "sea creatures (no octopuses or dolphins)", "birds (no owls)", "insects and bugs", "reptiles and amphibians (no turtles or frogs)", "prehistoric animals (mammoths, dodos; no dinosaurs)", "fruit (no apples)", "vegetables",
+    "mushrooms, flowers and plants (no tulips)", "food and sweets", "holiday figures (snowmen, pumpkins, gingerbread)",
+    "fantasy creatures (dragons, unicorns, monsters)", "simple people figurines (no real persons)",
+    "toys and desk buddies", "chess-like game pieces and tokens", "decorative shapes (pebbles, shells, blobs)",
+    "baby animals and cute characters",
+]
+
+CATEGORIES_ORGANIC = {
+    "simple": "one or two rounded volumes: a fruit, an egg, a pebble, a simple blob character.",
+    "medium": "an animal or character from 4-8 parts (body, head, legs, ears, tail...) in a plain pose.",
+    "hard": "a pose or many parts: a curled or stretching animal, a creature with wings or horns, thin features "
+            "such as tails, horns, petals or antennae that must still be printable.",
+}
+
+PROMPT_ORGANIC = """You write requests for a text-to-3D benchmark of ORGANIC objects, sculpted from rounded shapes
+(spheres, ellipsoids, capsules blended together) and 3D printed. Write {n} different requests.
+
+Area: {area}
+Category: {category} -- {category_desc}
+
+Style examples (do NOT reuse these objects):
+{examples}
+
+Rules:
+- One object per request, describing what it looks like: the pose, the main body parts and their rough
+  proportions, distinctive features, and the overall size in mm (usually 30-120 mm tall).
+- It must stand on a flat base and be one connected solid: no separate pieces, no stands with text, no logos,
+  no real or famous people, no trademarked characters.
+- Vary the objects, poses, sizes and wording.
+
+Reply with JSON only: {{"requests": [{{"request": "...", "bbox": null}}, ...]}}"""
+
+
+def _library_requests(path: Path) -> list[str]:
+    return [e["request"] for e in json.loads(Path(path).read_text())]
+
+
 def load_held_out() -> list[str]:
     texts = []
     for p in CASES_PATHS:
         if p.exists():
             texts += [c["request"] for c in json.loads(p.read_text())["cases"]]
-    texts += [e["request"] for e in json.loads(Path(EXAMPLES_PATH).read_text())]
-    return texts
+    return texts + _library_requests(EXAMPLES_PATH) + _library_requests(SDF_EXAMPLES_PATH)
+
+
+def organic_subjects() -> list[str]:
+    """The organic benchmark's subjects ("rubber duck", "dolphin", ...): no training request may name one."""
+    return [c["subject"].lower() for c in json.loads(CASES_PATHS[1].read_text())["cases"] if c.get("subject")]
+
+
+def names_subject(text: str, subjects: list[str]) -> str | None:
+    low = text.lower()
+    for subj in subjects:
+        if re.search(r"\b" + re.escape(subj) + r"(s|es)?\b", low):
+            return subj
+    return None
 
 
 def read_requests(path: Path = REQUESTS_PATH) -> list[dict]:
@@ -130,11 +186,16 @@ def parse_batch(reply: str) -> list[dict]:
     return out
 
 
-def style_examples(category: str, rng: random.Random) -> str:
-    """Three benchmark requests of the category, as style samples (casual: casual ones)."""
-    cases = json.loads(CASES_PATHS[0].read_text())["cases"]
-    pool = [c["request"] for c in cases if c["category"] == category and c["expect"] == "build"] or \
-           [c["request"] for c in cases if c["expect"] == "build"]
+def style_examples(category: str, rng: random.Random, style: str = "benchmark", kind: str = "cadquery") -> str:
+    """Three style samples: benchmark requests of the category (round 1), or example-library requests."""
+    if kind == "organic":
+        pool = _library_requests(SDF_EXAMPLES_PATH)
+    elif style == "library":
+        pool = _library_requests(EXAMPLES_PATH)
+    else:
+        cases = json.loads(CASES_PATHS[0].read_text())["cases"]
+        pool = [c["request"] for c in cases if c["category"] == category and c["expect"] == "build"] or \
+               [c["request"] for c in cases if c["expect"] == "build"]
     return "\n".join(f"- {r}" for r in rng.sample(pool, min(3, len(pool))))
 
 
@@ -144,7 +205,10 @@ def main(argv=None) -> None:
     ap.add_argument("--batch", type=int, default=20, help="requests asked for per LLM request")
     ap.add_argument("--max-requests", type=int, default=60, help="LLM requests at most this run")
     ap.add_argument("--seed", type=int, default=None)
-    ap.add_argument("--out", type=Path, default=REQUESTS_PATH)
+    ap.add_argument("--kind", choices=["cadquery", "organic"], default="cadquery")
+    ap.add_argument("--style", choices=["library", "benchmark"], default="library",
+                    help="CadQuery style samples: library examples (default) or benchmark requests (round 1)")
+    ap.add_argument("--out", type=Path, default=None, help="default: data/requests.jsonl or data/sdf/requests.jsonl")
     add_set_argument(ap)
     args = ap.parse_args(argv)
     override_settings(args.set)
@@ -155,33 +219,42 @@ def main(argv=None) -> None:
     model = provider_config(settings().provider)["model"]
     if settings().provider == "anthropic":  # room for thinking; writing requests needs little of it
         llm.max_tokens, llm.effort = 16000, "low"
+    organic = args.kind == "organic"
+    args.out = args.out or (SDF_DATA_DIR / "requests.jsonl" if organic else REQUESTS_PATH)
     existing = read_requests(args.out)
     filt = NearCopyFilter(load_held_out(), [r["request"] for r in existing])
+    subjects = organic_subjects() if organic else []
     rng = random.Random(args.seed)
-    weights = {"simple": 2, "medium": 4, "hard": 2, "casual": 2}
+    weights = {"simple": 1, "medium": 3, "hard": 2} if organic else {"simple": 2, "medium": 4, "hard": 2, "casual": 2}
+    areas, cats, template = (AREAS_ORGANIC, CATEGORIES_ORGANIC, PROMPT_ORGANIC) if organic else (AREAS, CATEGORIES, PROMPT)
+    prefix = "o" if organic else "r"
     args.out.parent.mkdir(parents=True, exist_ok=True)
     kept_total, dropped, n = len(existing), 0, len(existing)
 
     for i in range(args.max_requests):
         if kept_total >= args.target:
             break
-        area = rng.choice(AREAS)
+        area = rng.choice(areas)
         category = rng.choices(list(weights), weights=list(weights.values()))[0]
-        prompt = PROMPT.format(n=args.batch, area=area, category=category, category_desc=CATEGORIES[category],
-                               examples=style_examples(category, rng))
-        reply = llm.complete("You write precise, varied engineering requests. Reply with JSON only.",
-                             [{"role": "user", "content": prompt}])
+        prompt = template.format(n=args.batch, area=area, category=category, category_desc=cats[category],
+                                 examples=style_examples(category, rng, args.style, args.kind))
+        system = ("You write vivid, varied descriptions of objects to sculpt. Reply with JSON only." if organic else
+                  "You write precise, varied engineering requests. Reply with JSON only.")
+        reply = llm.complete(system, [{"role": "user", "content": prompt}])
         items = parse_batch(reply)
         with args.out.open("a") as f:
             for item in items:
-                why = filt.reason(item["request"])
+                subj = names_subject(item["request"], subjects)
+                why = f"benchmark subject {subj!r}" if subj else filt.reason(item["request"])
                 if why:
                     dropped += 1
                     continue
                 n += 1
                 kept_total += 1
-                f.write(json.dumps(dict(id=f"r{n:05d}", category=category, area=area, **item,
-                                        source=model)) + "\n")
+                if organic:
+                    item["expected_bbox_mm"] = None  # organic parts are judged by eye, not by size
+                f.write(json.dumps(dict(id=f"{prefix}{n:05d}", category=category, area=area, **item, source=model,
+                                        style="sdf-library" if organic else args.style)) + "\n")
         print(f"[{i + 1}] {area} / {category}: {len(items)} written, total kept {kept_total}, dropped {dropped}", flush=True)
     print(f"{kept_total} requests in {args.out} ({dropped} near copies dropped this run); "
           f"tokens this run: {llm.input_tokens} in, {llm.output_tokens} out")

@@ -54,9 +54,13 @@ python = "3.12.*"
 [feature.finetune.pypi-dependencies]
 unsloth = ">=2026.10"
 torch = ">=2.10, <2.15"  # unsloth 2026.10 needs < 2.15
+# The public fogleman/sdf (MIT), only to check that SDF training scripts run on it unchanged (#46,
+# finetune/fogleman_check.py). Not on PyPI; pinned to the commit that was compared with stl_agent/sdf.py.
+sdf = { git = "https://github.com/fogleman/sdf", rev = "d58a6fc63b75fc1cf1ebb71e0b42bf552319c8f1" }
 
 [feature.finetune.tasks]
 ft-train = "python -m finetune.train"
+ft-fogleman = "python -m finetune.fogleman_check"
 
 [environments]
 cap6938 = { features = ["cap6938"], no-default-feature = true }

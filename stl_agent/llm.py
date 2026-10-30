@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import os
 import re
+import threading
 import time
 from typing import Protocol, runtime_checkable
 
@@ -87,7 +88,7 @@ class OpenAICompatLLM(LLM):
         )
         self.model, self.max_tokens, self.temperature = model, max_tokens, temperature
         self.max_retries = max_retries
-        self.pacer = RateLimiter(rpm) if rpm else None
+        self.pacer = shared_limiter(base_url, model, rpm) if rpm else None
         self.input_tokens = self.output_tokens = 0
         self.last_truncated = False
 
@@ -165,13 +166,19 @@ def openai_content(content):
 
 
 class RateLimiter:
-    """Allows at most `rpm` calls in any 60-second window by sleeping before a call when needed."""
+    """Allows at most `rpm` calls in any 60-second window by sleeping before a call when needed. Thread-safe:
+    callers that share one limiter (see `shared_limiter`) wait their turn."""
 
     def __init__(self, rpm: int, clock=time.monotonic, sleep=time.sleep):
         self.rpm, self.clock, self.sleep = rpm, clock, sleep
         self.sent: list[float] = []
+        self._lock = threading.Lock()
 
     def wait(self) -> None:
+        with self._lock:
+            self._wait()
+
+    def _wait(self) -> None:
         now = self.clock()
         self.sent = [t for t in self.sent if now - t < 60]
         if len(self.sent) >= self.rpm:
@@ -179,6 +186,17 @@ class RateLimiter:
             now = self.clock()
             self.sent = [t for t in self.sent if now - t < 60]
         self.sent.append(now)
+
+
+_LIMITERS: dict[tuple, RateLimiter] = {}
+_LIMITERS_LOCK = threading.Lock()
+
+
+def shared_limiter(base_url: str, model: str, rpm: int) -> RateLimiter:
+    """One limiter per (server, model, rpm) in this process, so the `rpm` setting holds however many clients are
+    made, e.g. one per worker thread in `finetune.collect` (each had its own before, so 4 workers sent up to 4x)."""
+    with _LIMITERS_LOCK:
+        return _LIMITERS.setdefault((base_url.rstrip("/"), model, rpm), RateLimiter(rpm))
 
 
 MAX_QUOTA_WAIT = 90  # seconds; longer suggested waits mean a daily quota is used up
