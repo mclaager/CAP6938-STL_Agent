@@ -36,7 +36,9 @@ class LLM(Protocol):
 
 
 class AnthropicLLM(LLM):
-    def __init__(self, model: str | None = None, max_tokens: int = 2048, temperature: float | None = None,
+    # Current Claude models always think before replying, and the thinking counts against max_tokens: at 2048 a
+    # build or judge reply could be cut off. Only tokens actually used are billed (same as OpenAICompatLLM).
+    def __init__(self, model: str | None = None, max_tokens: int = 16000, temperature: float | None = None,
                  base_url: str | None = None, timeout: float = 300.0, max_retries: int = 2):
         import anthropic
 

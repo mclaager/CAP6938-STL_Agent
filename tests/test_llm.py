@@ -75,3 +75,10 @@ def test_openai_backend_splits_request_time_from_waiting(monkeypatch):
     monkeypatch.setattr(llm_mod.time, "sleep", lambda s: None)
     assert llm.complete("sys", [{"role": "user", "content": "hi"}]) == "ok"
     assert llm.wait_seconds == 3 and 0 <= llm.request_seconds < 3  # the back-off is waiting, not the model
+
+
+def test_anthropic_leaves_room_for_thinking(monkeypatch):
+    from stl_agent.llm import AnthropicLLM
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    assert AnthropicLLM().max_tokens >= 16000
