@@ -156,3 +156,17 @@ def test_organic_suite_runs_sdf_and_thingiverse_configs(tmp_path, monkeypatch):
     assert all(i.startswith("sdf_") for i in sdf_row["retrieved"])
     assert tv_row["built"] and tv_row["requests"] == 0 and bench._lib_key("thingiverse", tv_row["library"]) == "any"
     assert {c["id"] for c in bench.all_cases()} >= {"s01", "o01"}
+
+
+def test_study_rows_and_parts_stay_in_their_own_folders(tmp_path, monkeypatch):
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    monkeypatch.setattr(bench, "RESULTS_DIR", tmp_path / "results")
+    path = bench.results_dir("s1") / "m.jsonl"
+    assert path == tmp_path / "results/studies/s1/m.jsonl" and bench.results_dir() == tmp_path / "results"
+    bench.run(CASES[1:2], ["rag"], ScriptedLLM([GOOD]), "m", ExampleRetriever.from_file(), path, budget=1,
+              max_attempts=1, log=lambda m: None, study="s1")
+    row = bench.read_results(path)[0]
+    assert row["study"] == "s1" and bench.part_id(row).startswith("s1/m/")
+    assert (tmp_path / "out/bench" / bench.part_id(row) / "report.json").exists()
+    assert not (tmp_path / "results/m.jsonl").exists()  # earlier results untouched
+    assert bench.part_id({k: v for k, v in row.items() if k != "study"}).startswith("m/")  # old ids unchanged

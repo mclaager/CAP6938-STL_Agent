@@ -37,6 +37,19 @@ CASES_PATH = EVAL_DIR / "cases.json"
 ORGANIC_CASES_PATH = EVAL_DIR / "organic_cases.json"  # #42
 RESULTS_DIR = EVAL_DIR / "results"
 
+
+def results_dir(study: str | None = None) -> Path:
+    """Where result rows go: eval/results, or eval/results/studies/<study> for a self-contained round (e.g. the
+    report round), so its rows never mix with earlier ones."""
+    return RESULTS_DIR / "studies" / study if study else RESULTS_DIR
+
+
+def part_id(row: dict) -> str:
+    """Stable id of a benchmark part, e.g. "gemini-3.5-flash-lite/lib26-cdabac/rag/m04/rep0". Parts of a study
+    start with its name ("report-v1/gemini-3.5-flash-lite/..."). Also its folder under outputs/bench/."""
+    pid = f"{row['model']}/{row.get('library') or 'lib9'}/{row['config']}/{row['case']}/rep{row.get('rep', 0)}"
+    return f"{row['study']}/{pid}" if row.get("study") else pid
+
 # name -> generate_cad keyword arguments
 CONFIGS = {
     # Every config is pinned to the settings all earlier rows were recorded with, whatever the app default is:
@@ -208,9 +221,10 @@ def read_results(path: Path) -> list[dict]:
 
 def run(cases: list[dict], configs: list[str], llm, model: str, retriever, results_path: Path,
         budget: int, max_attempts: int | None = None, log=print, repeats: int = 1,
-        library: str | None = None) -> RunSummary:
+        library: str | None = None, study: str | None = None) -> RunSummary:
     """Run every (repeat, case, config) not yet in the results file. Repeats go in the outer loop, so a
-    partial run covers all cases evenly; rows from before repeats existed count as repeat 0."""
+    partial run covers all cases evenly; rows from before repeats existed count as repeat 0. `study` is recorded
+    on each row and keeps its parts in their own folder (outputs/bench/<study>/...)."""
     max_attempts = max_attempts or settings().max_attempts
     done = {(r["case"], r["config"], r.get("rep", 0), _lib_key(r["config"], r.get("library", "lib9")))
             for r in read_results(results_path)}
@@ -231,7 +245,8 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
 
         log(f"[{case['id']} / {config} / rep {rep}] {case['request'][:60]}")
         before = (counter.requests, llm.input_tokens, llm.output_tokens)
-        out_dir = OUTPUT_DIR / "bench" / model / lib / config / case["id"] / f"rep{rep}"
+        tag = {"study": study} if study else {}
+        out_dir = OUTPUT_DIR / "bench" / part_id(dict(tag, model=model, library=lib, config=config, case=case["id"], rep=rep))
         try:
             kw = dict(CONFIGS[config])
             kind = kw.pop("retriever", "tfidf")
@@ -250,7 +265,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
             summary.requests = counter.requests
             return summary
 
-        row = dict(case=case["id"], config=config, rep=rep, model=model, library=lib,
+        row = dict(**tag, case=case["id"], config=config, rep=rep, model=model, library=lib,
                    category=case["category"], expect=case["expect"],
                    **score(case, res),
                    requests=counter.requests - before[0],
@@ -333,11 +348,13 @@ def main(argv=None):
     r.add_argument("--repeats", type=int, default=1, help="runs per (case, config), to average out randomness")
     add_set_argument(r)
     rep = sub.add_parser("report", help="summarize results")
-    rep.add_argument("files", nargs="*", type=Path, help="results files (default: all in eval/results)")
+    rep.add_argument("files", nargs="*", type=Path, help="results files (default: all in eval/results, or the study's)")
+    for p in (r, rep):
+        p.add_argument("--study", help="keep results in eval/results/studies/<STUDY>/ (default: eval/results)")
     args = ap.parse_args(argv)
 
     if args.cmd == "report":
-        files = args.files or sorted(RESULTS_DIR.glob("*.jsonl"))
+        files = args.files or sorted(results_dir(args.study).glob("*.jsonl"))
         print(summarize([row for f in files for row in read_results(f)]))
         return
 
@@ -354,9 +371,9 @@ def main(argv=None):
         cases = [c for c in cases if c["category"] in args.category]
     llm = make_llm(model=args.model) if args.model else make_llm()
     model = getattr(llm, "model", "unknown")
-    path = RESULTS_DIR / f"{model}.jsonl"
+    path = results_dir(args.study) / f"{model}.jsonl"
     s = run(cases, configs, llm, model, ExampleRetriever.from_file(), path, args.budget, args.max_attempts,
-            repeats=args.repeats)
+            repeats=args.repeats, study=args.study)
     print(f"\nRan {s.ran}, skipped {s.skipped} already done, used {s.requests} requests. Results: {path}")
     if s.stopped:
         print("Stopped early: " + s.stopped)

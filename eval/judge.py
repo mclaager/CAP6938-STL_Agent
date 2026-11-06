@@ -22,7 +22,8 @@ import tempfile
 import time
 from pathlib import Path
 
-from eval.bench import RESULTS_DIR, CountingLLM, _lib_key, all_cases, library_for, load_cases, read_results
+from eval.bench import (RESULTS_DIR, CountingLLM, _lib_key, all_cases, library_for, load_cases, part_id,
+                        read_results)
 from stl_agent.config import OUTPUT_DIR, ROOT, add_set_argument, override_settings, settings
 from stl_agent.render import RENDER_VERSION, png_bytes, render_grid
 
@@ -43,9 +44,20 @@ NEAR_MISSES = [("m14", "h13"), ("h13", "m14"), ("c02", "h13"), ("m09", "m14"), (
 # ---------------------------------------------------------------------------
 # Finding parts and their renders
 # ---------------------------------------------------------------------------
-def part_id(row: dict) -> str:
-    """Stable id of a benchmark part, e.g. "gemini-3.5-flash-lite/lib26-cdabac/rag/m04/rep0"."""
-    return f"{row['model']}/{row.get('library') or 'lib9'}/{row['config']}/{row['case']}/rep{row.get('rep', 0)}"
+def study_dir(study: str | None) -> Path:
+    """Benchmark rows of a study (eval/results/studies/<study>), or the earlier ones (eval/results)."""
+    return RESULTS_DIR / "studies" / study if study else RESULTS_DIR
+
+
+def judge_dir(study: str | None) -> Path:
+    """Judge rows: eval/results/judge, or the study's own judge/ folder."""
+    return study_dir(study) / "judge" if study else JUDGE_DIR
+
+
+def split_part_id(pid: str) -> tuple[str | None, str, str, str, str, str]:
+    """(study or None, model, library, config, case, "rep<k>") from a part id."""
+    parts = pid.split("/")
+    return (parts[0] if len(parts) == 6 else None, *parts[-5:])
 
 
 def render_tag(px: int) -> str:
@@ -106,11 +118,11 @@ def ensure_render(stl: Path, out: Path, px: int) -> bytes:
 
 
 def bench_rows(gen_model: str, configs: list[str] | None, case_ids: list[str] | None,
-               library: str | None = None) -> list[dict]:
+               library: str | None = None, study: str | None = None) -> list[dict]:
     """Latest benchmark row per (case, config, rep) for this library (no-RAG rows from any library). `library`
-    None: each config's current library (the SDF one for SDF configs)."""
+    None: each config's current library (the SDF one for SDF configs). `study`: rows of that study only."""
     latest = {}
-    for r in read_results(RESULTS_DIR / f"{gen_model}.jsonl"):
+    for r in read_results(study_dir(study) / f"{gen_model}.jsonl"):
         if configs and r["config"] not in configs or case_ids and r["case"] not in case_ids:
             continue
         if _lib_key(r["config"], r.get("library") or "lib9") not in ("any", library or library_for(r["config"])):
@@ -123,11 +135,12 @@ def bench_rows(gen_model: str, configs: list[str] | None, case_ids: list[str] | 
 # Judging
 # ---------------------------------------------------------------------------
 class Session:
-    """One judge + one results file; skips (part, judge, prompt, render) rows already recorded."""
+    """One judge + one results file; skips (part, judge, prompt, render) rows already recorded. `study`: the
+    results file is the study's (eval/results/studies/<study>/judge/)."""
 
-    def __init__(self, judge, judge_name: str, prompt: str, px: int, budget: int, log=print):
-        self.judge, self.prompt, self.px, self.budget, self.log = judge, prompt, px, budget, log
-        self.path = JUDGE_DIR / f"{judge_name}.jsonl"
+    def __init__(self, judge, judge_name: str, prompt: str, px: int, budget: int, log=print, study: str | None = None):
+        self.judge, self.prompt, self.px, self.budget, self.log, self.study = judge, prompt, px, budget, log, study
+        self.path = judge_dir(study) / f"{judge_name}.jsonl"
         self.done = {(r["part"], r["judge"], r["prompt"], r["render"]) for r in read_results(self.path)}
         self.requests, self.stopped = 0, ""
 
@@ -184,11 +197,11 @@ def judge_bench_row(s: Session, row: dict, case: dict) -> str:
 
 def cmd_run(args, s: Session) -> None:
     cases = {c["id"]: c for c in all_cases()}
-    rows = bench_rows(args.gen_model, args.config, args.cases, args.library)
+    rows = bench_rows(args.gen_model, args.config, args.cases, args.library, study=s.study)
     if args.reps is not None:
         rows = [r for r in rows if r.get("rep", 0) in args.reps]
     if not rows:
-        print(f"No benchmark rows for {args.gen_model} (eval/results/{args.gen_model}.jsonl).")
+        print(f"No benchmark rows for {args.gen_model} ({(study_dir(s.study) / args.gen_model).relative_to(ROOT)}.jsonl).")
         return
     tally = {}
     for row in sorted(rows, key=lambda r: (r.get("rep", 0), r["config"], r["case"])):
@@ -287,8 +300,11 @@ def cmd_calibrate(args, s: Session) -> None:
         for pid in labels:
             if s.stopped or s.is_done(pid) or label_pass(labels[pid]) is None:
                 continue
-            gen_model, library, config, case, rep = pid.split("/")
-            rows = [r for r in bench_rows(gen_model, [config], [case], library) if f"rep{r.get('rep', 0)}" == rep]
+            study, gen_model, library, config, case, rep = split_part_id(pid)
+            if study not in (None, s.study):  # another study's part: judged in that study
+                continue
+            rows = [r for r in bench_rows(gen_model, [config], [case], library, study=study)
+                    if f"rep{r.get('rep', 0)}" == rep]
             if rows:
                 judge_bench_row(s, rows[0], cases[case])
     if s.stopped:
@@ -454,12 +470,12 @@ paint();
 """
 
 
-def write_sheet(path: Path, threshold: float, render: str | None = None) -> Path:
+def write_sheet(path: Path, threshold: float, render: str | None = None, study: str | None = None) -> Path:
     """Static review page next to the renders: every judged part and reference, with label buttons.
-    `render`: only rows with this render setting (e.g. "v2-256px"); None shows all."""
+    `render`: only rows with this render setting (e.g. "v2-256px"); None shows all. `study`: that study's judge rows."""
     cases = {c["id"]: c for c in all_cases()}
     rows = []
-    for f in sorted(JUDGE_DIR.glob("*.jsonl")):
+    for f in sorted(judge_dir(study).glob("*.jsonl")):
         rows += read_results(f)
     latest = {}
     for r in rows:
@@ -548,11 +564,14 @@ def main(argv=None):
     c = sub.add_parser("calibrate", help="judge reference parts and labelled parts, pick a threshold")
     c.add_argument("--budget", type=int, default=80)
     judge_args(c)
-    for name, helptext in (("report", "pass rates from judged parts"), ("sheet", "write eval/renders/index.html")):
+    for name, helptext in (("report", "pass rates from judged parts"),
+                           ("sheet", "write eval/renders/index.html (with --study: eval/renders/<study>.html)")):
         p = sub.add_parser(name, help=helptext)
         p.add_argument("--judge-model", help="only this judge model (default: all judge result files)")
         p.add_argument("--threshold", type=float, help="default: the judge_threshold setting")
         add_set_argument(p)
+    for p in sub.choices.values():
+        p.add_argument("--study", help="parts and judge rows of eval/results/studies/<STUDY>/ (default: eval/results)")
     sub.choices["sheet"].add_argument("--render", default=render_tag(DEFAULT_PX),
                                       help='render setting to show (default: current), or "all"')
     args = ap.parse_args(argv)
@@ -561,12 +580,14 @@ def main(argv=None):
         args.threshold = settings().judge_threshold
 
     if args.cmd == "report":
-        files = [JUDGE_DIR / f"{args.judge_model}.jsonl"] if args.judge_model else sorted(JUDGE_DIR.glob("*.jsonl"))
+        jdir = judge_dir(args.study)
+        files = [jdir / f"{args.judge_model}.jsonl"] if args.judge_model else sorted(jdir.glob("*.jsonl"))
         print("\n".join(summarize(judged_bench(f), args.threshold) for f in files) if files else "No judge results yet.")
         return
     if args.cmd == "sheet":
         render = None if args.render == "all" else args.render
-        print(f"Wrote {write_sheet(RENDERS_DIR / 'index.html', args.threshold, render).relative_to(ROOT)}")
+        page = RENDERS_DIR / (f"{args.study}.html" if args.study else "index.html")
+        print(f"Wrote {write_sheet(page, args.threshold, render, study=args.study).relative_to(ROOT)}")
         return
 
     from stl_agent.judge.llm_judge import RENDER_FOR_PROMPT
@@ -577,7 +598,7 @@ def main(argv=None):
     name = judge_model(model=args.judge_model)
     judge = make_judge(model=name, prompt=args.prompt)
     judge.llm = CountingLLM(judge.llm)
-    s = Session(judge, name, args.prompt, args.px, args.budget)
+    s = Session(judge, name, args.prompt, args.px, args.budget, study=args.study)
     (cmd_run if args.cmd == "run" else cmd_calibrate)(args, s)
 
 

@@ -154,3 +154,20 @@ def test_prompts_are_files_paired_with_render_versions():
     assert set(PROMPTS) == set(RENDER_FOR_PROMPT)  # every prompt file says which render it describes
     assert RENDER_FOR_PROMPT[DEFAULT_PROMPT] == RENDER_VERSION  # the default matches the current renders
     assert all("Score 1-10" in p and '"score"' in p for p in PROMPTS.values())
+
+
+def test_study_parts_are_judged_into_the_study_folder(tmp_path, monkeypatch):
+    import eval.judge as ej
+
+    for name, value in dict(RESULTS_DIR=tmp_path, JUDGE_DIR=tmp_path / "judge").items():
+        monkeypatch.setattr(ej, name, value)
+    assert ej.split_part_id("s1/gen/lib1/rag/s01/rep2") == ("s1", "gen", "lib1", "rag", "s01", "rep2")
+    assert ej.split_part_id("gen/lib1/rag/s01/rep0") == (None, "gen", "lib1", "rag", "s01", "rep0")
+    judge = make_judge(llm=ScriptedLLM([]), model="judge-m")
+    assert ej.Session(judge, "judge-m", "v2", 64, 1, study="s1").path == tmp_path / "studies/s1/judge/judge-m.jsonl"
+    assert ej.Session(judge, "judge-m", "v2", 64, 1).path == tmp_path / "judge/judge-m.jsonl"
+    row = dict(study="s1", case="s01", config="rag", rep=0, model="gen", library="lib1", outcome="built")
+    (tmp_path / "studies/s1").mkdir(parents=True)
+    (tmp_path / "studies/s1/gen.jsonl").write_text(json.dumps(row) + "\n")
+    assert ej.bench_rows("gen", None, None, "lib1", study="s1") == [row]
+    assert ej.bench_rows("gen", None, None, "lib1") == []
