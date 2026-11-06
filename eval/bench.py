@@ -262,6 +262,20 @@ def _timing(res, llm, before: tuple[float, float]) -> dict:
                 sandbox_seconds=round(getattr(res, "sandbox_seconds", 0.0), 2))
 
 
+def study_tables(study_name: str, rows: list[dict], judge_model: str | None, threshold: float | None) -> str:
+    """The study report (eval/study.py): its manifest's comparisons, and the judge's verdicts when it has judged
+    the study's parts."""
+    from eval import study
+    from stl_agent.judge import judge_model as default_judge_model
+
+    name = judge_model or default_judge_model()
+    judge_rows = read_results(results_dir(study_name) / "judge" / f"{name}.jsonl")
+    verdicts = study.judge_verdicts(judge_rows, settings().judge_threshold if threshold is None else threshold)
+    manifest = study.STUDIES_DIR / f"{study_name}.toml"
+    compare = study.load_study(str(manifest)).get("compare", []) if manifest.exists() else []
+    return study.study_report(rows, verdicts, compare, judge_name=name)
+
+
 class CountingLLM:
     """Counts requests and tokens; everything else goes to the wrapped backend."""
 
@@ -449,6 +463,9 @@ def main(argv=None):
     rep.add_argument("files", nargs="*", type=Path, help="results files (default: all in eval/results, or the study's)")
     for p in (r, rep):
         p.add_argument("--study", help="keep results in eval/results/studies/<STUDY>/ (default: eval/results)")
+    rep.add_argument("--judge-model", help="with --study: whose verdicts count for 'right shape' (default: the "
+                                           "judge model in settings)")
+    rep.add_argument("--threshold", type=float, help="judge pass threshold (default: the judge_threshold setting)")
     st = sub.add_parser("study", help="run or check a study manifest (eval/studies/<name>.toml, see eval/study.py)")
     st.add_argument("action", choices=["run", "status"])
     st.add_argument("manifest", help="study name (eval/studies/<name>.toml) or path")
@@ -478,7 +495,10 @@ def main(argv=None):
 
     if args.cmd == "report":
         files = args.files or sorted(results_dir(args.study).glob("*.jsonl"))
-        print(summarize([row for f in files for row in read_results(f)]))
+        rows = [row for f in files for row in read_results(f)]
+        if args.study:
+            print(study_tables(args.study, rows, args.judge_model, args.threshold) + "\n")
+        print(summarize(rows))
         return
 
     override_settings(args.set)
