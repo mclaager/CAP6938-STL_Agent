@@ -200,4 +200,27 @@ def test_rows_split_build_time(tmp_path, monkeypatch):
               log=lambda m: None)
     row = bench.read_results(path)[0]
     assert (row["llm_seconds"], row["wait_seconds"]) == (4.0, 1.0)
-    assert 0 < row["sandbox_seconds"] <= row["seconds"]
+    assert 0 < row["sandbox_seconds"] <= row["seconds"] + 0.05  # seconds is rounded to 0.1
+
+
+def test_spending_cap_counts_earlier_runs_and_lost_spend(tmp_path, monkeypatch):
+    import json
+
+    import pytest
+
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    path = tmp_path / "claude-haiku-5-5.jsonl"
+    retriever = ExampleRetriever.from_file()
+    run = lambda llm, cap, model="claude-haiku-5-5": bench.run(
+        CASES[:2], ["rag"], llm, model, retriever, path, budget=9, max_attempts=1, log=lambda m: None, max_usd=cap)
+    # One build of Haiku may cost up to 1 x (12k in, 3k out) = $0.0027: a $1 cap runs both cases.
+    s = run(ScriptedLLM([GOOD, GOOD]), 1.0)
+    assert s.ran == 2 and all(r["usd"] == 0 for r in bench.read_results(path))
+    # Spend from earlier runs and spend lost to errors both count toward the cap.
+    path.write_text(json.dumps(dict(case="x", config="rag", rep=0, usd=0.995)) + "\n")
+    bench.record_lost_usd(path, 0.003)
+    assert bench.spent_usd(path) == pytest.approx(0.998)
+    s = run(ScriptedLLM([GOOD]), 1.0)
+    assert s.ran == 0 and s.stopped.startswith("spending cap")
+    with pytest.raises(ValueError, match="known price"):
+        run(ScriptedLLM([]), 1.0, model="no-price-model")

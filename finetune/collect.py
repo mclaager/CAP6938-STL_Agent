@@ -33,21 +33,15 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from eval.bench import bbox_matches, library_id, sdf_prompt_id
+from eval.bench import RESERVE_TOKENS, bbox_matches, library_id, sdf_prompt_id
 from stl_agent.config import OUTPUT_DIR, SDF_EXAMPLES_PATH, add_set_argument, override_settings, settings
 from stl_agent.generate import generate_cad
+from stl_agent.llm import PRICES
 
 from finetune.make_requests import DATA_DIR, REQUESTS_PATH, SDF_DATA_DIR, read_requests
 
 RUNS_PATH = DATA_DIR / "runs.jsonl"
 CONVERSATIONS_PATH = DATA_DIR / "conversations.jsonl"
-
-# Dollars per million tokens (input, output), for the running cost line and --max-usd. Thinking is billed as output.
-PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-opus-5-5": (4.0, 20.0), "claude-haiku-5-5": (0.10, 0.50),
-          # Gemini paid tier (third-party price lists, Oct 2026; Google's page is the authority)
-          "gemini-3.5-flash-lite": (0.30, 2.50), "gemini-3.1-flash-lite": (0.25, 1.50)}
-# A run still in progress is assumed to cost up to max_attempts requests of 12k input and 3k output tokens.
-RESERVE_TOKENS = (12_000, 3_000)
 
 # Pinned so every collected conversation has the same repair messages, whatever the user's settings say.
 GEN_KW = dict(use_rag=True, top_k=3, api_hints=False, size_feedback="measured")

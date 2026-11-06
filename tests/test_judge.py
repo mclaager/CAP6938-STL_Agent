@@ -171,3 +171,20 @@ def test_study_parts_are_judged_into_the_study_folder(tmp_path, monkeypatch):
     (tmp_path / "studies/s1/gen.jsonl").write_text(json.dumps(row) + "\n")
     assert ej.bench_rows("gen", None, None, "lib1", study="s1") == [row]
     assert ej.bench_rows("gen", None, None, "lib1") == []
+
+
+def test_judge_spending_cap(tmp_path, monkeypatch):
+    import pytest
+
+    import eval.judge as ej
+
+    monkeypatch.setattr(ej, "JUDGE_DIR", tmp_path / "judge")
+    judge = make_judge(llm=ScriptedLLM(['{"score": 9}'] * 3), model="claude-haiku-5-5")
+    s = ej.Session(judge, "claude-haiku-5-5", "v2", 64, budget=5, log=lambda m: None, max_usd=0.004)
+    assert s.judge_one("p1", "a block", b"png", {}) is not None  # reserve 4k+4k tokens = $0.0024
+    assert s.judge_one("p2", "a block", b"png", {}) is not None
+    ej.record_lost_usd(s.path, 0.002)
+    s = ej.Session(judge, "claude-haiku-5-5", "v2", 64, budget=5, log=lambda m: None, max_usd=0.004)
+    assert s.judge_one("p3", "a block", b"png", {}) is None and s.stopped.startswith("spending cap")
+    with pytest.raises(ValueError, match="known price"):
+        ej.Session(judge, "no-price", "v2", 64, budget=5, max_usd=1.0)

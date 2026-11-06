@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 
 from eval.bench import (RESULTS_DIR, CountingLLM, _lib_key, all_cases, code_version, library_for, load_cases,
-                        part_id, read_results)
+                        part_id, read_results, record_lost_usd, spent_usd)
 from stl_agent.config import OUTPUT_DIR, ROOT, add_set_argument, override_settings, settings
 from stl_agent.render import RENDER_VERSION, png_bytes, render_grid
 
@@ -32,6 +32,9 @@ RENDERS_DIR = EVAL_DIR / "renders"
 JUDGE_DIR = RESULTS_DIR / "judge"
 LABELS_PATH = EVAL_DIR / "judge_labels.json"
 DEFAULT_PX = 256
+# A spending cap (--max-usd) assumes the next judge request costs up to 4k input tokens (prompt + image) and 4k
+# output tokens (thinking included).
+JUDGE_RESERVE_TOKENS = (4_000, 4_000)
 MISMATCH_OFFSET = 7  # reference i is also judged against the request of reference i+7 (should fail)
 # Near misses: a reference judged against the request of a similar-looking part (should fail).
 # The offset pairs above are all clearly different objects; these test whether the judge notices
@@ -138,9 +141,17 @@ class Session:
     """One judge + one results file; skips (part, judge, prompt, render) rows already recorded. `study`: the
     results file is the study's (eval/results/studies/<study>/judge/)."""
 
-    def __init__(self, judge, judge_name: str, prompt: str, px: int, budget: int, log=print, study: str | None = None):
+    def __init__(self, judge, judge_name: str, prompt: str, px: int, budget: int, log=print, study: str | None = None,
+                 max_usd: float | None = None):
+        from stl_agent.llm import price_usd
+
         self.judge, self.prompt, self.px, self.budget, self.log, self.study = judge, prompt, px, budget, log, study
         self.path = judge_dir(study) / f"{judge_name}.jsonl"
+        self.model, self.max_usd = judge_name, max_usd
+        self.reserve = price_usd(judge_name, *JUDGE_RESERVE_TOKENS)
+        if max_usd is not None and self.reserve is None:
+            raise ValueError(f"--max-usd needs a known price; {judge_name} is not in stl_agent.llm.PRICES")
+        self.spent = spent_usd(self.path)  # earlier runs of this judge file included
         self.meta = dict(git=code_version(), provider=settings().judge_provider or settings().provider)
         self.done = {(r["part"], r["judge"], r["prompt"], r["render"]) for r in read_results(self.path)}
         self.requests, self.stopped = 0, ""
@@ -150,8 +161,13 @@ class Session:
 
     def judge_one(self, pid: str, request: str, image: bytes, facts: dict, **extra) -> dict | None:
         """Judge and append a row. Returns None (and sets `stopped`) at the budget or on an API error."""
+        from stl_agent.llm import price_usd
+
         if self.requests >= self.budget:
             self.stopped = f"budget: {self.requests}/{self.budget} requests used; run again to continue"
+            return None
+        if self.max_usd is not None and self.spent + self.reserve > self.max_usd:
+            self.stopped = f"spending cap: ${self.spent:.2f} of ${self.max_usd:.2f} spent"
             return None
         llm = getattr(self.judge, "llm", None)
         before = (llm.input_tokens, llm.output_tokens)
@@ -161,6 +177,9 @@ class Session:
             self.requests += 1
             j = self.judge.judge(request, image, facts)
         except Exception as e:  # quota exhausted, network: stop without recording
+            lost = price_usd(self.model, llm.input_tokens - before[0], llm.output_tokens - before[1])
+            record_lost_usd(self.path, lost)
+            self.spent += lost or 0
             self.stopped = f"error, stopping: {type(e).__name__}: {e}"
             return None
         row = dict(part=pid, judge=self.judge.name, prompt=self.prompt, render=render_tag(self.px), **extra,
@@ -172,6 +191,9 @@ class Session:
                    llm_seconds=round(getattr(llm, "request_seconds", 0.0) - timers[0], 2),
                    wait_seconds=round(getattr(llm, "wait_seconds", 0.0) - timers[1], 2),
                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
+        usd = price_usd(self.model, row["input_tokens"], row["output_tokens"])
+        row["usd"] = round(usd, 5) if usd is not None else None
+        self.spent += usd or 0
         if j.error:
             row["reply"] = j.reply[:2000]
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -571,6 +593,9 @@ def main(argv=None):
     judge_args(r)
     c = sub.add_parser("calibrate", help="judge reference parts and labelled parts, pick a threshold")
     c.add_argument("--budget", type=int, default=80)
+    for p in (r, c):
+        p.add_argument("--max-usd", type=float, help="stop before this judge's results file (earlier runs included) "
+                                                     "could cost more than this; needs the model in llm.PRICES")
     judge_args(c)
     for name, helptext in (("report", "pass rates from judged parts"),
                            ("sheet", "write eval/renders/index.html (with --study: eval/renders/<study>.html)")):
@@ -606,7 +631,7 @@ def main(argv=None):
     name = judge_model(model=args.judge_model)
     judge = make_judge(model=name, prompt=args.prompt)
     judge.llm = CountingLLM(judge.llm)
-    s = Session(judge, name, args.prompt, args.px, args.budget, study=args.study)
+    s = Session(judge, name, args.prompt, args.px, args.budget, study=args.study, max_usd=args.max_usd)
     (cmd_run if args.cmd == "run" else cmd_calibrate)(args, s)
 
 

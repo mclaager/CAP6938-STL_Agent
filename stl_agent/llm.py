@@ -17,6 +17,19 @@ from typing import Protocol, runtime_checkable
 from .config import Settings, settings
 
 
+# Dollars per million tokens (input, output), for cost lines and spending caps (bench/judge --max-usd,
+# finetune.collect). Thinking is billed as output. Claude: Anthropic's prices (Oct 2026). Gemini paid tier:
+# third-party price lists (Oct 2026; Google's page is the authority). Local models cost nothing and have no entry.
+PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-opus-5-5": (4.0, 20.0), "claude-haiku-5-5": (0.10, 0.50),
+          "gemini-3.5-flash-lite": (0.30, 2.50), "gemini-3.1-flash-lite": (0.25, 1.50)}
+
+
+def price_usd(model: str, input_tokens: int, output_tokens: int) -> float | None:
+    """What these tokens cost on `model`, or None when its price isn't known."""
+    p = PRICES.get(model)
+    return None if p is None else (input_tokens * p[0] + output_tokens * p[1]) / 1e6
+
+
 @runtime_checkable
 class LLM(Protocol):
     """What the pipeline, gate and judge expect from a backend."""

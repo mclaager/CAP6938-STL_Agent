@@ -140,6 +140,31 @@ def _lib_key(config: str, library: str) -> str:
         return library
     return "any" if not cfg.get("use_rag", True) or cfg.get("download") else library
 
+# Spending caps (--max-usd) assume a build still to run costs up to max_attempts requests of 12k input and 3k
+# output tokens (also used by finetune.collect).
+RESERVE_TOKENS = (12_000, 3_000)
+
+
+def lost_usd_path(results_path: Path) -> Path:
+    """Spend that has no result row (a build stopped by an error after some requests): <model>.lost-usd.json
+    beside the results, so a spending cap still counts it after a restart."""
+    return results_path.with_name(results_path.stem + ".lost-usd.json")
+
+
+def spent_usd(results_path: Path) -> float:
+    """Dollars recorded so far for this results file: its rows' usd plus spend lost to errors."""
+    lost = lost_usd_path(results_path)
+    return (sum(r.get("usd") or 0 for r in read_results(results_path))
+            + (sum(json.loads(lost.read_text())) if lost.exists() else 0.0))
+
+
+def record_lost_usd(results_path: Path, usd: float | None) -> None:
+    if usd:
+        lost = lost_usd_path(results_path)
+        lost.parent.mkdir(parents=True, exist_ok=True)
+        lost.write_text(json.dumps((json.loads(lost.read_text()) if lost.exists() else []) + [round(usd, 4)]))
+
+
 BBOX_REL_TOL, BBOX_ABS_TOL = 0.03, 1.0  # per dimension: within 3% or 1 mm, whichever is larger
 
 
@@ -265,10 +290,13 @@ def read_results(path: Path) -> list[dict]:
 
 def run(cases: list[dict], configs: list[str], llm, model: str, retriever, results_path: Path,
         budget: int, max_attempts: int | None = None, log=print, repeats: int = 1,
-        library: str | None = None, study: str | None = None) -> RunSummary:
+        library: str | None = None, study: str | None = None, max_usd: float | None = None) -> RunSummary:
     """Run every (repeat, case, config) not yet in the results file. Repeats go in the outer loop, so a
     partial run covers all cases evenly; rows from before repeats existed count as repeat 0. `study` is recorded
-    on each row and keeps its parts in their own folder (outputs/bench/<study>/...)."""
+    on each row and keeps its parts in their own folder (outputs/bench/<study>/...). `max_usd`: stop before a build
+    could take this results file's total spend (earlier runs included) over that many dollars."""
+    from stl_agent.llm import price_usd
+
     max_attempts = max_attempts or settings().max_attempts
     done = {(r["case"], r["config"], r.get("rep", 0), _lib_key(r["config"], r.get("library", "lib9")))
             for r in read_results(results_path)}
@@ -277,6 +305,10 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
     summary = RunSummary()
     # Recorded on every row: the code, provider and settings that produced it.
     meta = dict(git=code_version(), provider=settings().provider)
+    reserve = price_usd(model, *RESERVE_TOKENS)
+    if max_usd is not None and reserve is None:
+        raise ValueError(f"--max-usd needs a known price; {model} is not in stl_agent.llm.PRICES")
+    spent = spent_usd(results_path)
     retrievers = {"tfidf": retriever}  # other kinds are built on first use
 
     for case, config, rep in ((c, k, n) for n in range(repeats) for c in cases for k in configs):
@@ -286,6 +318,11 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
             continue
         if counter.requests + max_attempts > budget:
             summary.stopped = f"budget: {counter.requests}/{budget} requests used; run again to continue"
+            summary.requests = counter.requests
+            return summary
+        if max_usd is not None and spent + max_attempts * reserve > max_usd:
+            summary.stopped = (f"spending cap: ${spent:.2f} of ${max_usd:.2f} spent; the next build could cost up to "
+                               f"${max_attempts * reserve:.2f}")
             summary.requests = counter.requests
             return summary
 
@@ -307,6 +344,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
                 res = generate_cad(case["request"], counter, retrievers[kind], log=lambda m: None, out_dir=out_dir,
                                    max_attempts=max_attempts, **kw)
         except Exception as e:  # quota exhausted, timeouts, network: stop without recording a result
+            record_lost_usd(results_path, price_usd(model, llm.input_tokens - before[1], llm.output_tokens - before[2]))
             summary.stopped = f"error, stopping: {type(e).__name__}: {e}"
             summary.requests = counter.requests
             return summary
@@ -321,12 +359,18 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
                    input_tokens=llm.input_tokens - before[1],
                    output_tokens=llm.output_tokens - before[2],
                    **_timing(res, llm, before[3:]),
+                   usd=None,
                    stl=_repo_relative(res.stl_path),
                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
+        usd = price_usd(model, row["input_tokens"], row["output_tokens"])
+        row["usd"] = round(usd, 4) if usd is not None else None
+        spent += usd or 0
         with results_path.open("a") as f:
             f.write(json.dumps(row) + "\n")
         summary.ran += 1
-        log(f"    -> {row['outcome']}, correct={row['correct']}, attempts={row['attempts']}, bbox_ok={row['bbox_ok']}")
+        log(f"    -> {row['outcome']}, correct={row['correct']}, attempts={row['attempts']}, bbox_ok={row['bbox_ok']}"
+            + (f", ${row['usd']:.4f} (total ${spent:.2f}" + (f" of ${max_usd:.2f})" if max_usd else ")")
+               if usd is not None else ""))
 
     summary.requests = counter.requests
     return summary
@@ -396,6 +440,8 @@ def main(argv=None):
     r.add_argument("--max-attempts", type=int, help="default: the max_attempts setting")
     r.add_argument("--model", help="model id (default: the provider's model in settings)")
     r.add_argument("--repeats", type=int, default=1, help="runs per (case, config), to average out randomness")
+    r.add_argument("--max-usd", type=float, help="stop before this model's results file (earlier runs included) "
+                                                 "could cost more than this; needs the model in llm.PRICES")
     add_set_argument(r)
     rep = sub.add_parser("report", help="summarize results")
     rep.add_argument("files", nargs="*", type=Path, help="results files (default: all in eval/results, or the study's)")
@@ -423,7 +469,7 @@ def main(argv=None):
     model = getattr(llm, "model", "unknown")
     path = results_dir(args.study) / f"{model}.jsonl"
     s = run(cases, configs, llm, model, ExampleRetriever.from_file(), path, args.budget, args.max_attempts,
-            repeats=args.repeats, study=args.study)
+            repeats=args.repeats, study=args.study, max_usd=args.max_usd)
     print(f"\nRan {s.ran}, skipped {s.skipped} already done, used {s.requests} requests. Results: {path}")
     if s.stopped:
         print("Stopped early: " + s.stopped)
