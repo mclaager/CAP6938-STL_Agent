@@ -170,3 +170,15 @@ def test_study_rows_and_parts_stay_in_their_own_folders(tmp_path, monkeypatch):
     assert (tmp_path / "out/bench" / bench.part_id(row) / "report.json").exists()
     assert not (tmp_path / "results/m.jsonl").exists()  # earlier results untouched
     assert bench.part_id({k: v for k, v in row.items() if k != "study"}).startswith("m/")  # old ids unchanged
+
+
+def test_rows_record_prompt_code_version_provider_and_settings(tmp_path, monkeypatch):
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    path = tmp_path / "r.jsonl"
+    bench.run(CASES[1:2], ["rag-size"], ScriptedLLM([GOOD]), "m", ExampleRetriever.from_file(), path, budget=1,
+              max_attempts=1, log=lambda m: None)
+    row = bench.read_results(path)[0]
+    assert row["prompt"] == bench.prompt_id("rag-size") and row["prompt"].startswith("cqp-")
+    assert bench.prompt_id("sdf").startswith("sdfp-") and bench.prompt_id("thingiverse") is None
+    assert row["git"] and row["provider"]
+    assert row["settings"]["max_attempts"] == 1 and row["settings"]["size_feedback"] == "measured"

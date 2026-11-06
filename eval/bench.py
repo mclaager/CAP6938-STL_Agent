@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 import sys
 import time
 from dataclasses import dataclass
@@ -90,6 +91,36 @@ def sdf_prompt_id() -> str:
     from stl_agent.generate import SYSTEM_PROMPT_SDF
 
     return "sdfp-" + hashlib.sha1(SYSTEM_PROMPT_SDF.encode()).hexdigest()[:6]
+
+
+def prompt_id(config: str) -> str | None:
+    """Names the build system prompt a config sends, e.g. "cqp-1a2b3c" (CadQuery) or "sdfp-1a2b3c" (SDF), so a
+    prompt change shows in the rows. None for download configs (no prompt)."""
+    from stl_agent.generate import SYSTEM_PROMPT
+
+    cfg = CONFIGS.get(config, {})
+    if cfg.get("download"):
+        return None
+    if cfg.get("language") == "sdf":
+        return sdf_prompt_id()
+    return "cqp-" + hashlib.sha1(SYSTEM_PROMPT.encode()).hexdigest()[:6]
+
+
+# Files the eval commands write while they run; changes there don't make the code "dirty".
+DATA_PATHS = ("eval/results", "eval/renders", "eval/judge_labels.json")
+
+
+def code_version() -> str:
+    """Short git commit of the checkout, plus "+dirty" when tracked code has uncommitted changes (result and
+    render files excepted), so every row names the code that produced it."""
+    try:
+        git = lambda *a: subprocess.run(["git", "-C", str(ROOT), *a], capture_output=True, text=True,
+                                        check=True).stdout.strip()
+        commit = git("rev-parse", "--short", "HEAD")
+        dirty = git("status", "--porcelain", "--untracked-files=no", "--", ".", *(f":!{p}" for p in DATA_PATHS))
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+    return commit + ("+dirty" if dirty else "")
 
 
 def library_for(config: str) -> str:
@@ -231,6 +262,8 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
     results_path.parent.mkdir(parents=True, exist_ok=True)
     counter = CountingLLM(llm)
     summary = RunSummary()
+    # Recorded on every row: the code, provider and settings that produced it.
+    meta = dict(git=code_version(), provider=settings().provider)
     retrievers = {"tfidf": retriever}  # other kinds are built on first use
 
     for case, config, rep in ((c, k, n) for n in range(repeats) for c in cases for k in configs):
@@ -265,8 +298,11 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
             summary.requests = counter.requests
             return summary
 
+        run_settings = dict(max_attempts=max_attempts, **CONFIGS[config], effort=getattr(llm, "effort", None),
+                            max_tokens=getattr(llm, "max_tokens", None))
         row = dict(**tag, case=case["id"], config=config, rep=rep, model=model, library=lib,
-                   category=case["category"], expect=case["expect"],
+                   category=case["category"], expect=case["expect"], prompt=prompt_id(config), **meta,
+                   settings=run_settings,
                    **score(case, res),
                    requests=counter.requests - before[0],
                    input_tokens=llm.input_tokens - before[1],

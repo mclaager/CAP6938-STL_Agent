@@ -22,8 +22,8 @@ import tempfile
 import time
 from pathlib import Path
 
-from eval.bench import (RESULTS_DIR, CountingLLM, _lib_key, all_cases, library_for, load_cases, part_id,
-                        read_results)
+from eval.bench import (RESULTS_DIR, CountingLLM, _lib_key, all_cases, code_version, library_for, load_cases,
+                        part_id, read_results)
 from stl_agent.config import OUTPUT_DIR, ROOT, add_set_argument, override_settings, settings
 from stl_agent.render import RENDER_VERSION, png_bytes, render_grid
 
@@ -141,6 +141,7 @@ class Session:
     def __init__(self, judge, judge_name: str, prompt: str, px: int, budget: int, log=print, study: str | None = None):
         self.judge, self.prompt, self.px, self.budget, self.log, self.study = judge, prompt, px, budget, log, study
         self.path = judge_dir(study) / f"{judge_name}.jsonl"
+        self.meta = dict(git=code_version(), provider=settings().judge_provider or settings().provider)
         self.done = {(r["part"], r["judge"], r["prompt"], r["render"]) for r in read_results(self.path)}
         self.requests, self.stopped = 0, ""
 
@@ -164,7 +165,7 @@ class Session:
                    request=request, facts=facts, score=j.score, raw_score=j.raw_score, matches=j.matches,
                    problems=j.problems, error=j.error,
                    input_tokens=llm.input_tokens - before[0],
-                   output_tokens=llm.output_tokens - before[1],
+                   output_tokens=llm.output_tokens - before[1], **self.meta,
                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
         if j.error:
             row["reply"] = j.reply[:2000]
