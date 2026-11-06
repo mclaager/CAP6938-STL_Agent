@@ -233,3 +233,50 @@ def test_size_configs_match_the_app_defaults():
         assert bench.CONFIGS[config]["size_feedback"] == settings().size_feedback
     assert bench.CONFIGS["rag-size"]["use_rag"] and not bench.CONFIGS["norag-size"]["use_rag"]
     assert bench._lib_key("norag-size", "lib26-x") == "any"  # no examples: shared across library versions
+
+
+def test_study_manifest_runs_jobs_with_their_own_settings(tmp_path, monkeypatch):
+    import pytest
+
+    from eval import study
+    from stl_agent import llm as llm_mod
+    from stl_agent.config import settings
+
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    monkeypatch.setattr(bench, "RESULTS_DIR", tmp_path / "results")
+    manifest = tmp_path / "s1.toml"
+    manifest.write_text('''
+[study]
+about = "test"
+
+[[run]]
+name = "local"
+model = "m"
+configs = ["rag-size"]
+repeats = 2
+budget = 9
+max_attempts = 1
+set = ["provider=ollama"]
+cases = ["s01"]
+''')
+    seen = []
+
+    def fake_make_llm(model=None, **kw):
+        seen.append((settings().provider, model))
+        return ScriptedLLM([GOOD] * 2)
+
+    monkeypatch.setattr(llm_mod, "make_llm", fake_make_llm)
+    data = study.load_study(str(manifest))
+    assert data["study"]["name"] == "s1"
+    job = data["run"][0]
+    s = study.run_job("s1", job, log=lambda m: None)
+    assert seen == [("ollama", "m")] and s.ran == 2
+    assert settings().provider == "gemini"  # the job's settings don't leak
+    assert study.job_status("s1", job) == dict(name="local", model="m", done=2, expected=2, usd=0.0, max_usd=None)
+    assert "| local | m | 2 | 2 |" in study.status_table(data)
+
+    manifest.write_text('[[run]]\nname = "x"\nmodel = "m"\nconfigs = ["rag-size"]\n')
+    with pytest.raises(ValueError, match="provider"):  # LLM jobs must name their provider
+        study.load_study(str(manifest))
+    manifest.write_text('[[run]]\nname = "tv"\nmodel = "thingiverse"\nsuite = "organic"\nconfigs = ["thingiverse-check"]\n')
+    assert study.download_only(study.load_study(str(manifest))["run"][0])

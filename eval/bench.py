@@ -449,7 +449,32 @@ def main(argv=None):
     rep.add_argument("files", nargs="*", type=Path, help="results files (default: all in eval/results, or the study's)")
     for p in (r, rep):
         p.add_argument("--study", help="keep results in eval/results/studies/<STUDY>/ (default: eval/results)")
+    st = sub.add_parser("study", help="run or check a study manifest (eval/studies/<name>.toml, see eval/study.py)")
+    st.add_argument("action", choices=["run", "status"])
+    st.add_argument("manifest", help="study name (eval/studies/<name>.toml) or path")
+    st.add_argument("--run", nargs="+", dest="jobs", help="only these jobs (default: all, in file order)")
+    st.add_argument("--budget", type=int, help="max LLM requests per job this time (default: the job's budget)")
     args = ap.parse_args(argv)
+
+    if args.cmd == "study":
+        from eval import study
+
+        data = study.load_study(args.manifest)
+        name = data["study"]["name"]
+        if args.action == "run":
+            unknown = set(args.jobs or []) - {j["name"] for j in data.get("run", [])}
+            if unknown:
+                raise SystemExit(f"No such job(s) in {name}: {sorted(unknown)}")
+            for job in data.get("run", []):
+                if args.jobs and job["name"] not in args.jobs:
+                    continue
+                s = study.run_job(name, job, args.budget)
+                print(f"   ran {s.ran}, skipped {s.skipped}, {s.requests} requests"
+                      + (f"; stopped: {s.stopped}" if s.stopped else ""))
+                if s.stopped.startswith("error"):
+                    sys.exit(2)
+        print(study.status_table(data))
+        return
 
     if args.cmd == "report":
         files = args.files or sorted(results_dir(args.study).glob("*.jsonl"))
