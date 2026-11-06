@@ -224,3 +224,12 @@ def test_spending_cap_counts_earlier_runs_and_lost_spend(tmp_path, monkeypatch):
     assert s.ran == 0 and s.stopped.startswith("spending cap")
     with pytest.raises(ValueError, match="known price"):
         run(ScriptedLLM([]), 1.0, model="no-price-model")
+
+
+def test_size_configs_match_the_app_defaults():
+    from stl_agent.config import settings
+
+    for config in ("rag-size", "norag-size"):
+        assert bench.CONFIGS[config]["size_feedback"] == settings().size_feedback
+    assert bench.CONFIGS["rag-size"]["use_rag"] and not bench.CONFIGS["norag-size"]["use_rag"]
+    assert bench._lib_key("norag-size", "lib26-x") == "any"  # no examples: shared across library versions

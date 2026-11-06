@@ -60,6 +60,8 @@ CONFIGS = {
     "rag-hints": dict(use_rag=True, top_k=3, api_hints=True, size_feedback="fix"),
     "rag-size": dict(use_rag=True, top_k=3, api_hints=False, size_feedback="measured"),
     "norag": dict(use_rag=False, api_hints=False, size_feedback="fix"),
+    # The app's current setup, with and without examples (the report round compares these two).
+    "norag-size": dict(use_rag=False, api_hints=False, size_feedback="measured"),
     "rag-k1": dict(use_rag=True, top_k=1, api_hints=False, size_feedback="fix"),  # top-k ablation (#7): 1 and 5 examples vs the default 3
     "rag-k5": dict(use_rag=True, top_k=5, api_hints=False, size_feedback="fix"),
     # "retriever" is a stl_agent.retrieval kind, default "tfidf". Older results also contain
