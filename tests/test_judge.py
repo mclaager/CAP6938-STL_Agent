@@ -275,3 +275,10 @@ def test_compare_judges_tables():
     assert "| good | +0 pts (8) | - | - |" in report and "| bad | +50 pts (8) |" in report
     assert "| bad | good | 8 | 0 | 4 |" in report
     assert "### Items bad gets wrong (4)" in report
+
+
+def test_render_parts_ahead_of_judging(tmp_path, monkeypatch):
+    ej = _bench_tree(tmp_path, monkeypatch, study="s1")
+    assert ej.render_parts("s1", px=64, log=lambda m: None) == {"rendered": 3}
+    assert ej.render_parts("s1", px=64, log=lambda m: None) == {"done": 3}  # saved renders are reused
+    assert (tmp_path / "renders" / ej.render_tag(64) / "s1/gen/lib1/rag/s01-rep0.png").exists()

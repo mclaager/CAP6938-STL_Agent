@@ -228,6 +228,27 @@ def judge_bench_row(s: Session, row: dict, case: dict) -> str:
     return "judged" if s.judge_one(pid, case["request"], image, {"bbox_mm": row.get("bbox_mm")}, **extra) else "stopped"
 
 
+def render_parts(study: str | None, px: int = DEFAULT_PX, gen_models: list[str] | None = None, log=print) -> dict:
+    """Render every part of a study's benchmark rows (or of `gen_models`) ahead of judging, with no LLM requests.
+    Judging then reuses the saved renders, so it needs almost no CPU (e.g. while a local model benchmarks)."""
+    tally = {}
+    models = gen_models or [f.stem for f in sorted(study_dir(study).glob("*.jsonl"))]
+    for model in models:
+        for row in read_results(study_dir(study) / f"{model}.jsonl"):
+            if row.get("outcome") not in ("built", "best_effort"):
+                what = "no_part"
+            elif render_path(part_id(row), px).exists():
+                what = "done"
+            elif (stl := locate_stl(row)) is None:
+                what = "missing_stl"
+            else:
+                ensure_render(stl, render_path(part_id(row), px), px)
+                what = "rendered"
+            tally[what] = tally.get(what, 0) + 1
+        log(f"{model}: {tally}")
+    return tally
+
+
 def cmd_run(args, s: Session) -> None:
     cases = {c["id"]: c for c in all_cases()}
     rows = bench_rows(args.gen_model, args.config, args.cases, args.library, study=s.study)
@@ -798,6 +819,9 @@ def main(argv=None):
         p.add_argument("--px", type=int, default=DEFAULT_PX, help="pixels per view (the render is 2*px square)")
         add_set_argument(p)
 
+    rn = sub.add_parser("render", help="render benchmark parts ahead of judging (no LLM requests)")
+    rn.add_argument("--gen-model", nargs="+", help="models whose parts to render (default: all of the study's)")
+    rn.add_argument("--px", type=int, default=DEFAULT_PX, help="pixels per view")
     r = sub.add_parser("run", help="judge benchmark parts")
     r.add_argument("--gen-model", required=True, help="model whose benchmark parts to judge")
     r.add_argument("--config", nargs="+", help="benchmark configs (default: all)")
@@ -851,6 +875,9 @@ def main(argv=None):
         render = None if args.render == "all" else args.render
         page = RENDERS_DIR / (f"{args.study or 'index'}{'-blind' if args.blind else ''}.html")
         print(f"Wrote {write_sheet(page, args.threshold, render, study=args.study, blind=args.blind).relative_to(ROOT)}")
+        return
+    if args.cmd == "render":
+        render_parts(args.study, args.px, args.gen_model)
         return
     if args.cmd == "compare":
         jdir = judge_dir(args.study)
