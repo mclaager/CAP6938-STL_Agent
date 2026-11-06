@@ -153,11 +153,13 @@ class Session:
             raise ValueError(f"--max-usd needs a known price; {judge_name} is not in stl_agent.llm.PRICES")
         self.spent = spent_usd(self.path)  # earlier runs of this judge file included
         self.meta = dict(git=code_version(), provider=settings().judge_provider or settings().provider)
-        self.done = {(r["part"], r["judge"], r["prompt"], r["render"]) for r in read_results(self.path)}
+        self.done = {(r["part"], r["judge"], r["prompt"], r["render"], r.get("judge_rep", 0))
+                     for r in read_results(self.path)}
         self.requests, self.stopped = 0, ""
+        self.judge_rep = 0  # which repeat of the judging is running (--repeats); rows from before count as 0
 
     def is_done(self, pid: str) -> bool:
-        return (pid, self.judge.name, self.prompt, render_tag(self.px)) in self.done
+        return (pid, self.judge.name, self.prompt, render_tag(self.px), self.judge_rep) in self.done
 
     def judge_one(self, pid: str, request: str, image: bytes, facts: dict, **extra) -> dict | None:
         """Judge and append a row. Returns None (and sets `stopped`) at the budget or on an API error."""
@@ -182,7 +184,8 @@ class Session:
             self.spent += lost or 0
             self.stopped = f"error, stopping: {type(e).__name__}: {e}"
             return None
-        row = dict(part=pid, judge=self.judge.name, prompt=self.prompt, render=render_tag(self.px), **extra,
+        row = dict(part=pid, judge=self.judge.name, prompt=self.prompt, render=render_tag(self.px),
+                   judge_rep=self.judge_rep, **extra,
                    request=request, facts=facts, score=j.score, raw_score=j.raw_score, matches=j.matches,
                    problems=j.problems, error=j.error,
                    input_tokens=llm.input_tokens - before[0],
@@ -199,7 +202,7 @@ class Session:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("a") as f:
             f.write(json.dumps(row) + "\n")
-        self.done.add((pid, self.judge.name, self.prompt, render_tag(self.px)))
+        self.done.add((pid, self.judge.name, self.prompt, render_tag(self.px), self.judge_rep))
         self.log(f"  {pid}: score {j.score if j.score is not None else 'ERROR ' + str(j.error)}"
                  + (f" | {'; '.join(j.problems)[:120]}" if j.problems else ""))
         return row
@@ -234,10 +237,13 @@ def cmd_run(args, s: Session) -> None:
         print(f"No benchmark rows for {args.gen_model} ({(study_dir(s.study) / args.gen_model).relative_to(ROOT)}.jsonl).")
         return
     tally = {}
-    for row in sorted(rows, key=lambda r: (r.get("rep", 0), r["config"], r["case"])):
-        what = judge_bench_row(s, row, cases[row["case"]])
-        tally[what] = tally.get(what, 0) + 1
-        if what == "stopped":
+    for s.judge_rep in range(getattr(args, "repeats", 1)):
+        for row in sorted(rows, key=lambda r: (r.get("rep", 0), r["config"], r["case"])):
+            what = judge_bench_row(s, row, cases[row["case"]])
+            tally[what] = tally.get(what, 0) + 1
+            if what == "stopped":
+                break
+        if s.stopped:
             break
     print(f"\n{tally} | {s.requests} requests | results: {s.path.relative_to(ROOT)}")
     if s.stopped:
@@ -316,18 +322,21 @@ def load_labels() -> dict:
 
 
 def cmd_calibrate(args, s: Session) -> None:
-    for it in calibration_items(s.px):
-        if s.is_done(it["pid"]):
-            continue
-        extra = {k: it[k] for k in ("kind", "case", "render_file", "label") if k in it}
-        if "asked_case" in it:
-            extra["asked_case"] = it["asked_case"]
-        if not s.judge_one(it["pid"], it["request"], it["image"], it["facts"], **extra):
-            break
+    """Judge the reference items and every graded part, `--repeats` times (repeat-major, so a stopped run still
+    has whole repeats)."""
+    items = calibration_items(s.px)
     labels = load_labels()
-    if labels and not s.stopped:  # labelled benchmark parts that haven't been judged yet
-        cases = {c["id"]: c for c in all_cases()}
-        for pid in labels:
+    cases = {c["id"]: c for c in all_cases()}
+    for s.judge_rep in range(getattr(args, "repeats", 1)):
+        for it in items:
+            if s.is_done(it["pid"]):
+                continue
+            extra = {k: it[k] for k in ("kind", "case", "render_file", "label") if k in it}
+            if "asked_case" in it:
+                extra["asked_case"] = it["asked_case"]
+            if not s.judge_one(it["pid"], it["request"], it["image"], it["facts"], **extra):
+                break
+        for pid in labels if not s.stopped else []:  # graded benchmark parts not judged yet in this repeat
             if s.stopped or s.is_done(pid) or label_pass(labels[pid]) is None:
                 continue
             study, gen_model, library, config, case, rep = split_part_id(pid)
@@ -337,6 +346,8 @@ def cmd_calibrate(args, s: Session) -> None:
                     if f"rep{r.get('rep', 0)}" == rep]
             if rows:
                 judge_bench_row(s, rows[0], cases[case])
+        if s.stopped:
+            break
     if s.stopped:
         print("Stopped: " + s.stopped)
     print(calibration_report(s, labels))
@@ -410,6 +421,205 @@ def auc(data: list[tuple]) -> float:
     if not pos or not neg:
         return float("nan")
     return sum((p > n) + 0.5 * (p == n) for p in pos for n in neg) / (len(pos) * len(neg))
+
+
+# ---------------------------------------------------------------------------
+# Comparing judges (#28)
+# ---------------------------------------------------------------------------
+def builder_family(gen_model: str | None) -> str:
+    """Who built a part: gemini / claude / local, or reference for the hand-written reference solutions."""
+    m = (gen_model or "").lower()
+    return "reference" if not m else "gemini" if m.startswith("gemini") else "claude" if m.startswith("claude") else "local"
+
+
+def judge_items(rows: list[dict], labels: dict) -> dict[str, dict]:
+    """part id -> one item per judged part: its truth (reference items: their label; benchmark parts: your grade,
+    None when ungraded), case, builder family, and the judge's scores over its repeats."""
+    items = {}
+    for r in rows:
+        if r.get("score") is None:
+            continue
+        it = items.get(r["part"])
+        if it is None:
+            if r.get("kind") == "bench":
+                lab = labels.get(r["part"], {})
+                truth, grade, family = label_pass(lab), lab.get("grade") if label_pass(lab) is not None else None, \
+                    builder_family(r.get("gen_model"))
+            else:
+                truth, grade, family = r["label"], None, "reference"
+            it = items[r["part"]] = dict(truth=truth, grade=grade, case=r["case"], family=family, kind=r.get("kind"),
+                                         scores=[], raws=[], seconds=[], usd=[])
+        it["scores"].append(r["score"])
+        it["raws"].append(r["raw_score"])
+        it["seconds"].append(r.get("seconds"))
+        it["usd"].append(r.get("usd"))
+    for it in items.values():
+        it["score"] = sum(it["scores"]) / len(it["scores"])
+        it["raw"] = sum(it["raws"]) / len(it["raws"])
+    return items
+
+
+def best_threshold(data: list[tuple]) -> float:
+    """The threshold with the best balanced accuracy (ties: closest to 0.5), as in calibrate."""
+    return max(threshold_table(data), key=lambda t: (round(t["balanced"], 6), -abs(t["threshold"] - 0.5)))["threshold"]
+
+
+def held_out_predictions(items: dict[str, dict]) -> tuple[dict[str, bool], list[float]]:
+    """Pass/fail per item with a truth, each predicted with a threshold picked on the other half of the cases
+    (two folds, cases split alternately in sorted order), so the accuracy isn't flattered by picking the
+    threshold on the items it is scored on. Returns (predictions, the two thresholds)."""
+    known = {pid: it for pid, it in items.items() if it["truth"] is not None}
+    cases = sorted({it["case"] for it in known.values()})
+    fold = {c: i % 2 for i, c in enumerate(cases)}
+    preds, thresholds = {}, []
+    for f in (0, 1):
+        train = [(it["score"], it["truth"], it["kind"]) for it in known.values() if fold[it["case"]] != f]
+        if not train:
+            continue
+        t = best_threshold(train)
+        thresholds.append(t)
+        for pid, it in known.items():
+            if fold[it["case"]] == f:
+                preds[pid] = it["score"] >= t
+    return preds, thresholds
+
+
+def compare_judges(by_judge: dict[str, list[dict]], labels: dict, baseline: str | None = None) -> str:
+    """Markdown tables comparing judges on the same items: held-out accuracy, AUC, agreement with your grades,
+    consistency over repeats, leniency toward each builder family, pairwise agreement, cost and time."""
+    from eval import stats
+
+    items = {name: judge_items(rows, labels) for name, rows in by_judge.items()}
+    names = [n for n in by_judge if items[n]]
+    if not names:
+        return "No judged items yet."
+    baseline = baseline if baseline in names else names[0]
+    names = [baseline] + [n for n in names if n != baseline]
+    preds = {n: held_out_predictions(items[n]) for n in names}
+    out = ["## Judges compared\n",
+           "Items: reference solutions against their own request (should pass), against an unrelated or a similar "
+           "part's request (should fail), and benchmark parts you graded (match / minor deviation pass). Held-out "
+           "accuracy: each item judged with a threshold picked on the other half of the cases. [brackets]: 95% "
+           "bootstrap intervals over items.\n",
+           "| judge | items | repeats | AUC | held-out accuracy | thresholds | kappa vs you (pass/fail) | "
+           "weighted kappa vs you (bands) | same verdict every repeat | score SD | $/item | s/item |",
+           "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for n in names:
+        its = items[n]
+        known = {pid: it for pid, it in its.items() if it["truth"] is not None}
+        p, thresholds = preds[n]
+        right = [p[pid] == known[pid]["truth"] for pid in p]
+        acc = stats.bootstrap_mean(right)
+        graded = [pid for pid in p if known[pid]["grade"]]
+        kappa = stats.cohen_kappa([p[x] for x in graded], [known[x]["truth"] for x in graded], [False, True]) \
+            if graded else float("nan")
+        wkappa = stats.cohen_kappa([band(known[x]["raw"]) for x in graded], [known[x]["grade"] for x in graded],
+                                   GRADES, "linear") if graded else float("nan")
+        t_all = best_threshold([(it["score"], it["truth"], it["kind"]) for it in known.values()]) if known else 0.5
+        multi = [it for it in its.values() if len(it["scores"]) > 1]
+        same = sum(len({sc >= t_all for sc in it["scores"]}) == 1 for it in multi) / len(multi) if multi else float("nan")
+        sd = (sum(float(stats.np.std(it["raws"])) for it in multi) / len(multi)) if multi else float("nan")
+        usd = [u for it in its.values() for u in it["usd"] if u is not None]
+        secs = [x for it in its.values() for x in it["seconds"] if x is not None]
+        reps = max(len(it["scores"]) for it in its.values())
+        auc_v = auc([(it["score"], it["truth"], it["kind"]) for it in known.values()])
+        out.append(f"| {n} | {len(its)} | {reps} | {auc_v:.2f} | {stats.fmt_rate(*acc)} | "
+                   f"{', '.join(f'{t:.2f}' for t in thresholds)} | {kappa:.2f} | {wkappa:.2f} | "
+                   + (f"{same:.0%}" if multi else "-") + f" | " + (f"{sd:.2f}" if multi else "-") + " | "
+                   + (f"${sum(usd) / len(usd):.4f}" if usd else "-") + f" | {stats.fmt_s(stats.quantiles(secs)[0])} |")
+
+    out += ["\n### Leniency by who built the part (graded parts)\n",
+            "Judge pass rate minus your pass rate (held-out thresholds). Positive: the judge passes more than you do. "
+            "A judge that favours its own family's parts shows a higher number there.\n",
+            "| judge | " + " | ".join(f"{f} (n)" for f in ("gemini", "claude", "local")) + " |", "|---|---|---|---|"]
+    for n in names:
+        p, _ = preds[n]
+        cells = []
+        for fam in ("gemini", "claude", "local"):
+            pids = [pid for pid in p if items[n][pid]["family"] == fam and items[n][pid]["grade"]]
+            if not pids:
+                cells.append("-")
+                continue
+            diff = (sum(p[x] for x in pids) - sum(items[n][x]["truth"] for x in pids)) / len(pids)
+            cells.append(f"{diff * 100:+.0f} pts ({len(pids)})")
+        out.append(f"| {n} | " + " | ".join(cells) + " |")
+
+    if len(names) > 1:
+        out += ["\n### Pairs of judges\n",
+                "Right/wrong against the truth on items both judged (McNemar's exact test), and agreement of their "
+                "pass/fail on every item both judged, graded or not (kappa at each judge's threshold on all items).\n",
+                "| judge a | judge b | items | only a right | only b right | p | kappa(a, b) |", "|---|---|---|---|---|---|---|"]
+        for i, a in enumerate(names):
+            for b in names[i + 1:]:
+                common = sorted(set(preds[a][0]) & set(preds[b][0]))
+                m = stats.mcnemar([preds[a][0][x] == items[a][x]["truth"] for x in common],
+                                  [preds[b][0][x] == items[b][x]["truth"] for x in common])
+                both = sorted(set(items[a]) & set(items[b]))
+                ta = best_threshold([(it["score"], it["truth"], it["kind"]) for it in items[a].values()
+                                     if it["truth"] is not None])
+                tb = best_threshold([(it["score"], it["truth"], it["kind"]) for it in items[b].values()
+                                     if it["truth"] is not None])
+                k = stats.cohen_kappa([items[a][x]["score"] >= ta for x in both], [items[b][x]["score"] >= tb for x in both],
+                                      [False, True]) if both else float("nan")
+                out.append(f"| {a} | {b} | {len(common)} | {m['only_a']} | {m['only_b']} | {m['p']:.3f} | {k:.2f} |")
+
+        wrong = [pid for pid, v in preds[baseline][0].items() if v != items[baseline][pid]["truth"]]
+        if wrong:
+            out += [f"\n### Items {baseline} gets wrong ({len(wrong)})\n", "| item | truth | " + " | ".join(names) + " |",
+                    "|---|---|" + "---|" * len(names)]
+            for pid in sorted(wrong):
+                cells = []
+                for n in names:
+                    v = preds[n][0].get(pid)
+                    cells.append("-" if v is None else ("right" if v == items[n][pid]["truth"] else "wrong")
+                                 + f" ({items[n][pid]['score']:.2f})")
+                out.append(f"| {pid} | {'pass' if items[baseline][pid]['truth'] else 'fail'} | " + " | ".join(cells) + " |")
+    return "\n".join(out)
+
+
+def pick_labels(study: str, n: int, seed: int, judge_name: str, threshold: float) -> list[str]:
+    """Pick `n` judged, ungraded parts of a study to grade by hand, spread evenly over (builder model, suite,
+    judge pass / fail), so every builder and both verdicts are covered. Deterministic for a seed."""
+    import random
+
+    verdicts = {}
+    for r in read_results(judge_dir(study) / f"{judge_name}.jsonl"):
+        if r.get("kind") == "bench" and r.get("score") is not None:
+            verdicts.setdefault(r["part"], []).append(r["score"])
+    labels = json.loads(LABELS_PATH.read_text()).get("labels", {}) if LABELS_PATH.exists() else {}
+    groups = {}
+    for f in sorted(study_dir(study).glob("*.jsonl")):
+        for r in read_results(f):
+            pid = part_id(r)
+            if r.get("outcome") != "built" or pid not in verdicts or pid in labels:
+                continue
+            passed = sum(verdicts[pid]) / len(verdicts[pid]) >= threshold
+            suite = "organic" if r.get("category") == "organic" else "main"
+            groups.setdefault((r["model"], suite, passed), set()).add(pid)
+    rng = random.Random(seed)
+    queues = []
+    for key in sorted(groups):
+        pids = sorted(groups[key])
+        rng.shuffle(pids)
+        queues.append(pids)
+    picked = []
+    while len(picked) < n and any(queues):
+        for q in queues:
+            if q and len(picked) < n:
+                picked.append(q.pop())
+    return picked
+
+
+def add_picked_labels(pids: list[str], note: str) -> int:
+    """Add picked parts to eval/judge_labels.json without a grade (graded later on the review page)."""
+    data = json.loads(LABELS_PATH.read_text()) if LABELS_PATH.exists() else {"labels": {}}
+    added = 0
+    for pid in pids:
+        if pid not in data["labels"]:
+            data["labels"][pid] = {"picked": note}
+            added += 1
+    LABELS_PATH.write_text(json.dumps(data, indent=1) + "\n")
+    return added
 
 
 # ---------------------------------------------------------------------------
@@ -500,9 +710,11 @@ paint();
 """
 
 
-def write_sheet(path: Path, threshold: float, render: str | None = None, study: str | None = None) -> Path:
+def write_sheet(path: Path, threshold: float, render: str | None = None, study: str | None = None,
+                blind: bool = False) -> Path:
     """Static review page next to the renders: every judged part and reference, with label buttons.
-    `render`: only rows with this render setting (e.g. "v2-256px"); None shows all. `study`: that study's judge rows."""
+    `render`: only rows with this render setting (e.g. "v2-256px"); None shows all. `study`: that study's judge rows.
+    `blind`: only the parts in the labels file, with no judge scores or verdicts, so grades aren't swayed by them."""
     cases = {c["id"]: c for c in all_cases()}
     rows = []
     for f in sorted(judge_dir(study).glob("*.jsonl")):
@@ -511,10 +723,12 @@ def write_sheet(path: Path, threshold: float, render: str | None = None, study: 
     for r in rows:
         if render is None or r["render"] == render:
             latest[(r["part"], r["judge"], r["prompt"], r["render"])] = r
+    labels = load_labels()
     by_render = {}
     for r in latest.values():
+        if blind and (r.get("kind") != "bench" or r["part"] not in labels):
+            continue
         by_render.setdefault(r["render_file"], []).append(r)
-    labels = load_labels()
 
     def card(render_file: str, rs: list[dict], labellable: bool) -> str:
         r0 = rs[0]
@@ -522,7 +736,7 @@ def write_sheet(path: Path, threshold: float, render: str | None = None, study: 
         meta = (f"bench: {r0['bench_outcome']}, bbox {'ok' if r0['bench_correct'] else 'wrong'}"
                 if r0.get("kind") == "bench" else "reference solution")
         verdicts = []
-        for r in sorted(rs, key=lambda r: (r["part"], r["judge"])):
+        for r in [] if blind else sorted(rs, key=lambda r: (r["part"], r["judge"])):
             asked = f" (asked: {r['asked_case']})" if r.get("asked_case") else ""
             score = ("error" if r["score"] is None else
                      f"{r['score']:.2f} {'pass' if r['score'] >= threshold else 'FAIL'} ({GRADE_NAMES[band(r['raw_score'])]})")
@@ -553,7 +767,8 @@ def write_sheet(path: Path, threshold: float, render: str | None = None, study: 
 <title>Judge renders</title><style>{SHEET_CSS}</style></head><body>
 <h1>Judge renders</h1>
 <p>Generated by <code>python -m eval.judge sheet</code>. Renders: {html.escape(render or "all versions")}.
-Pass threshold {threshold:.2f}. Click an image to enlarge.
+{"<b>Blind: only the parts to grade, judge scores hidden.</b>" if blind else f"Pass threshold {threshold:.2f}."}
+Click an image to enlarge.
 To label: grade each part on the judge's scale (match and minor deviation pass; feature wrong and different object
 fail), optionally say why, then copy the JSON into <code>eval/judge_labels.json</code>. Grades are kept in this
 browser until then, so reloading or regenerating the page doesn't lose them.</p>
@@ -594,6 +809,8 @@ def main(argv=None):
     c = sub.add_parser("calibrate", help="judge reference parts and labelled parts, pick a threshold")
     c.add_argument("--budget", type=int, default=80)
     for p in (r, c):
+        p.add_argument("--repeats", type=int, default=1, help="judge each item this many times (judge_rep 0..N-1), "
+                                                              "to measure how consistent the judge is")
         p.add_argument("--max-usd", type=float, help="stop before this judge's results file (earlier runs included) "
                                                      "could cost more than this; needs the model in llm.PRICES")
     judge_args(c)
@@ -603,10 +820,23 @@ def main(argv=None):
         p.add_argument("--judge-model", help="only this judge model (default: all judge result files)")
         p.add_argument("--threshold", type=float, help="default: the judge_threshold setting")
         add_set_argument(p)
-    for p in sub.choices.values():
-        p.add_argument("--study", help="parts and judge rows of eval/results/studies/<STUDY>/ (default: eval/results)")
     sub.choices["sheet"].add_argument("--render", default=render_tag(DEFAULT_PX),
                                       help='render setting to show (default: current), or "all"')
+    sub.choices["sheet"].add_argument("--blind", action="store_true",
+                                      help="only parts in the labels file, without judge scores (for grading)")
+    cmp = sub.add_parser("compare", help="compare judge models on the same items (#28)")
+    cmp.add_argument("--judge-model", nargs="+", required=True, dest="judges",
+                     help="judge models to compare; the first is the baseline")
+    pk = sub.add_parser("pick-labels", help="add N ungraded study parts to eval/judge_labels.json, spread over "
+                                            "builders and judge verdicts")
+    pk.add_argument("--n", type=int, default=100)
+    pk.add_argument("--seed", type=int, default=0)
+    pk.add_argument("--judge-model", help="whose verdicts to spread over (default: the judge model in settings)")
+    pk.add_argument("--threshold", type=float, help="default: the judge_threshold setting")
+    for p in (cmp, pk):
+        add_set_argument(p)
+    for p in sub.choices.values():
+        p.add_argument("--study", help="parts and judge rows of eval/results/studies/<STUDY>/ (default: eval/results)")
     args = ap.parse_args(argv)
     override_settings(args.set)
     if getattr(args, "threshold", None) is None:
@@ -619,8 +849,23 @@ def main(argv=None):
         return
     if args.cmd == "sheet":
         render = None if args.render == "all" else args.render
-        page = RENDERS_DIR / (f"{args.study}.html" if args.study else "index.html")
-        print(f"Wrote {write_sheet(page, args.threshold, render, study=args.study).relative_to(ROOT)}")
+        page = RENDERS_DIR / (f"{args.study or 'index'}{'-blind' if args.blind else ''}.html")
+        print(f"Wrote {write_sheet(page, args.threshold, render, study=args.study, blind=args.blind).relative_to(ROOT)}")
+        return
+    if args.cmd == "compare":
+        jdir = judge_dir(args.study)
+        by_judge = {j: [r for r in read_results(jdir / f"{j}.jsonl") if r["prompt"] == DEFAULT_PROMPT
+                        and r["render"] == render_tag(DEFAULT_PX)] for j in args.judges}
+        print(compare_judges(by_judge, load_labels(), baseline=args.judges[0]))
+        return
+    if args.cmd == "pick-labels":
+        if not args.study:
+            raise SystemExit("pick-labels needs --study")
+        name = judge_model(model=args.judge_model)
+        pids = pick_labels(args.study, args.n, args.seed, name, args.threshold)
+        added = add_picked_labels(pids, f"pick-labels {args.study} seed {args.seed}")
+        print(f"Added {added} parts to grade to {LABELS_PATH.relative_to(ROOT)}. Grade them on the blind page: "
+              f"python -m eval.judge sheet --study {args.study} --blind")
         return
 
     from stl_agent.judge.llm_judge import RENDER_FOR_PROMPT
