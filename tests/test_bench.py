@@ -182,3 +182,22 @@ def test_rows_record_prompt_code_version_provider_and_settings(tmp_path, monkeyp
     assert bench.prompt_id("sdf").startswith("sdfp-") and bench.prompt_id("thingiverse") is None
     assert row["git"] and row["provider"]
     assert row["settings"]["max_attempts"] == 1 and row["settings"]["size_feedback"] == "measured"
+
+
+def test_rows_split_build_time(tmp_path, monkeypatch):
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    llm = ScriptedLLM([GOOD.replace("box(20, 10, 5)", "box(20, 10, 5).no_such_method()"), GOOD])
+    llm.request_seconds = llm.wait_seconds = 0.0
+
+    def timed(system, messages, complete=llm.complete):
+        llm.request_seconds += 2.0
+        llm.wait_seconds += 0.5
+        return complete(system, messages)
+
+    llm.complete = timed
+    path = tmp_path / "r.jsonl"
+    bench.run(CASES[1:2], ["rag"], llm, "m", ExampleRetriever.from_file(), path, budget=2, max_attempts=2,
+              log=lambda m: None)
+    row = bench.read_results(path)[0]
+    assert (row["llm_seconds"], row["wait_seconds"]) == (4.0, 1.0)
+    assert 0 < row["sandbox_seconds"] <= row["seconds"]

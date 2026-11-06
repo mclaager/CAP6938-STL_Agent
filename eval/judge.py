@@ -155,6 +155,8 @@ class Session:
             return None
         llm = getattr(self.judge, "llm", None)
         before = (llm.input_tokens, llm.output_tokens)
+        timers = (getattr(llm, "request_seconds", 0.0), getattr(llm, "wait_seconds", 0.0))
+        t0 = time.monotonic()
         try:
             self.requests += 1
             j = self.judge.judge(request, image, facts)
@@ -166,6 +168,9 @@ class Session:
                    problems=j.problems, error=j.error,
                    input_tokens=llm.input_tokens - before[0],
                    output_tokens=llm.output_tokens - before[1], **self.meta,
+                   seconds=round(time.monotonic() - t0, 2),
+                   llm_seconds=round(getattr(llm, "request_seconds", 0.0) - timers[0], 2),
+                   wait_seconds=round(getattr(llm, "wait_seconds", 0.0) - timers[1], 2),
                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
         if j.error:
             row["reply"] = j.reply[:2000]
@@ -189,10 +194,12 @@ def judge_bench_row(s: Session, row: dict, case: dict) -> str:
     if stl is None:
         return "missing_stl"
     out = render_path(pid, s.px)
-    image = ensure_render(stl, out, s.px)
+    t0 = time.monotonic()
+    image = ensure_render(stl, out, s.px)  # 0 s when the render was already saved
+    render_seconds = round(time.monotonic() - t0, 2)
     extra = dict(kind="bench", case=row["case"], config=row["config"], rep=row.get("rep", 0), gen_model=row["model"],
                  library=row.get("library"), category=row["category"], bench_outcome=row["outcome"],
-                 bench_correct=row["correct"], render_file=str(out.relative_to(EVAL_DIR)))
+                 bench_correct=row["correct"], render_file=str(out.relative_to(EVAL_DIR)), render_seconds=render_seconds)
     return "judged" if s.judge_one(pid, case["request"], image, {"bbox_mm": row.get("bbox_mm")}, **extra) else "stopped"
 
 

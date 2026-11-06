@@ -222,6 +222,19 @@ def score(case: dict, res) -> dict:
                 retrieved=res.retrieved_ids, seconds=round(res.seconds, 1), error=res.error)
 
 
+def _timers(llm) -> tuple[float, float]:
+    """The backend's running (request, wait) seconds; 0 for backends that don't measure them."""
+    return getattr(llm, "request_seconds", 0.0), getattr(llm, "wait_seconds", 0.0)
+
+
+def _timing(res, llm, before: tuple[float, float]) -> dict:
+    """Where one build's time went: `llm_seconds` inside requests, `wait_seconds` rate pacing and retry back-off,
+    `sandbox_seconds` running and checking scripts. Output tokens per second follow from the row's tokens."""
+    llm_s, wait_s = (now - then for now, then in zip(_timers(llm), before))
+    return dict(llm_seconds=round(llm_s, 2), wait_seconds=round(wait_s, 2),
+                sandbox_seconds=round(getattr(res, "sandbox_seconds", 0.0), 2))
+
+
 class CountingLLM:
     """Counts requests and tokens; everything else goes to the wrapped backend."""
 
@@ -277,7 +290,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
             return summary
 
         log(f"[{case['id']} / {config} / rep {rep}] {case['request'][:60]}")
-        before = (counter.requests, llm.input_tokens, llm.output_tokens)
+        before = (counter.requests, llm.input_tokens, llm.output_tokens, *_timers(llm))
         tag = {"study": study} if study else {}
         out_dir = OUTPUT_DIR / "bench" / part_id(dict(tag, model=model, library=lib, config=config, case=case["id"], rep=rep))
         try:
@@ -307,6 +320,7 @@ def run(cases: list[dict], configs: list[str], llm, model: str, retriever, resul
                    requests=counter.requests - before[0],
                    input_tokens=llm.input_tokens - before[1],
                    output_tokens=llm.output_tokens - before[2],
+                   **_timing(res, llm, before[3:]),
                    stl=_repo_relative(res.stl_path),
                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"))
         with results_path.open("a") as f:

@@ -238,7 +238,8 @@ class GenResult:
     retrieved_ids: list[str] = field(default_factory=list)
     history: list[dict] = field(default_factory=list)  # per-attempt record, for error analysis
     error: str | None = None
-    seconds: float = 0.0
+    seconds: float = 0.0  # wall clock for the whole build
+    sandbox_seconds: float = 0.0  # running the scripts and checking the meshes, over all attempts
 
     def report(self) -> dict:
         return {
@@ -249,6 +250,7 @@ class GenResult:
             "validation": self.validation.to_dict() if self.validation else None,
             "attempt_log": self.history,
             "seconds": round(self.seconds, 1),
+            "sandbox_seconds": round(self.sandbox_seconds, 1),
             "error": self.error,
             "stl_path": self.stl_path,  # final (or best-effort) part
         }
@@ -332,7 +334,9 @@ def generate_cad(
             continue
 
         log("Executing code in sandbox...")
+        t_sandbox = time.time()
         ex = run_cadquery(parsed.code, out_dir=out_dir / f"attempt_{attempt}", timeout=exec_timeout, language=language)
+        res.sandbox_seconds += time.time() - t_sandbox
         rec["code"] = parsed.code
 
         if not ex.success:
@@ -348,7 +352,9 @@ def generate_cad(
             continue
 
         log("Validating mesh (watertight, volume, bounding box)...")
+        t_sandbox = time.time()
         val = validate_mesh(ex.stl_path, expected_bbox=parsed.bbox)
+        res.sandbox_seconds += time.time() - t_sandbox
         rec.update(outcome="ok" if val.valid else "invalid_mesh", validation=val.to_dict())
         res.history.append(rec)
         if best is None or (val.valid and not best[1].valid) or (val.watertight and not best[1].watertight):
