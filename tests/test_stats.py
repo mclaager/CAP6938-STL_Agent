@@ -79,3 +79,15 @@ def test_study_report_tables_and_comparisons():
     assert "| m | main | norag-size | 3 | 6 | 17% [" in report
     assert "| rag | correct | 3 | 50% | 17% | +33 pts" in report and "| 1 / 0 / 2 | 1.000 |" in report
     assert "| m | main | rag-size | 10 (10) | 6.0 (6.0) | 1.0 (1.0) | 2.0 (2.0) | 100 | 4.0 (4.0) | 14 (14) |" in report
+
+
+def test_organic_shape_counts_any_part_the_judge_passes():
+    from eval import study
+    from eval.bench import part_id
+
+    leaky = _row("thingiverse", "thingiverse-check", "o13", 0, False, outcome="best_effort", category="organic")
+    nothing = _row("thingiverse", "thingiverse-check", "o14", 0, False, outcome="failed", category="organic")
+    assert study.shape_ok(leaky, {part_id(leaky): {"pass": True, "seconds": 1}}) is True
+    assert study.shape_ok(leaky, {}) is None and study.shape_ok(nothing, {}) is False
+    main = _row("m", "rag-size", "m01", 0, False, outcome="best_effort")
+    assert study.shape_ok(main, {part_id(main): {"pass": True, "seconds": 1}}) is False  # main suite: size must pass

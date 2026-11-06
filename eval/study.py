@@ -157,11 +157,16 @@ def judge_verdicts(judge_rows: list[dict], threshold: float) -> dict[str, dict]:
 
 
 def shape_ok(row: dict, verdicts: dict[str, dict]) -> bool | None:
-    """Right size and right shape: the benchmark's check passed and the judge passed the part. A run with no
-    part counts as a failure; a part the judge hasn't scored is left out (None)."""
+    """Right size and right shape: the benchmark's check passed and the judge passed the part. Organic suite (no
+    size to check): any part that came out and the judge passes, watertight or not, since the app hands those
+    parts over too (as in eval/results/organic-sdf.md). A run with no part counts as a failure; a part the judge
+    hasn't scored is left out (None)."""
     from eval.bench import part_id
 
-    if not row["correct"] or row["outcome"] != "built":
+    if suite_of(row) == "organic":
+        if row["outcome"] not in ("built", "best_effort"):
+            return False
+    elif not row["correct"] or row["outcome"] != "built":
         return False if row.get("expect") == "build" else bool(row["correct"])
     v = verdicts.get(part_id(row))
     return None if v is None else v["pass"]
@@ -187,8 +192,9 @@ def study_report(rows: list[dict], verdicts: dict[str, dict] | None = None, comp
     out = ["## Results per model and config\n",
            "Rates are the mean over cases of each case's rate over its repeats; [brackets] are 95% bootstrap "
            "intervals over cases. Main suite: correct = built at the expected size (or declined when it should be). "
-           "Organic suite: correct = built (no expected size)."
-           + (f" Right shape: correct, and the visual judge ({judge_name}) passes the part." if judged else "") + "\n"]
+           "Organic suite: correct = built as a valid mesh (no expected size)."
+           + (f" Right shape: correct, and the visual judge ({judge_name}) passes the part; for the organic suite, any "
+              "part that came out (valid mesh or not) that the judge passes." if judged else "") + "\n"]
     head = ["model", "suite", "config", "cases", "runs", "correct"] + (["right size + shape", "judged"] if judged else []) + \
         ["built", "first try", "requests/run", "$/run"]
     out += ["| " + " | ".join(head) + " |", "|" + "---|" * len(head)]
