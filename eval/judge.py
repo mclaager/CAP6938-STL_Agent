@@ -822,6 +822,7 @@ def main(argv=None):
     rn = sub.add_parser("render", help="render benchmark parts ahead of judging (no LLM requests)")
     rn.add_argument("--gen-model", nargs="+", help="models whose parts to render (default: all of the study's)")
     rn.add_argument("--px", type=int, default=DEFAULT_PX, help="pixels per view")
+    add_set_argument(rn)
     r = sub.add_parser("run", help="judge benchmark parts")
     r.add_argument("--gen-model", required=True, help="model whose benchmark parts to judge")
     r.add_argument("--config", nargs="+", help="benchmark configs (default: all)")

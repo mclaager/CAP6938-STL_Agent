@@ -282,3 +282,12 @@ def test_render_parts_ahead_of_judging(tmp_path, monkeypatch):
     assert ej.render_parts("s1", px=64, log=lambda m: None) == {"rendered": 3}
     assert ej.render_parts("s1", px=64, log=lambda m: None) == {"done": 3}  # saved renders are reused
     assert (tmp_path / "renders" / ej.render_tag(64) / "s1/gen/lib1/rag/s01-rep0.png").exists()
+
+
+def test_every_judge_command_parses(tmp_path, monkeypatch):
+    """Each subcommand gets the options main() reads for all of them (--set, --study)."""
+    ej = _bench_tree(tmp_path, monkeypatch, study="s1")
+    ej.main(["render", "--study", "s1", "--px", "64"])
+    assert (tmp_path / "renders" / ej.render_tag(64) / "s1/gen/lib1/rag/s01-rep0.png").exists()
+    ej.main(["report", "--study", "s1"])
+    ej.main(["compare", "--study", "s1", "--judge-model", "j"])
