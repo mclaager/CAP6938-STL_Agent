@@ -262,7 +262,8 @@ def _timing(res, llm, before: tuple[float, float]) -> dict:
                 sandbox_seconds=round(getattr(res, "sandbox_seconds", 0.0), 2))
 
 
-def study_tables(study_name: str, rows: list[dict], judge_model: str | None, threshold: float | None) -> str:
+def study_tables(study_name: str, rows: list[dict], judge_model: str | None, threshold: float | None,
+                 organic_judge_model: str | None = None) -> str:
     """The study report (eval/study.py): its manifest's comparisons, and the judge's verdicts when it has judged
     the study's parts."""
     from eval import study
@@ -273,7 +274,12 @@ def study_tables(study_name: str, rows: list[dict], judge_model: str | None, thr
     verdicts = study.judge_verdicts(judge_rows, settings().judge_threshold if threshold is None else threshold)
     manifest = study.STUDIES_DIR / f"{study_name}.toml"
     compare = study.load_study(str(manifest)).get("compare", []) if manifest.exists() else []
-    return study.study_report(rows, verdicts, compare, judge_name=name)
+    organic = None
+    if organic_judge_model:
+        organic = study.judge_verdicts(read_results(results_dir(study_name) / "judge" / f"{organic_judge_model}.jsonl"),
+                                       settings().judge_threshold if threshold is None else threshold)
+    return study.study_report(rows, verdicts, compare, judge_name=name, organic_verdicts=organic,
+                              organic_judge_name=organic_judge_model or "")
 
 
 class CountingLLM:
@@ -466,6 +472,8 @@ def main(argv=None):
     rep.add_argument("--judge-model", help="with --study: whose verdicts count for 'right shape' (default: the "
                                            "judge model in settings)")
     rep.add_argument("--threshold", type=float, help="judge pass threshold (default: the judge_threshold setting)")
+    rep.add_argument("--organic-judge-model", help="with --study: another judge for the organic suite's verdicts "
+                                                   "(the organic arms are then also shown under both judges)")
     st = sub.add_parser("study", help="run or check a study manifest (eval/studies/<name>.toml, see eval/study.py)")
     st.add_argument("action", choices=["run", "status"])
     st.add_argument("manifest", help="study name (eval/studies/<name>.toml) or path")
@@ -497,7 +505,7 @@ def main(argv=None):
         files = args.files or sorted(results_dir(args.study).glob("*.jsonl"))
         rows = [row for f in files for row in read_results(f)]
         if args.study:
-            print(study_tables(args.study, rows, args.judge_model, args.threshold) + "\n")
+            print(study_tables(args.study, rows, args.judge_model, args.threshold, args.organic_judge_model) + "\n")
         print(summarize(rows))
         return
 

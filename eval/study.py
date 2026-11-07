@@ -181,13 +181,20 @@ def arms(rows: list[dict]) -> dict[tuple[str, str, str], list[dict]]:
 
 
 def study_report(rows: list[dict], verdicts: dict[str, dict] | None = None, compare: list[dict] | None = None,
-                 judge_name: str = "") -> str:
+                 judge_name: str = "", organic_verdicts: dict[str, dict] | None = None,
+                 organic_judge_name: str = "") -> str:
     """Markdown tables for a study: results per arm with bootstrap CIs over cases, timing, and the comparisons
-    named in the manifest."""
+    named in the manifest. `organic_verdicts`: another judge's verdicts used for the organic suite (when it agrees
+    better with the hand grades on organic parts); a table then shows the organic arms under both judges."""
     from eval import stats
     from eval.bench import part_id
 
     verdicts = verdicts or {}
+    main_verdicts = verdicts
+    if organic_verdicts is not None:
+        verdicts = {part_id(r): v for r in rows
+                    if (v := (organic_verdicts if suite_of(r) == "organic" else main_verdicts).get(part_id(r)))}
+        judge_name = f"{judge_name}; organic suite: {organic_judge_name}"
     judged = bool(verdicts)
     out = ["## Results per model and config\n",
            "Rates are the mean over cases of each case's rate over its repeats; [brackets] are 95% bootstrap "
@@ -210,6 +217,17 @@ def study_report(rows: list[dict], verdicts: dict[str, dict] | None = None, comp
         cells += [f"{sum(bool(r['built']) for r in rs) / len(rs):.0%}", f"{sum(bool(r['first_try']) for r in rs) / len(rs):.0%}",
                   f"{sum(r['requests'] for r in rs) / len(rs):.2f}", f"${sum(usd) / len(usd):.4f}" if usd else "-"]
         out.append("| " + " | ".join(cells) + " |")
+
+    if organic_verdicts is not None:
+        out += [f"\n### Organic suite under both judges\n",
+                "Right shape (any part that came out, passed by the judge), mean over cases [95% interval].\n",
+                f"| model | config | {organic_judge_name} | {main_judge_label(judge_name)} |", "|---|---|---|---|"]
+        for (model, suite, config), rs in arms(rows).items():
+            if suite != "organic":
+                continue
+            cells = [stats.fmt_rate(*stats.bootstrap_mean(stats.per_case(rs, lambda r, v=v: shape_ok(r, v)).values()))
+                     for v in (organic_verdicts, main_verdicts)]
+            out.append(f"| {model} | {config} | {cells[0]} | {cells[1]} |")
 
     out += ["\n## Tokens and cost\n",
             "Per run, all attempts included; output tokens include the model's thinking. Per correct part: everything "
@@ -266,3 +284,8 @@ def study_report(rows: list[dict], verdicts: dict[str, dict] | None = None, comp
                            f"{p['better']} / {p['worse']} / {p['tied']} | {p['p']:.3f} |")
         out.append("\na = " + "; ".join(f"{c['name']}: {c['a']} vs {c['b']}" for c in compare))
     return "\n".join(out)
+
+
+def main_judge_label(judge_name: str) -> str:
+    """The main judge's name from a combined label ("A; organic suite: B" -> "A")."""
+    return judge_name.split(";")[0]

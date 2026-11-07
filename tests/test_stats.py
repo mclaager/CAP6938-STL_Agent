@@ -93,3 +93,16 @@ def test_organic_shape_counts_any_part_the_judge_passes():
     assert study.shape_ok(leaky, {}) is None and study.shape_ok(nothing, {}) is False
     main = _row("m", "rag-size", "m01", 0, False, outcome="best_effort")
     assert study.shape_ok(main, {part_id(main): {"pass": True, "seconds": 1}}) is False  # main suite: size must pass
+
+
+def test_organic_suite_can_use_another_judge():
+    from eval import study
+    from eval.bench import part_id
+
+    rows = [_row("m", "sdf", f"o{i}", 0, True, category="organic") for i in range(4)]
+    main = {part_id(r): {"pass": False, "seconds": 1.0} for r in rows}
+    organic = {part_id(r): {"pass": True, "seconds": 2.0} for r in rows}
+    report = study.study_report(rows, main, judge_name="A", organic_verdicts=organic, organic_judge_name="B")
+    assert "| m | organic | sdf | 4 | 4 | 100% [100-100] | 100% [100-100] | 4 |" in report  # B's verdicts count
+    assert "| m | sdf | 100% [100-100] | 0% [0-0] |" in report  # both judges side by side
+    assert "(A; organic suite: B)" in report
