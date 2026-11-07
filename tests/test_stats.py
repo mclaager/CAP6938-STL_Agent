@@ -79,6 +79,8 @@ def test_study_report_tables_and_comparisons():
     assert "| m | main | norag-size | 3 | 6 | 17% [" in report
     assert "| rag | correct | 3 | 50% | 17% | +33 pts" in report and "| 1 / 0 / 2 | 1.000 |" in report
     assert "| m | main | rag-size | 10 (10) | 6.0 (6.0) | 1.0 (1.0) | 2.0 (2.0) | 100 | 4.0 (4.0) | 14 (14) |" in report
+    # 6 runs of 600 output tokens (no input tokens in these rows), 3 correct: 1,200 tokens and $0.02 per correct part
+    assert "| m | main | rag-size | 0 | 600 | 1,200 | $0.0200 |" in report
 
 
 def test_organic_shape_counts_any_part_the_judge_passes():

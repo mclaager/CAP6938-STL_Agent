@@ -470,11 +470,13 @@ def judge_items(rows: list[dict], labels: dict) -> dict[str, dict]:
             else:
                 truth, grade, family = r["label"], None, "reference"
             it = items[r["part"]] = dict(truth=truth, grade=grade, case=r["case"], family=family, kind=r.get("kind"),
-                                         scores=[], raws=[], seconds=[], usd=[])
+                                         scores=[], raws=[], seconds=[], usd=[], tokens_in=[], tokens_out=[])
         it["scores"].append(r["score"])
         it["raws"].append(r["raw_score"])
         it["seconds"].append(r.get("seconds"))
         it["usd"].append(r.get("usd"))
+        it["tokens_in"].append(r.get("input_tokens") or 0)
+        it["tokens_out"].append(r.get("output_tokens") or 0)
     for it in items.values():
         it["score"] = sum(it["scores"]) / len(it["scores"])
         it["raw"] = sum(it["raws"]) / len(it["raws"])
@@ -524,8 +526,9 @@ def compare_judges(by_judge: dict[str, list[dict]], labels: dict, baseline: str 
            "accuracy: each item judged with a threshold picked on the other half of the cases. [brackets]: 95% "
            "bootstrap intervals over items.\n",
            "| judge | items | repeats | AUC | held-out accuracy | thresholds | kappa vs you (pass/fail) | "
-           "weighted kappa vs you (bands) | same verdict every repeat | score SD | $/item | s/item |",
-           "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+           "weighted kappa vs you (bands) | same verdict every repeat | score SD | input tokens/item | "
+           "output tokens/item | $/item | s/item |",
+           "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for n in names:
         its = items[n]
         known = {pid: it for pid, it in its.items() if it["truth"] is not None}
@@ -544,10 +547,14 @@ def compare_judges(by_judge: dict[str, list[dict]], labels: dict, baseline: str 
         usd = [u for it in its.values() for u in it["usd"] if u is not None]
         secs = [x for it in its.values() for x in it["seconds"] if x is not None]
         reps = max(len(it["scores"]) for it in its.values())
+        n_req = sum(len(it["scores"]) for it in its.values())
+        tok_in = sum(sum(it["tokens_in"]) for it in its.values()) / n_req
+        tok_out = sum(sum(it["tokens_out"]) for it in its.values()) / n_req
         auc_v = auc([(it["score"], it["truth"], it["kind"]) for it in known.values()])
         out.append(f"| {n} | {len(its)} | {reps} | {auc_v:.2f} | {stats.fmt_rate(*acc)} | "
                    f"{', '.join(f'{t:.2f}' for t in thresholds)} | {kappa:.2f} | {wkappa:.2f} | "
-                   + (f"{same:.0%}" if multi else "-") + f" | " + (f"{sd:.2f}" if multi else "-") + " | "
+                   + (f"{same:.0%}" if multi else "-") + f" | " + (f"{sd:.2f}" if multi else "-")
+                   + f" | {tok_in:,.0f} | {tok_out:,.0f} | "
                    + (f"${sum(usd) / len(usd):.4f}" if usd else "-") + f" | {stats.fmt_s(stats.quantiles(secs)[0])} |")
 
     out += ["\n### Leniency by who built the part (graded parts)\n",

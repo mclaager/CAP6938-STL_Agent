@@ -211,6 +211,20 @@ def study_report(rows: list[dict], verdicts: dict[str, dict] | None = None, comp
                   f"{sum(r['requests'] for r in rs) / len(rs):.2f}", f"${sum(usd) / len(usd):.4f}" if usd else "-"]
         out.append("| " + " | ".join(cells) + " |")
 
+    out += ["\n## Tokens and cost\n",
+            "Per run, all attempts included; output tokens include the model's thinking. Per correct part: everything "
+            "spent on the arm divided by its correct runs, so failed and repaired runs count. Each model family splits "
+            "text into tokens differently, so compare token counts within a family, and cost or time across families.\n",
+            "| model | suite | config | input tokens/run | output tokens/run | tokens per correct part | $ per correct part |",
+            "|---|---|---|---|---|---|---|"]
+    for (model, suite, config), rs in arms(rows).items():
+        n_ok = sum(bool(r["correct"]) for r in rs)
+        tin, tout = sum(r.get("input_tokens", 0) for r in rs), sum(r.get("output_tokens", 0) for r in rs)
+        usd = [r["usd"] for r in rs if r.get("usd") is not None]
+        per_ok = f"{(tin + tout) / n_ok:,.0f}" if n_ok and tin + tout else "-"
+        usd_ok = f"${sum(usd) / n_ok:.4f}" if n_ok and len(usd) == len(rs) else "-"
+        out.append(f"| {model} | {suite} | {config} | {tin / len(rs):,.0f} | {tout / len(rs):,.0f} | {per_ok} | {usd_ok} |")
+
     out += ["\n## Time\n",
             "Seconds, median (90th percentile). Build: wall clock for one run. Request: time inside one LLM request. "
             "Waiting: rate pacing and retry back-off per run. Sandbox: running and checking scripts per run. "

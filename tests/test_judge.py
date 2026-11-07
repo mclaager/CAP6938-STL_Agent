@@ -269,11 +269,12 @@ def test_compare_judges_tables():
         part, truth = f"gemini-x/l/rag/c{i}/rep0", i in passing
         for k in (0, 1):
             common = dict(part=part, kind="bench", case=f"c{i}", gen_model="gemini-x", judge_rep=k, seconds=2.0,
-                          usd=0.001)
+                          usd=0.001, input_tokens=1500, output_tokens=80)
             rows["good"].append(dict(common, score=0.9 if truth else 0.1, raw_score=9.0 if truth else 1.0))
             rows["bad"].append(dict(common, score=0.9, raw_score=9.0))  # passes everything
     report = compare_judges(rows, labels, baseline="bad")
     assert "| good | 8 | 2 | 1.00 | 100% [100-100] | 0.50, 0.50 |" in report
+    assert "| 1,500 | 80 | $0.0010 | 2.0 |" in report
     assert "| bad | 8 | 2 | 0.50 | 50% [" in report
     assert "| good | +0 pts (8) | - | - |" in report and "| bad | +50 pts (8) |" in report
     assert "| bad | good | 8 | 0 | 4 |" in report
