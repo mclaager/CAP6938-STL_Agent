@@ -151,6 +151,306 @@
   },
   "gemini-3.5-flash-lite/lib26-cdabac/norag/h04/rep0": {
    "grade": "different"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/m11/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/s01/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o30/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o19/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/rag-size/m13/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/rag-size/m07/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/c04/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/m11/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o29/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o02/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/c01/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/m14/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/m13/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/s01/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/s02/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/c02/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib11-d5ca7f+sdfp-a4585e/sdf/o21/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o23/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o07/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/m13/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/s02/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o24/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o18/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/norag-size/m13/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/norag-size/m08/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/m08/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/h03/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o09/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o28/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/h06/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/m07/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/h12/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/h12/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/m06/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/s01/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib11-d5ca7f+sdfp-a4585e/sdf/o06/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o02/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o06/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/c04/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/m06/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o22/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o10/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/norag-size/m13/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/norag-size/h06/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/h13/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/rag-size/h01/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o30/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o17/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/h08/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/s04/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/m03/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/m02/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/m11/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/c02/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib11-d5ca7f+sdfp-a4585e/sdf/o10/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o17/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o08/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/m01/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/c02/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o23/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o03/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/rag-size/h07/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/rag-size/m05/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/h10/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/c01/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o29/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o08/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/c03/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/m02/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/c03/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/m01/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/s02/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/m02/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o27/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o03/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/m17/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/s03/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o12/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/norag-size/m13/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/norag-size/m03/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/rag-size/h09/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/h10/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o16/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o01/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/c04/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma-4-31b-it/lib26-cdabac/rag-size/h07/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/m13/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemma4:12b/lib26-cdabac/rag-size/s04/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/s04/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/qwen3.5:4b/lib26-cdabac/rag-size/s03/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o28/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/thingiverse/lib26-cdabac/thingiverse-check/o01/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/m17/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib26-cdabac/rag-size/c01/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/cad-qwen3.5:4b-v2/lib11-d5ca7f+sdfp-a4585e/sdf/o19/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/rag-size/p02/rep1": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/claude-sonnet-5-5/lib26-cdabac/norag-size/p01/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/norag-size/m10/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib26-cdabac/rag-size/h02/rep0": {
+   "picked": "pick-labels report-v1 seed 0"
+  },
+  "report-v1/gemini-3.5-flash-lite/lib11-d5ca7f+sdfp-a4585e/sdf/o09/rep2": {
+   "picked": "pick-labels report-v1 seed 0"
   }
  }
 }
