@@ -65,6 +65,18 @@ budget = 1200
 max_usd = 6.0
 set = ["provider=anthropic"]
 
+[[run]]
+name = "gemma-31b-api"
+# The same open model family as the local default, larger, served by Google (added during the round, after a
+# pilot): does the gap to Gemini / Sonnet come from size or from running locally? Not in llm.PRICES, so no cap.
+model = "gemma-4-31b-it"
+suite = "main"
+configs = ["rag-size"]
+repeats = 3
+max_attempts = 4
+budget = 800
+set = ["provider=gemini", "providers.gemini.rpm=30"]
+
 # --- Local models (Ollama) ------------------------------------------------------------------------------------
 [[run]]
 name = "gemma"
@@ -136,6 +148,11 @@ b = "gemini-3.5-flash-lite:rag-size"
 name = "gemma4:12b vs Gemini"
 a = "gemma4:12b:rag-size"
 b = "gemini-3.5-flash-lite:rag-size"
+
+[[compare]]
+name = "Gemma 4 31B (API) vs gemma4:12b (local)"
+a = "gemma-4-31b-it:rag-size"
+b = "gemma4:12b:rag-size"
 
 [[compare]]
 name = "Fine-tuned vs base Qwen 4B"
