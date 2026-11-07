@@ -469,7 +469,10 @@ def judge_items(rows: list[dict], labels: dict) -> dict[str, dict]:
                     builder_family(r.get("gen_model"))
             else:
                 truth, grade, family = r["label"], None, "reference"
+            group = ("reference" if r.get("kind") != "bench" else
+                     "organic" if r.get("category") == "organic" else "mechanical")
             it = items[r["part"]] = dict(truth=truth, grade=grade, case=r["case"], family=family, kind=r.get("kind"),
+                                         group=group,
                                          scores=[], raws=[], seconds=[], usd=[], tokens_in=[], tokens_out=[])
         it["scores"].append(r["score"])
         it["raws"].append(r["raw_score"])
@@ -556,6 +559,20 @@ def compare_judges(by_judge: dict[str, list[dict]], labels: dict, baseline: str 
                    + (f"{same:.0%}" if multi else "-") + f" | " + (f"{sd:.2f}" if multi else "-")
                    + f" | {tok_in:,.0f} | {tok_out:,.0f} | "
                    + (f"${sum(usd) / len(usd):.4f}" if usd else "-") + f" | {stats.fmt_s(stats.quantiles(secs)[0])} |")
+
+    groups = [("reference", "reference checks"), ("mechanical", "graded mechanical parts"),
+              ("organic", "graded organic parts")]
+    out += ["\n### Held-out accuracy by kind of item\n",
+            "Reference checks are hand-written mechanical parts against their own or another request; graded parts are "
+            "benchmark parts you graded. [brackets]: 95% bootstrap intervals over items.\n",
+            "| judge | " + " | ".join(f"{name} (n)" for _, name in groups) + " |", "|---|---|---|---|"]
+    for n in names:
+        p, _ = preds[n]
+        cells = []
+        for g, _ in groups:
+            right = [p[pid] == items[n][pid]["truth"] for pid in p if items[n][pid]["group"] == g]
+            cells.append(f"{stats.fmt_rate(*stats.bootstrap_mean(right))} ({len(right)})" if right else "-")
+        out.append(f"| {n} | " + " | ".join(cells) + " |")
 
     out += ["\n### Leniency by who built the part (graded parts)\n",
             "Judge pass rate minus your pass rate (held-out thresholds). Positive: the judge passes more than you do. "

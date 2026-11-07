@@ -275,6 +275,7 @@ def test_compare_judges_tables():
     report = compare_judges(rows, labels, baseline="bad")
     assert "| good | 8 | 2 | 1.00 | 100% [100-100] | 0.50, 0.50 |" in report
     assert "| 1,500 | 80 | $0.0010 | 2.0 |" in report
+    assert "| good | - | 100% [100-100] (8) | - |" in report  # all graded mechanical parts, held-out
     assert "| bad | 8 | 2 | 0.50 | 50% [" in report
     assert "| good | +0 pts (8) | - | - |" in report and "| bad | +50 pts (8) |" in report
     assert "| bad | good | 8 | 0 | 4 |" in report
