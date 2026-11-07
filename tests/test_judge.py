@@ -253,6 +253,9 @@ def test_blind_sheet_shows_only_parts_to_grade_without_scores(tmp_path, monkeypa
     page = ej.write_sheet(tmp_path / "blind.html", 0.5, blind=True).read_text()
     assert "s01-rep0.png" in page and "s02-rep0.png" not in page
     assert "telltale" not in page and "0.89" not in page and "data-g=match" in page
+    assert ">#1<" in page and "measured size" in page
+    assert "<h2>Parts to grade (1)</h2>" in page and "<h2>gen" not in page  # no builder / config headings
+    assert "<div class=id>#1</div>" in page and "<div class=id>gen/" not in page
     assert "telltale" in ej.write_sheet(tmp_path / "all.html", 0.5).read_text()
 
 

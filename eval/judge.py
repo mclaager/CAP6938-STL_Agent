@@ -16,6 +16,7 @@ Parts come from benchmark runs (eval/bench.py), whose STLs are under outputs/ben
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import tempfile
@@ -751,11 +752,14 @@ def write_sheet(path: Path, threshold: float, render: str | None = None, study: 
             continue
         by_render.setdefault(r["render_file"], []).append(r)
 
-    def card(render_file: str, rs: list[dict], labellable: bool) -> str:
+    def card(render_file: str, rs: list[dict], labellable: bool, number: int | None = None) -> str:
         r0 = rs[0]
         case = cases.get(r0["case"], {})
         meta = (f"bench: {r0['bench_outcome']}, bbox {'ok' if r0['bench_correct'] else 'wrong'}"
                 if r0.get("kind") == "bench" else "reference solution")
+        if number is not None:  # blind: what the judge is told, nothing about who built it or how it scored
+            size = (r0.get("facts") or {}).get("bbox_mm")
+            meta = "measured size: " + (" x ".join(f"{v:g}" for v in size) + " mm" if size else "unknown")
         verdicts = []
         for r in [] if blind else sorted(rs, key=lambda r: (r["part"], r["judge"])):
             asked = f" (asked: {r['asked_case']})" if r.get("asked_case") else ""
@@ -770,11 +774,15 @@ def write_sheet(path: Path, threshold: float, render: str | None = None, study: 
                + f"<input placeholder='why (optional)' oninput=\"why('{pid}',this.value)\"></div>"
                if labellable else "")
         return (f"<div class=card><img loading=lazy src='{html.escape(str(Path(render_file).relative_to('renders')))}'>"
-                f"<div class=id>{html.escape(r0['part'] if r0.get('kind') == 'bench' else 'references/' + r0['case'])}</div>"
+                f"<div class=id>{f'#{number}' if number is not None else html.escape(r0['part'] if r0.get('kind') == 'bench' else 'references/' + r0['case'])}</div>"
                 f"<div class=req>{html.escape(case.get('request', ''))}</div><div class=meta>{meta}</div>"
                 + "".join(verdicts) + lbl + "</div>")
 
     sections = {}
+    if blind:  # one list in a fixed shuffled order, numbered: no builder, config or verdict to go by
+        order = sorted(by_render.items(), key=lambda kv: hashlib.sha1(kv[1][0]["part"].encode()).hexdigest())
+        sections["Parts to grade"] = [card(f, rs, True, number=i) for i, (f, rs) in enumerate(order, 1)]
+        by_render = {}
     for render_file, rs in sorted(by_render.items()):
         r0 = rs[0]
         if r0.get("kind") != "bench":
