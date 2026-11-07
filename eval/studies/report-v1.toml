@@ -119,6 +119,17 @@ budget = 2000
 set = ["provider=ollama"]
 
 [[run]]
+name = "qwen-base-norag"
+# Added during the round: how much does RAG help a small untuned local model? Pairs with qwen-base.
+model = "qwen3.5:4b"
+suite = "main"
+configs = ["norag-size"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+[[run]]
 name = "qwen-base-organic"
 model = "qwen3.5:4b"
 suite = "organic"
@@ -153,6 +164,11 @@ b = "gemini-3.5-flash-lite:rag-size"
 name = "Gemma 4 31B (API) vs gemma4:12b (local)"
 a = "gemma-4-31b-it:rag-size"
 b = "gemma4:12b:rag-size"
+
+[[compare]]
+name = "RAG vs no RAG, base Qwen 4B (local)"
+a = "qwen3.5:4b:rag-size"
+b = "qwen3.5:4b:norag-size"
 
 [[compare]]
 name = "Fine-tuned vs base Qwen 4B"
