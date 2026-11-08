@@ -143,7 +143,9 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   matches first. Automatic picks are strict (nothing matching: next phrase, then the fallback or the gallery);
   galleries are only ranked. Benchmark config `thingiverse-check` is `thingiverse` with the strict check; `download_stl` takes the thing's largest STL via `download_url` (302 to the
   CDN). Cloudflare 403s default User-Agents (curl, httpx) on both API and CDN, so the client sends
-  `USER_AGENT`. Tests use `httpx.MockTransport` (`client=` argument), never the network.
+  `USER_AGENT`. The image server does too, so the app fetches gallery thumbnails itself (`thumbnails`, no token)
+  and shows the images. Tests use `httpx.MockTransport` (`client=` argument), never the network (conftest makes
+  thumbnail fetches fail).
   `pipeline.run_fetch` saves it to `outputs/<name>.stl` plus `<name>.source.json` (attribution) and runs
   `validate_mesh`. The gate's JSON has a `search` field (keywords) for this.
 - `sources/assembly.py` — combined parts (#10), pure trimesh: `place` applies the gate's relations using

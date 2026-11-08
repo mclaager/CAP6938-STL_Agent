@@ -244,3 +244,21 @@ def test_composite_needs_token(composite, monkeypatch):
     monkeypatch.delenv(thingiverse.TOKEN_VAR)
     chat, *_ = last(app.on_build(composite["chat"], composite["state"]))
     assert "THINGIVERSE_TOKEN" in chat[-1]["content"] and composite["calls"] == []
+
+
+def test_gallery_shows_fetched_thumbnails_or_links(monkeypatch):
+    import io
+
+    from PIL import Image
+
+    from stl_agent.sources import thingiverse
+
+    png = io.BytesIO()
+    Image.new("RGB", (1024, 1024), "red").save(png, format="PNG")
+    monkeypatch.setattr(thingiverse, "thumbnails", lambda urls: [png.getvalue(), None])
+    value = app.gallery_update([candidate(1), candidate(2)]).value
+    # Gradio's postprocessed gallery: the fetched image was saved locally, the other is still the link.
+    first, second = (item["image"] for item in value)
+    assert first["url"].startswith("/gradio_api/file=")
+    assert second["url"] == "https://cdn.example/2.jpg"
+

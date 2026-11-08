@@ -70,10 +70,29 @@ def new_state() -> dict:
 
 
 def gallery_update(candidates: list | None = None):
-    """The Thingiverse results gallery: shown with these candidates, or hidden when there are none."""
+    """The Thingiverse results gallery: shown with these candidates, or hidden when there are none. Thumbnails
+    are fetched here (thingiverse.thumbnails) and passed as images; a link is the fallback."""
     if not candidates:
         return gr.Gallery(value=None, visible=False)
-    return gr.Gallery(value=[(c.thumbnail, c.caption()) for c in candidates], visible=True)
+    images = thingiverse.thumbnails([c.thumbnail for c in candidates])
+    return gr.Gallery(value=[(_image(data) or c.thumbnail, c.caption()) for data, c in zip(images, candidates)],
+                      visible=True)
+
+
+def _image(data: bytes | None):
+    """A gallery-sized PIL image from image bytes, or None."""
+    if not data:
+        return None
+    from io import BytesIO
+
+    from PIL import Image
+
+    try:
+        img = Image.open(BytesIO(data))
+        img.thumbnail((400, 400))  # the API's thumbnails are 1024 px; the gallery tiles are much smaller
+        return img
+    except Exception:  # not an image after all
+        return None
 
 
 def fetch_model(c, state: dict, log) -> str:
