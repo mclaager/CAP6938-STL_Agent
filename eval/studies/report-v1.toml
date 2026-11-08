@@ -99,6 +99,18 @@ budget = 2000
 set = ["provider=ollama"]
 
 [[run]]
+name = "qwen-ft-norag"
+# Added during the round: RAG vs no RAG for the fine-tuned 4B model. It was trained with 3 retrieved examples in
+# every prompt, so no RAG is also a prompt unlike its training. Pairs with qwen-ft.
+model = "cad-qwen3.5:4b-v2"
+suite = "main"
+configs = ["norag-size"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+[[run]]
 name = "qwen-ft-organic"
 model = "cad-qwen3.5:4b-v2"
 suite = "organic"
@@ -169,6 +181,11 @@ b = "gemma4:12b:rag-size"
 name = "RAG vs no RAG, base Qwen 4B (local)"
 a = "qwen3.5:4b:rag-size"
 b = "qwen3.5:4b:norag-size"
+
+[[compare]]
+name = "RAG vs no RAG, fine-tuned Qwen 4B (local)"
+a = "cad-qwen3.5:4b-v2:rag-size"
+b = "cad-qwen3.5:4b-v2:norag-size"
 
 [[compare]]
 name = "Fine-tuned vs base Qwen 4B"
