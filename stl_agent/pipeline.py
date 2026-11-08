@@ -142,6 +142,12 @@ def _generate(request: str, log, language: str = "cadquery", **kw) -> GenResult:
     return generate_cad(request, get_llm(), _retriever, log=log, **kw)
 
 
+def is_one_solid(validation: dict | None) -> bool:
+    """The mesh is one closed solid, whatever its size (validation: sandbox.ValidationReport.to_dict())."""
+    v = validation or {}
+    return bool(v.get("watertight")) and v.get("n_components") == 1 and (v.get("volume_mm3") or 0) > 1e-6
+
+
 def _panel_report(res: GenResult) -> dict:
     """The run's report without the long text kept for analysis (it stays in the run's report.json)."""
     report = res.report()
@@ -207,8 +213,9 @@ def run_assembly(pieces: list[dict], log, name: str | None = None,
     `picks`: piece id -> the user's Thingiverse candidate, or None when a search found nothing (the piece is
     then built from its fallback_spec). Pieces not in `picks` are picked automatically (find_model).
     Thingiverse pieces are fetched first, so a missing model costs no generation requests. "sdf" pieces
-    (organic_builder setting, #42) are sculpted; if that fails, a Thingiverse model is picked automatically,
-    else the fallback_spec is built.
+    (organic_builder setting, #42) are sculpted; if no mesh comes out, or it isn't one closed solid, a Thingiverse
+    model is picked automatically; failing that, a flawed sculpt is kept (with a warning), and a missing one is
+    replaced by the fallback_spec build.
     """
     import trimesh
 
@@ -253,7 +260,16 @@ def run_assembly(pieces: list[dict], log, name: str | None = None,
             continue
         log(f"{p['id']}: sculpting with SDF shapes...")
         res = _generate(p["spec"], log, out_dir=folder / p["id"], language="sdf")
-        if not (res.unsupported or res.stl_path is None):
+        made = not (res.unsupported or res.stl_path is None)
+        # A wrong size is fine (the piece is scaled to its height below); a broken mesh is not.
+        solid = made and (res.success or is_one_solid(res.validation.to_dict() if res.validation else None))
+        c = path = None
+        if not solid:
+            log(f"{p['id']}: " + ("the sculpted piece is not one closed solid" if made else "sculpting failed")
+                + f" ({res.error}).")
+            if tv.has_token():
+                c, path = find_model(p, log, folder)
+        if c is None and made:  # kept when there is no download: it looks more like the object than a stand-in
             paths[p["id"]] = Path(res.stl_path)
             rows[p["id"]].update(source="sdf", attempts=res.attempts)
             if not res.success:
@@ -261,8 +277,6 @@ def run_assembly(pieces: list[dict], log, name: str | None = None,
                 log(f"{p['id']}: {res.error}")
             codes.append(f"# --- {p['id']} (sculpted) ---\n{res.code or ''}")
             continue
-        log(f"{p['id']}: sculpting failed ({res.error}).")
-        c, path = find_model(p, log, folder) if tv.has_token() else (None, None)
         if c is not None:
             paths[p["id"]] = path
             credits.append({"piece": p["id"], **c.to_dict()})

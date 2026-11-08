@@ -192,3 +192,18 @@ def test_run_fetch_saves_attribution(monkeypatch, tmp_path):
     source = json.loads((tmp_path / "horse-statue.source.json").read_text())
     assert source["author"] == "maker9" and source["other_stl_files"] == ["extra.stl"]
     assert any("Saved" in line for line in log)
+
+
+def test_thumbnails_are_fetched_with_our_user_agent():
+    """The app shows fetched thumbnails: the image server refuses some clients (#9 gallery tiles were blank)."""
+    agents = []
+
+    def handler(request):
+        agents.append(request.headers.get("user-agent"))
+        if request.url.path == "/ok.png":
+            return httpx.Response(200, content=b"PNG", headers={"content-type": "image/png"})
+        return httpx.Response(403, content=b"<html>challenge</html>", headers={"content-type": "text/html"})
+
+    with httpx.Client(transport=httpx.MockTransport(handler), headers={"User-Agent": tv.USER_AGENT}) as c:
+        got = tv.thumbnails(["https://img.example/ok.png", "https://img.example/blocked.png", ""], client=c)
+    assert got == [b"PNG", None, None] and agents == [tv.USER_AGENT] * 2

@@ -92,9 +92,10 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   `run_fetch`, `run_assembly`, with the LLM, gate and retrievers cached until `reset_backends()`.
   `sculpt_organic` (in `run_gate`, with `organic_builder = "sdf"`) turns an out-of-scope object with an
   `organic_spec` into a build (scope `organic`, `run_pipeline(..., language="sdf")`) and Thingiverse pieces with one
-  into `sdf` pieces; it runs before the token check, so sculpting needs no Thingiverse token. A failed sculpted
-  piece falls back to an automatic Thingiverse pick, then its `fallback_spec`; in the app, a failed sculpted part
-  shows the Thingiverse search instead.
+  into `sdf` pieces; it runs before the token check, so sculpting needs no Thingiverse token. A sculpted piece
+  that fails, or isn't one closed solid (`is_one_solid`; a wrong size is fine, pieces are scaled), falls back to an
+  automatic Thingiverse pick; without one, a flawed sculpt is kept with a warning and a missing one becomes its
+  `fallback_spec`. In the app, a failed or broken sculpted part shows the Thingiverse search (a broken one stays shown).
 - `config.py` — paths, `.env` loading (API keys), and settings: `Settings`, `settings()`, the settings file
   (create, validate, `set_setting` / `unset_setting`), `--set` overrides. Defaults in `data/settings.defaults.toml`.
 - `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`. Every backend
@@ -142,7 +143,9 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   matches first. Automatic picks are strict (nothing matching: next phrase, then the fallback or the gallery);
   galleries are only ranked. Benchmark config `thingiverse-check` is `thingiverse` with the strict check; `download_stl` takes the thing's largest STL via `download_url` (302 to the
   CDN). Cloudflare 403s default User-Agents (curl, httpx) on both API and CDN, so the client sends
-  `USER_AGENT`. Tests use `httpx.MockTransport` (`client=` argument), never the network.
+  `USER_AGENT`. The image server does too, so the app fetches gallery thumbnails itself (`thumbnails`, no token)
+  and shows the images. Tests use `httpx.MockTransport` (`client=` argument), never the network (conftest makes
+  thumbnail fetches fail).
   `pipeline.run_fetch` saves it to `outputs/<name>.stl` plus `<name>.source.json` (attribution) and runs
   `validate_mesh`. The gate's JSON has a `search` field (keywords) for this.
 - `sources/assembly.py` — combined parts (#10), pure trimesh: `place` applies the gate's relations using
