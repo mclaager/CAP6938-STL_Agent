@@ -77,6 +77,29 @@ max_attempts = 4
 budget = 800
 set = ["provider=gemini", "providers.gemini.rpm=30"]
 
+[[run]]
+name = "haiku"
+# Added during the round: a cheap, fast paid model, next to Gemini Flash Lite.
+model = "claude-haiku-5-5"
+suite = "main"
+configs = ["rag-size", "norag-size"]
+repeats = 3
+max_attempts = 4
+budget = 1200
+max_usd = 1.0
+set = ["provider=anthropic"]
+
+[[run]]
+name = "haiku-organic"
+model = "claude-haiku-5-5"
+suite = "organic"
+configs = ["sdf"]
+repeats = 3
+max_attempts = 4
+budget = 400
+max_usd = 1.5  # caps count the whole results file, which this job shares with "haiku"
+set = ["provider=anthropic"]
+
 # --- Local models (Ollama) ------------------------------------------------------------------------------------
 [[run]]
 name = "gemma"
@@ -168,6 +191,16 @@ a = "claude-sonnet-5-5:rag-size"
 b = "gemini-3.5-flash-lite:rag-size"
 
 [[compare]]
+name = "RAG vs no RAG, Haiku"
+a = "claude-haiku-5-5:rag-size"
+b = "claude-haiku-5-5:norag-size"
+
+[[compare]]
+name = "Haiku vs Gemini"
+a = "claude-haiku-5-5:rag-size"
+b = "gemini-3.5-flash-lite:rag-size"
+
+[[compare]]
 name = "gemma4:12b vs Gemini"
 a = "gemma4:12b:rag-size"
 b = "gemini-3.5-flash-lite:rag-size"
@@ -201,6 +234,11 @@ b = "gemma4:12b:rag-size"
 name = "Organic: sculpted (Gemini) vs Thingiverse"
 a = "gemini-3.5-flash-lite:sdf"
 b = "thingiverse:thingiverse-check"
+
+[[compare]]
+name = "Organic: Haiku vs Gemini"
+a = "claude-haiku-5-5:sdf"
+b = "gemini-3.5-flash-lite:sdf"
 
 [[compare]]
 name = "Organic: fine-tuned vs base Qwen 4B"
