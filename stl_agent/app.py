@@ -11,7 +11,8 @@ THINGIVERSE_TOKEN is set: the results show as a gallery, and clicking one downlo
 A "composite" plan (#10: pieces to download or generate, then join) is built by `run_assembly`; with
 thingiverse_pick = "manual", Build first shows a gallery per downloaded piece for the user to pick from.
 With organic_builder = "sdf" (#42), organic objects and pieces are sculpted with SDF code instead
-(`pipeline.sculpt_organic`); a failed sculpted part falls back to the Thingiverse search.
+(`pipeline.sculpt_organic`); a failed sculpted part, or one that isn't one closed solid, falls back to the
+Thingiverse search.
 The settings panel (⚙) is in settings_panel.py.
 """
 
@@ -25,7 +26,7 @@ import trimesh
 
 from .config import OUTPUT_DIR, settings
 from .gate import CLARIFY, OUT_OF_SCOPE
-from .pipeline import describe_settings, run_assembly, run_fetch, run_gate, run_pipeline
+from .pipeline import describe_settings, is_one_solid, run_assembly, run_fetch, run_gate, run_pipeline
 from .settings_panel import build_panel
 from .sources import thingiverse
 
@@ -298,17 +299,19 @@ def next_pick(state: dict) -> tuple[list[str], bool]:
     return lines, False
 
 
-def _thingiverse_instead(chat: list, state: dict):
-    """After a failed sculpted build: search Thingiverse for the object. Returns (chat, state, build_button,
-    log, gallery)."""
+def _thingiverse_instead(chat: list, state: dict, flawed: bool = False):
+    """After a failed sculpted build, or one that isn't a closed solid (`flawed`, its result stays shown): search
+    Thingiverse for the object. Returns (chat, state, build_button, log, gallery)."""
     from .gate import OUT_OF_SCOPE, Decision
 
+    reason = ("the sculpted part didn't come out as one closed solid (it's shown, but may not print well)."
+              if flawed else "sculpting it didn't work.")
     d = Decision(action=OUT_OF_SCOPE, spec=state["spec"], scope="out_of_scope",
-                 scope_reason="sculpting it didn't work.", search=state.get("search") or state.get("name", ""))
+                 scope_reason=reason, search=state.get("search") or state.get("name", ""))
     reply = search_thingiverse(d, state)
     state["conversation"].append({"role": "assistant", "content": reply})
     chat = chat + [{"role": "assistant", "content": reply}]
-    log = "Sculpting failed; searched Thingiverse instead."
+    log = ("Sculpted part is not one closed solid" if flawed else "Sculpting failed") + "; searched Thingiverse instead."
     return chat, state, gr.Button(interactive=state.get("spec") is not None), log, gallery_update(state["candidates"])
 
 
@@ -332,9 +335,14 @@ def on_build(chat: list, state: dict):
         out = None
         for out in _stream(job, chat, state, "part"):
             yield *out, gr.skip()
-        if language == "sdf" and not state.get("result") and thingiverse.has_token():
-            # Sculpting failed: offer existing models instead, as for any organic object.
-            yield _thingiverse_instead(out[0], state)
+        if language == "sdf" and thingiverse.has_token():
+            # Sculpting failed or left a broken mesh: offer existing models instead, as for any organic object.
+            result = state.get("result")
+            if not result:
+                yield _thingiverse_instead(out[0], state)
+            elif not is_one_solid(result["report"].get("validation")):
+                state["spec"] = spec  # _stream cleared it; the search needs it
+                yield _thingiverse_instead(out[0], state, flawed=True)
         return
 
     if any(p["source"] == "thingiverse" for p in pieces) and not thingiverse.has_token():

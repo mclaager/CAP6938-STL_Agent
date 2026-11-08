@@ -92,9 +92,10 @@ pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list
   `run_fetch`, `run_assembly`, with the LLM, gate and retrievers cached until `reset_backends()`.
   `sculpt_organic` (in `run_gate`, with `organic_builder = "sdf"`) turns an out-of-scope object with an
   `organic_spec` into a build (scope `organic`, `run_pipeline(..., language="sdf")`) and Thingiverse pieces with one
-  into `sdf` pieces; it runs before the token check, so sculpting needs no Thingiverse token. A failed sculpted
-  piece falls back to an automatic Thingiverse pick, then its `fallback_spec`; in the app, a failed sculpted part
-  shows the Thingiverse search instead.
+  into `sdf` pieces; it runs before the token check, so sculpting needs no Thingiverse token. A sculpted piece
+  that fails, or isn't one closed solid (`is_one_solid`; a wrong size is fine, pieces are scaled), falls back to an
+  automatic Thingiverse pick; without one, a flawed sculpt is kept with a warning and a missing one becomes its
+  `fallback_spec`. In the app, a failed or broken sculpted part shows the Thingiverse search (a broken one stays shown).
 - `config.py` — paths, `.env` loading (API keys), and settings: `Settings`, `settings()`, the settings file
   (create, validate, `set_setting` / `unset_setting`), `--set` overrides. Defaults in `data/settings.defaults.toml`.
 - `llm.py` — LLM backends (Anthropic, OpenAI-compatible for Gemini etc., `ScriptedLLM` for tests), `make_llm`. Every backend
