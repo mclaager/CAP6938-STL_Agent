@@ -1,0 +1,73 @@
+\section{Results}
+\label{sec:results}
+
+% ~3 pages. Each subsection: the claim first, then the number with its interval / p, then the table or figure.
+% Source for every number: eval/results/report-v1.md (table names in the comments).
+
+\subsection{Which model builds the part (RQ1)}
+\label{sec:res-models}
+% Table 2 (report-v1 "Summary"): right size, right size + shape with intervals, per model (rag-size).
+% Figure 2: right size + shape per model with 95% intervals (bar or dot plot).
+% Sonnet 99% [96-100], Haiku 94% [89-99], Gemini Flash Lite 74% [64-84], gemma-4-31b-it 74% [65-83],
+% gemma4:12b 55% [42-67], fine-tuned Qwen 30% [19-41], base Qwen 13% [6-22].
+% Sonnet vs Gemini +24 pts [+14, +35], p < 0.001; Haiku vs Gemini +20 pts, p < 0.001 ("Comparisons").
+% The main suite no longer separates the two Claude models (ceiling).
+\TODO{model comparison}
+
+\subsection{Retrieved examples (RQ2)}
+\label{sec:res-rag}
+% "Comparisons" table. No measurable effect for API models: Gemini 74% vs 74% (+1 pts [-8, +9]), Sonnet 99 vs 98,
+% Haiku 94 vs 95. Fine-tuned 4B: right shape 30% vs 18% (+12 [+3, +21], p = 0.04), first try 28% vs 8%;
+% it was trained with examples in every prompt, so this measures RAG and training format together.
+% Base 4B: within noise (17% vs 10% correct, p = 0.18), but builds a valid part more often (12% vs 3%) and needs
+% half the tokens per correct part. Examples do raise first-try rates for Gemini (55% -> 67%) and Haiku.
+\TODO{RAG}
+
+\subsection{Fine-tuning a small local model (RQ3)}
+\label{sec:res-ft}
+% Fine-tuned vs base Qwen 4B: right size 51% vs 17% (+34 [+22, +47], p < 0.001), right shape 30% vs 13%
+% (p = 0.007), a third of the tokens per correct part ("Tokens and cost"). Still below gemma4:12b (-25 pts shape,
+% p < 0.001). Organic: valid mesh 36% vs 3%, but right shape only 1%: it learned to produce SDF code that runs,
+% not the shape.
+\TODO{fine-tuning}
+
+\subsection{Model size versus running locally}
+\label{sec:res-size}
+% Same Gemma 4 family: 31B on Google's servers vs 12B local: right shape 74% vs 55% (+19 [+6, +32], p = 0.005),
+% right size +8 pts (p = 0.19, not significant). 31B matches Gemini Flash Lite. So the local gap is mostly size.
+\TODO{size vs local}
+
+\subsection{Repair loop and retries (RQ4)}
+\label{sec:res-repair}
+% Figure 3: correct after k = 1..4 attempts per model ("Repair loop and retries"), one line per model.
+% Gemini 67% -> 88%, gemma4:12b 53% -> 77%, gemma-31b 52% -> 85%; Sonnet/Haiku 97% -> 99-100% (little to fix).
+% Sculpting depends on it: Gemini 1% first try -> 82%, Haiku 26% -> 91%.
+% Table 3 (maybe appendix): failure types and how often the next attempt fixed them; small Qwen almost never fixes
+% a script error (base 1% of ~460).
+% Retrying the whole request (pass@3): Gemini 88% -> 96%, fine-tuned Qwen 51% -> 73%, gemma4:12b 77% -> 88%.
+\TODO{repair and retries}
+
+\subsection{Organic shapes: sculpting or downloading (RQ5)}
+\label{sec:res-organic}
+% Judged by claude-sonnet-5-5. Right shape: Haiku 82% [71-92], Gemini 52% [40-64], Thingiverse 37% [20-53]
+% (Gemini vs Thingiverse +16 pts, p = 0.33: not significant; Haiku vs Gemini +30, p = 0.001); small local models
+% 0-1%. Thingiverse: a download came out for 67% of cases; many were the wrong object or a scene.
+% Table 4 ("Organic suite under both judges"): gemini-3.8-flash rates Haiku's parts higher (90%), so the Claude
+% judge does not favour Claude's parts.
+% Figure 4: a few organic parts side by side (same case, Haiku / Gemini / Thingiverse) from eval/renders/.
+\TODO{organic}
+
+\subsection{How far the judge can be trusted}
+\label{sec:res-judge}
+% Table 5 ("Choosing the judge"): held-out accuracy, mechanical / organic, kappa vs grades, consistency, $/item.
+% gemini-3.1-flash-lite 83%, gemini-3.8-flash 92%, Haiku 90%, Sonnet 96%.
+% The old judge (used in all earlier studies) got 35 of 204 wrong and failed Claude-built parts 50 pts more often
+% than the hand grades: earlier rounds understated strong models. No judge clearly favours its own family.
+\TODO{judge reliability}
+
+\subsection{Cost and time}
+\label{sec:res-cost}
+% Table 6 ("Tokens and cost", "Time"): $ per correct part and median build time.
+% Haiku $0.0009, Gemini $0.0029, Sonnet $0.011 per correct part; Gemini fastest (median 3 s per build), Sonnet 6 s;
+% gemma4:12b 136 s median (up to ~10 min), mostly thinking (11.5K output tokens per run). Total spend ("Spend").
+\TODO{cost and time}

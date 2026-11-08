@@ -1,0 +1,50 @@
+\section{System}
+\label{sec:system}
+
+% ~1.5 pages. Describe what the app does today (the round's code). Keep history to one sentence per dropped idea.
+
+% Figure 1: pipeline diagram (to draw): request -> gate (proceed / clarify / out of scope / composite)
+%   -> in scope: retrieve 3 examples -> LLM writes CadQuery -> sandbox -> mesh + size check -> repair (<= 4 attempts)
+%   -> out of scope: SDF sculpting (organic_spec) or Thingiverse search with name/tag check
+%   -> composite: pieces built or downloaded, placed by relation, merged into one STL.
+% \begin{figure*}[t] \centering \includegraphics[width=\linewidth]{figures/pipeline.pdf}
+%   \caption{Pipeline.} \label{fig:pipeline} \end{figure*}
+\TODO{Figure 1: pipeline}
+
+\subsection{Intake gate}
+% One LLM request: scope, filled-in spec, unknown parameters (critical or not). Fixed rules choose proceed /
+% clarify / out of scope; composite plans with pieces. Not evaluated in this round (say so; Sec. 6).
+\TODO{gate}
+
+\subsection{Retrieved examples}
+% 26 hand-checked CadQuery examples (scripts/make_examples.py), each request plus generic shape keywords;
+% TF-IDF retriever, top 3 into the prompt. History, one sentence: an embedding retriever, a similarity cutoff and
+% an external Text-to-CadQuery pool were tried and dropped (no gain; retrieval-lib26.md, external-rag.md).
+\TODO{RAG}
+
+\subsection{Generate, run, check, repair}
+% The model writes a script plus its own BBOX line (expected size). Sandbox: separate process, timeout, 2 GB cap.
+% Checks: valid watertight mesh (trimesh), size matches the request. On failure the error goes back
+% (script error, mesh check failed, size off with the measured size, #23; no code; reply cut off), up to 4 attempts.
+\TODO{repair loop}
+
+\subsection{Organic shapes: sculpting and Thingiverse}
+% Out-of-scope objects with an organic_spec are sculpted: the model writes SDF code (fogleman/sdf API on our own
+% small library, meshed with manifold3d level sets; 11 SDF examples retrieved); every shape is stood on z = 0
+% (#47). Otherwise / as fallback: Thingiverse search, name/tag check that the result is the object (#39),
+% download, validate.
+\TODO{SDF sculpting; Thingiverse}
+
+\subsection{Combined parts}
+% Composite plans: base first, pieces generated or downloaded, scaled to height, placed (on_top / under / beside /
+% inside) by bounding boxes, merged with manifold3d. Not benchmarked; one example figure at most.
+\TODO{assembly}
+
+\subsection{Local models and fine-tuning}
+\label{sec:finetune}
+% Ollama for fully local use (default gemma4:12b). Student: Qwen3.5-4B, 4-bit QLoRA (rank 16, 2 epochs) on 1,052
+% teacher conversations (822 CadQuery, 230 SDF; 990 train / 62 validation; teachers Sonnet and
+% gemini-3.5-flash-lite), kept only when the part was valid
+% and the right size (SDF: judge pass too). Failed attempts and repairs kept in the conversations. Requests are
+% filtered against benchmark cases. Source: finetune-v2.md (data/training only; results from report-v1.md).
+\TODO{fine-tuned student}

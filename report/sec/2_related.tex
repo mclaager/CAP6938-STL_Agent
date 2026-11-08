@@ -1,0 +1,26 @@
+\section{Related work}
+\label{sec:related}
+
+% Keep to ~0.5 page. One paragraph per thread, ending with how this project differs.
+
+% Text to CAD: Text2CAD~\cite{khan2024text2cad} (sequence models on CAD command sequences), CAD-Recode~\cite{rukhovich2025cadrecode}
+% (point cloud -> CadQuery code), Text-to-CadQuery~\cite{xie2025text2cadquery} (fine-tuned LLMs write CadQuery),
+% CADCodeVerify~\cite{alrashedy2025cadcodeverify} (VLM looks at renders to refine CAD code). CadQuery~\cite{cadquery}.
+% Difference: a whole agent with intake, checks and fallbacks; measured against exact expected sizes.
+\TODO{text to CAD}
+
+% Code generation with execution feedback: Self-Refine~\cite{madaan2023selfrefine}, Reflexion~\cite{shinn2023reflexion},
+% Self-Debugging~\cite{chen2024selfdebug}. Here the feedback is a geometry check (watertight mesh, measured size).
+% pass@k~\cite{chen2021codex} for retrying the whole request.
+\TODO{execution feedback and repair}
+
+% Retrieval: RAG~\cite{lewis2020rag}; few-shot examples picked by TF-IDF similarity.
+\TODO{retrieval-augmented generation}
+
+% Judging with models: LLM-as-a-judge~\cite{zheng2023judging} and its biases (self-preference); here a multimodal
+% judge over six rendered views, checked against hand grades.
+\TODO{LLM judges}
+
+% Small models and shapes: QLoRA~\cite{dettmers2023qlora} for the fine-tuned student; SDF modeling after
+% fogleman/sdf~\cite{fogleman_sdf}, meshed with manifold3d~\cite{manifold3d}; Thingiverse~\cite{thingiverse}.
+\TODO{fine-tuning small models; SDF modeling}

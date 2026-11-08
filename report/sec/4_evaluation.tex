@@ -1,0 +1,47 @@
+\section{Evaluation}
+\label{sec:evaluation}
+
+% ~1.25 pages. Everything here is from report-v1.md (header, "Choosing the judge", "For writing the report") and
+% eval/studies/report-v1.toml. Say early: one round, one code version, comparisons named before the runs.
+
+\subsection{Benchmarks}
+% Main suite: 48 requests (simple 5, medium 17, hard 13, proposal 8, casual 5); 42 should be built, 3 declined,
+% 3 either. Each with an expected bounding box has a hand-written reference solution that builds at that size
+% (eval/references.py), never shown to the model. None copied from the example library.
+% Organic suite: 30 objects (animals, figures, ...), no expected size; no organic subject in the SDF examples.
+% Appendix A lists every case.
+\TODO{benchmarks}
+
+\subsection{Builders and configurations}
+% Table 1: builders. Columns: model, where it runs (API / Google API / local RTX 3080), configs run.
+%   claude-sonnet-5-5, claude-haiku-5-5, gemini-3.5-flash-lite, gemma-4-31b-it (Google API), gemma4:12b (local
+%   default), qwen3.5:4b (local base), cad-qwen3.5:4b-v2 (fine-tuned), plus Thingiverse (organic only).
+% Configs: rag-size (3 retrieved examples, measured-size message: the app's setup), norag-size (no examples),
+% sdf (organic, 11 SDF examples), thingiverse-check (first matching download). 4 attempts max. 3 runs per pair.
+% Gemma 31B, Haiku and the no-RAG Qwen arms were added during the round ("Changes during the round").
+\TODO{Table 1: builders}
+
+\subsection{Metrics}
+% Correct: built at the expected size (or declined when it should be); organic: a valid mesh.
+% Right size + shape: correct and the visual judge passes it (organic: any part that came out and passes).
+% Also: first-try rate, correct after k attempts, pass@k over the 3 repeats~\cite{chen2021codex},
+% tokens, $ per correct part, time.
+\TODO{metrics}
+
+\subsection{Visual judge}
+\label{sec:judge}
+% Six views per part (front, right, top, bottom flat; two isometric), one request with the request text and the
+% measured size; score 0-1 on four bands (match / minor / feature wrong / different object; top two pass).
+% Choice: 4 judges x 204 items x 3 runs; items = 58 reference checks + 146 hand-graded parts (100 graded blind:
+% no builder, config or judge score shown). Rule written before the runs: best held-out accuracy, the cheaper one
+% if the interval overlaps the old judge's. It picks Sonnet; Sonnet for every part (~$5.90) was over the remaining
+% budget, so gemini-3.8-flash (statistically tied, 92% vs 96%, p = 0.08) judges the main suite and Sonnet the
+% organic suite, where gemini-3.8-flash is weak (71% vs 91%). State this deviation plainly. Results in Sec. 5.7.
+\TODO{judge}
+
+\subsection{Statistics}
+% Rate = mean over cases of each case's rate over 3 runs. 95% intervals: bootstrap over cases~\cite{efron1993bootstrap}
+% (repeats are not independent). Comparisons paired by case: mean difference with interval and exact sign test.
+% Judges: McNemar's exact test~\cite{mcnemar1947}, Cohen's kappa~\cite{cohen1960kappa}. Code: eval/stats.py.
+% The compared pairs were written in the manifest before the runs.
+\TODO{statistics}

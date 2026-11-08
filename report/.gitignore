@@ -1,0 +1,15 @@
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.pdf
+!figures/*.pdf
+# the original template download
+*.zip

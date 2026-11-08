@@ -1,0 +1,35 @@
+\section{Introduction}
+\label{sec:intro}
+
+% Motivation (1 paragraph): 3D printers are common, CAD skills are not. Text-to-3D mesh models make shapes that
+% look right but have no exact dimensions, holes or wall thicknesses. Parametric CAD code is a better output for an
+% LLM: exact, editable, and checkable by running it and measuring the result.
+\TODO{motivation: why text to CAD code, not text to mesh}
+
+% Knowledge-systems framing (course focus). The agent can draw on four kinds of knowledge; the report asks which
+% one helps which model:
+%  1. retrieved examples from a hand-checked library (RAG),
+%  2. feedback from running the code and checking the mesh (errors, measured size) -> repair loop,
+%  3. knowledge in the weights: model size, and fine-tuning a small model on verified teacher builds,
+%  4. an outside repository (Thingiverse) for what code can't build, versus sculpting with SDF code.
+\TODO{problem statement}
+
+% Research questions (each answered in Sec. 5 and in one line in the conclusion):
+%  RQ1  How much does the model matter, and is the gap about size or running locally?        (5.1, 5.4)
+%  RQ2  Do retrieved examples help, and for which models?                                     (5.2)
+%  RQ3  Can fine-tuning on verified builds close the gap for a small local model?             (5.3)
+%  RQ4  How much do the repair loop and retrying the whole request add?                       (5.5)
+%  RQ5  For organic shapes, is sculpting with code better than downloading a model?          (5.6)
+%  and, underneath all shape results: how far can a visual LLM judge be trusted?             (5.7)
+\TODO{research questions}
+
+% Contributions (4-5 bullets, each pointing to a section):
+%  - An agent that turns a request into a checked STL: intake gate, RAG, CadQuery in a sandbox, mesh and size
+%    checks, repair loop; SDF sculpting and Thingiverse for organic objects; combined parts (Sec. 3).
+%  - A 48-case mechanical benchmark with hand-written reference solutions and expected sizes, plus 30 organic
+%    cases (Sec. 4).
+%  - A visual judge chosen among four on 146 blind hand grades, with the choice rule written before the runs
+%    (Sec. 4.4, 5.7).
+%  - One pre-planned round: 7 builders x 78 cases x 3 runs, case-level intervals and paired tests (Sec. 5).
+%  - A fine-tuned 4B local model trained only on teacher builds that passed the checks (Sec. 3.6, 5.3).
+\TODO{contributions}
