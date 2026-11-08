@@ -110,6 +110,26 @@ Anthropic $8.58 (builds: Sonnet $3.21, Haiku $0.59; judges: Sonnet $4.55, Haiku 
 $1.36, gemini-3.1-flash-lite judging $0.79; gemini-3.8-flash judging and gemma-4-31b-it builds have no listed price (2.5M input /
 114K output and 1.1M input / 129K output tokens). Local GPU: about 36 h.
 
+## For writing the report
+
+- **Why this round exists:** the course asks for results that hold up statistically ("a benchmark of 5 samples is
+  not reliable"). Earlier results (`ablation-lib26.md`, `finetune-v2.md`, `organic-sdf.md`, ...) used 12 cases for
+  local models, one run per config, or older code and settings. Cite this round's numbers; use the earlier write-ups
+  only as history (how the system got here), not side by side with these.
+- **How to describe the statistics:** rates are the mean over cases of each case's success rate over 3 runs; 95%
+  intervals come from a bootstrap that resamples cases (repeats of one case are not independent). Comparisons are
+  paired by case with an exact sign test; judge comparisons use McNemar's exact test and Cohen's kappa. Code:
+  `eval/stats.py`.
+- **Hand grades:** 146 parts graded by one person (the author): 46 from earlier rounds, 100 new ones picked by
+  `judge pick-labels` (spread over builders and verdicts) and graded on a blind page (no builder, config or judge
+  score shown). In `eval/judge_labels.json`.
+- **Decisions made during the round, with reasons:** listed under "Choosing the judge" and "Changes during the round"
+  above. Each is a separate commit on the `report-round` branch, so the order of events can be shown.
+- **Not measured** (future work): the intake gate and the whole app path (#12), combined parts (#10), harder cases
+  (the main suite no longer separates the Claude models), a second human grader, gemma4:12b and Sonnet on the
+  organic suite.
+- **Anthropic budget:** about $2.40 of the $11 set aside is left.
+
 ---
 
 # Tables
