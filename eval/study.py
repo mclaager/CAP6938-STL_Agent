@@ -229,6 +229,8 @@ def study_report(rows: list[dict], verdicts: dict[str, dict] | None = None, comp
                      for v in (organic_verdicts, main_verdicts)]
             out.append(f"| {model} | {config} | {cells[0]} | {cells[1]} |")
 
+    out += repair_tables(rows)
+
     out += ["\n## Tokens and cost\n",
             "Per run, all attempts included; output tokens include the model's thinking. Per correct part: everything "
             "spent on the arm divided by its correct runs, so failed and repaired runs count. Each model family splits "
@@ -289,3 +291,79 @@ def study_report(rows: list[dict], verdicts: dict[str, dict] | None = None, comp
 def main_judge_label(judge_name: str) -> str:
     """The main judge's name from a combined label ("A; organic suite: B" -> "A")."""
     return judge_name.split(";")[0]
+
+
+FAILURE_NAMES = {"exec_error": "script error", "invalid_mesh": "mesh check failed", "no_code_block": "no code",
+                 "truncated": "reply cut off"}
+
+
+def pass_at_k(n: int, c: int, k: int) -> float:
+    """Chance that at least one of k runs drawn from n (c of them correct) is correct (unbiased pass@k)."""
+    from math import comb
+
+    return 1.0 if n - c < k else 1 - comb(n - c, k) / comb(n, k)
+
+
+def fixed_next(rows: list[dict]) -> dict[str, list[int]]:
+    """Failure type -> [failed attempts of that type, how many the next attempt fixed (it built the part)]."""
+    out = defaultdict(lambda: [0, 0])
+    for r in rows:
+        seq = [f for f in r.get("failures", []) if f != "unsupported"] + (["ok"] if r["built"] else [])
+        for i, f in enumerate(seq):
+            if f == "ok":
+                continue
+            out[f][0] += 1
+            out[f][1] += i + 1 < len(seq) and seq[i + 1] == "ok"
+    return out
+
+
+def repair_tables(rows: list[dict]) -> list[str]:
+    """How much the repair loop and retrying the whole request add: correct after k attempts, which failures a
+    repair fixes, and pass@k over the repeats."""
+    from eval import stats
+
+    out = ["\n## Repair loop and retries\n",
+           "Correct after k attempts: the run was correct and needed at most k attempts (each attempt is one request; "
+           "a failed attempt sends the error back for a repair). Rates are means over cases [95% intervals].\n",
+           "| model | suite | config | after 1 | after 2 | after 3 | after 4 (final) | correct parts that needed a repair |",
+           "|---|---|---|---|---|---|---|---|"]
+    for (model, suite, config), rs in arms(rows).items():
+        if all(r["attempts"] == 0 for r in rs):  # downloads: no attempts
+            continue
+        cells = []
+        for k in (1, 2, 3, 4):
+            m = stats.bootstrap_mean(stats.per_case(rs, lambda r, k=k: bool(r["correct"]) and r["attempts"] <= k).values())
+            cells.append(stats.fmt_rate(*m) if k in (1, 4) else f"{m[0]:.0%}")
+        ok = [r for r in rs if r["correct"] and r["built"]]
+        repaired = f"{sum(r['attempts'] > 1 for r in ok) / len(ok):.0%} of {len(ok)}" if ok else "-"
+        out.append(f"| {model} | {suite} | {config} | " + " | ".join(cells) + f" | {repaired} |")
+
+    out += ["\n### Failed attempts and whether the next attempt fixed them\n",
+            "Per failure type: failed attempts, and the share where the following repair attempt produced a valid part. "
+            "'Mesh check failed' includes a part whose size didn't match the model's own size line.\n",
+            "| model | suite | config | " + " | ".join(FAILURE_NAMES.values()) + " |", "|---|---|---|" + "---|" * len(FAILURE_NAMES)]
+    for (model, suite, config), rs in arms(rows).items():
+        f = fixed_next(rs)
+        if not f:
+            continue
+        cells = [f"{f[k][1] / f[k][0]:.0%} of {f[k][0]}" if f[k][0] else "-" for k in FAILURE_NAMES]
+        out.append(f"| {model} | {suite} | {config} | " + " | ".join(cells) + " |")
+
+    out += ["\n### Retrying the whole request (pass@k over the 3 repeats)\n",
+            "The chance that at least one of k independent runs of the same request is correct (unbiased estimate from "
+            "the repeats), mean over cases: what asking again from scratch would give a user.\n",
+            "| model | suite | config | pass@1 | pass@2 | pass@3 |", "|---|---|---|---|---|---|"]
+    for (model, suite, config), rs in arms(rows).items():
+        by_case = defaultdict(list)
+        for r in rs:
+            by_case[r["case"]].append(bool(r["correct"]))
+        n_min = min(len(v) for v in by_case.values())
+        cells = []
+        for k in (1, 2, 3):
+            if k > n_min:
+                cells.append("-")
+                continue
+            vals = [pass_at_k(len(v), sum(v), k) for v in by_case.values()]
+            cells.append(stats.fmt_rate(*stats.bootstrap_mean(vals)))
+        out.append(f"| {model} | {suite} | {config} | " + " | ".join(cells) + " |")
+    return out

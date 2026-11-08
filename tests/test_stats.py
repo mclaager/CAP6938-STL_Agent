@@ -59,7 +59,7 @@ def _row(model, config, case, rep, correct, outcome="built", **kw):
     return dict(dict(model=model, config=config, case=case, rep=rep, library="lib1", category="simple",
                      expect="build", correct=correct, built=outcome == "built", outcome=outcome, first_try=correct,
                      requests=1, seconds=10.0, llm_seconds=6.0, wait_seconds=1.0, sandbox_seconds=2.0,
-                     output_tokens=600, usd=0.01, study="s1"), **kw)
+                     output_tokens=600, usd=0.01, study="s1", attempts=1, failures=[]), **kw)
 
 
 def test_study_report_tables_and_comparisons():
@@ -106,3 +106,20 @@ def test_organic_suite_can_use_another_judge():
     assert "| m | organic | sdf | 4 | 4 | 100% [100-100] | 100% [100-100] | 4 |" in report  # B's verdicts count
     assert "| m | sdf | 100% [100-100] | 0% [0-0] |" in report  # both judges side by side
     assert "(A; organic suite: B)" in report
+
+
+def test_repair_and_retry_tables():
+    from eval import study
+
+    assert study.pass_at_k(3, 1, 1) == pytest.approx(1 / 3) and study.pass_at_k(3, 1, 3) == 1.0
+    assert study.pass_at_k(3, 0, 2) == 0.0 and study.pass_at_k(3, 2, 2) == 1.0
+    rows = [_row("m", "rag-size", "a", 0, True, attempts=1, failures=[]),
+            _row("m", "rag-size", "a", 1, True, attempts=3, failures=["exec_error", "invalid_mesh"]),
+            _row("m", "rag-size", "a", 2, False, outcome="best_effort", attempts=4,
+                 failures=["exec_error", "exec_error", "invalid_mesh", "invalid_mesh"])]
+    f = study.fixed_next(rows)
+    assert f["exec_error"] == [3, 0] and f["invalid_mesh"] == [3, 1]  # only the mesh failure before an ok was fixed
+    out = "\n".join(study.repair_tables(rows))
+    assert "| m | main | rag-size | 33% [33-33] | 33% | 67% | 67% [67-67] | 50% of 2 |" in out
+    assert "| m | main | rag-size | 0% of 3 | 33% of 3 | - | - |" in out
+    assert "| m | main | rag-size | 67% [67-67] | 100% [100-100] | 100% [100-100] |" in out
