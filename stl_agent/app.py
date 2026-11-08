@@ -219,6 +219,7 @@ def on_message(message: str, chat: list, state: dict):
         return
 
     if d.action == OUT_OF_SCOPE:
+        state["name"] = d.name  # a download is named after this object, not an earlier plan
         if thingiverse.has_token():
             yield ("", chat + [{"role": "assistant", "content": "_Searching Thingiverse..._"}], state,
                    gr.Button(interactive=False), gr.skip())

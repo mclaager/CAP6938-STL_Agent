@@ -95,6 +95,8 @@ base_url = "http://localhost:11434/v1"
 # gemma4:12b (7.7 GB, fits a 10 GB GPU with a 16K context) built 60% of a 12-case benchmark subset, against
 # 43% for ornith:9b and 25% for qwen3.5:9b (eval/results/<model>.jsonl).
 model = "gemma4:12b"
+# With a small or fine-tuned build model (e.g. cad-qwen3.5:4b-v2, #46), keep gemma4:12b as the gate: the
+# fine-tuned models learned builds only, and a 4B gate planned "spiderman in a tree" differently every time.
 # gate_model = "gemma4:12b"
 # judge_model = "gemma4:12b"
 # rpm = 60

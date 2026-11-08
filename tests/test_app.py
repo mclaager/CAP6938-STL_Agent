@@ -262,3 +262,13 @@ def test_gallery_shows_fetched_thumbnails_or_links(monkeypatch):
     assert first["url"].startswith("/gradio_api/file=")
     assert second["url"] == "https://cdn.example/2.jpg"
 
+
+def test_download_after_an_earlier_plan_is_named_after_the_new_object(monkeypatch):
+    from stl_agent.sources import thingiverse
+
+    monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
+    monkeypatch.setattr(app, "run_gate", lambda conv, rounds: decide_from_report({**HORSE, "name": ""}, "x", rounds))
+    monkeypatch.setattr(thingiverse, "search", lambda term, **kw: [candidate(1)])
+    state = {**app.new_state(), "name": "spiderman-tree-composite"}  # left by an earlier plan
+    state = last(app.on_message("a horse statue", [], state))[2]
+    assert state["name"] == ""  # run_fetch then names the file after the picked model
