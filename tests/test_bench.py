@@ -156,3 +156,127 @@ def test_organic_suite_runs_sdf_and_thingiverse_configs(tmp_path, monkeypatch):
     assert all(i.startswith("sdf_") for i in sdf_row["retrieved"])
     assert tv_row["built"] and tv_row["requests"] == 0 and bench._lib_key("thingiverse", tv_row["library"]) == "any"
     assert {c["id"] for c in bench.all_cases()} >= {"s01", "o01"}
+
+
+def test_study_rows_and_parts_stay_in_their_own_folders(tmp_path, monkeypatch):
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    monkeypatch.setattr(bench, "RESULTS_DIR", tmp_path / "results")
+    path = bench.results_dir("s1") / "m.jsonl"
+    assert path == tmp_path / "results/studies/s1/m.jsonl" and bench.results_dir() == tmp_path / "results"
+    bench.run(CASES[1:2], ["rag"], ScriptedLLM([GOOD]), "m", ExampleRetriever.from_file(), path, budget=1,
+              max_attempts=1, log=lambda m: None, study="s1")
+    row = bench.read_results(path)[0]
+    assert row["study"] == "s1" and bench.part_id(row).startswith("s1/m/")
+    assert (tmp_path / "out/bench" / bench.part_id(row) / "report.json").exists()
+    assert not (tmp_path / "results/m.jsonl").exists()  # earlier results untouched
+    assert bench.part_id({k: v for k, v in row.items() if k != "study"}).startswith("m/")  # old ids unchanged
+
+
+def test_rows_record_prompt_code_version_provider_and_settings(tmp_path, monkeypatch):
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    path = tmp_path / "r.jsonl"
+    bench.run(CASES[1:2], ["rag-size"], ScriptedLLM([GOOD]), "m", ExampleRetriever.from_file(), path, budget=1,
+              max_attempts=1, log=lambda m: None)
+    row = bench.read_results(path)[0]
+    assert row["prompt"] == bench.prompt_id("rag-size") and row["prompt"].startswith("cqp-")
+    assert bench.prompt_id("sdf").startswith("sdfp-") and bench.prompt_id("thingiverse") is None
+    assert row["git"] and row["provider"]
+    assert row["settings"]["max_attempts"] == 1 and row["settings"]["size_feedback"] == "measured"
+
+
+def test_rows_split_build_time(tmp_path, monkeypatch):
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    llm = ScriptedLLM([GOOD.replace("box(20, 10, 5)", "box(20, 10, 5).no_such_method()"), GOOD])
+    llm.request_seconds = llm.wait_seconds = 0.0
+
+    def timed(system, messages, complete=llm.complete):
+        llm.request_seconds += 2.0
+        llm.wait_seconds += 0.5
+        return complete(system, messages)
+
+    llm.complete = timed
+    path = tmp_path / "r.jsonl"
+    bench.run(CASES[1:2], ["rag"], llm, "m", ExampleRetriever.from_file(), path, budget=2, max_attempts=2,
+              log=lambda m: None)
+    row = bench.read_results(path)[0]
+    assert (row["llm_seconds"], row["wait_seconds"]) == (4.0, 1.0)
+    assert 0 < row["sandbox_seconds"] <= row["seconds"] + 0.05  # seconds is rounded to 0.1
+
+
+def test_spending_cap_counts_earlier_runs_and_lost_spend(tmp_path, monkeypatch):
+    import json
+
+    import pytest
+
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    path = tmp_path / "claude-haiku-5-5.jsonl"
+    retriever = ExampleRetriever.from_file()
+    run = lambda llm, cap, model="claude-haiku-5-5": bench.run(
+        CASES[:2], ["rag"], llm, model, retriever, path, budget=9, max_attempts=1, log=lambda m: None, max_usd=cap)
+    # One build of Haiku may cost up to 1 x (12k in, 3k out) = $0.0027: a $1 cap runs both cases.
+    s = run(ScriptedLLM([GOOD, GOOD]), 1.0)
+    assert s.ran == 2 and all(r["usd"] == 0 for r in bench.read_results(path))
+    # Spend from earlier runs and spend lost to errors both count toward the cap.
+    path.write_text(json.dumps(dict(case="x", config="rag", rep=0, usd=0.995)) + "\n")
+    bench.record_lost_usd(path, 0.003)
+    assert bench.spent_usd(path) == pytest.approx(0.998)
+    s = run(ScriptedLLM([GOOD]), 1.0)
+    assert s.ran == 0 and s.stopped.startswith("spending cap")
+    with pytest.raises(ValueError, match="known price"):
+        run(ScriptedLLM([]), 1.0, model="no-price-model")
+
+
+def test_size_configs_match_the_app_defaults():
+    from stl_agent.config import settings
+
+    for config in ("rag-size", "norag-size"):
+        assert bench.CONFIGS[config]["size_feedback"] == settings().size_feedback
+    assert bench.CONFIGS["rag-size"]["use_rag"] and not bench.CONFIGS["norag-size"]["use_rag"]
+    assert bench._lib_key("norag-size", "lib26-x") == "any"  # no examples: shared across library versions
+
+
+def test_study_manifest_runs_jobs_with_their_own_settings(tmp_path, monkeypatch):
+    import pytest
+
+    from eval import study
+    from stl_agent import llm as llm_mod
+    from stl_agent.config import settings
+
+    monkeypatch.setattr(bench, "OUTPUT_DIR", tmp_path / "out")
+    monkeypatch.setattr(bench, "RESULTS_DIR", tmp_path / "results")
+    manifest = tmp_path / "s1.toml"
+    manifest.write_text('''
+[study]
+about = "test"
+
+[[run]]
+name = "local"
+model = "m"
+configs = ["rag-size"]
+repeats = 2
+budget = 9
+max_attempts = 1
+set = ["provider=ollama"]
+cases = ["s01"]
+''')
+    seen = []
+
+    def fake_make_llm(model=None, **kw):
+        seen.append((settings().provider, model))
+        return ScriptedLLM([GOOD] * 2)
+
+    monkeypatch.setattr(llm_mod, "make_llm", fake_make_llm)
+    data = study.load_study(str(manifest))
+    assert data["study"]["name"] == "s1"
+    job = data["run"][0]
+    s = study.run_job("s1", job, log=lambda m: None)
+    assert seen == [("ollama", "m")] and s.ran == 2
+    assert settings().provider == "gemini"  # the job's settings don't leak
+    assert study.job_status("s1", job) == dict(name="local", model="m", done=2, expected=2, usd=0.0, max_usd=None)
+    assert "| local | m | 2 | 2 |" in study.status_table(data)
+
+    manifest.write_text('[[run]]\nname = "x"\nmodel = "m"\nconfigs = ["rag-size"]\n')
+    with pytest.raises(ValueError, match="provider"):  # LLM jobs must name their provider
+        study.load_study(str(manifest))
+    manifest.write_text('[[run]]\nname = "tv"\nmodel = "thingiverse"\nsuite = "organic"\nconfigs = ["thingiverse-check"]\n')
+    assert study.download_only(study.load_study(str(manifest))["run"][0])

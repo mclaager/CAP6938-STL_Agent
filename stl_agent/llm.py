@@ -17,12 +17,29 @@ from typing import Protocol, runtime_checkable
 from .config import Settings, settings
 
 
+# Dollars per million tokens (input, output), for cost lines and spending caps (bench/judge --max-usd,
+# finetune.collect). Thinking is billed as output. Claude: Anthropic's prices (Oct 2026). Gemini paid tier:
+# third-party price lists (Oct 2026; Google's page is the authority). Local models cost nothing and have no entry.
+PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-opus-5-5": (4.0, 20.0), "claude-haiku-5-5": (0.10, 0.50),
+          "gemini-3.5-flash-lite": (0.30, 2.50), "gemini-3.1-flash-lite": (0.25, 1.50)}
+
+
+def price_usd(model: str, input_tokens: int, output_tokens: int) -> float | None:
+    """What these tokens cost on `model`, or None when its price isn't known."""
+    p = PRICES.get(model)
+    return None if p is None else (input_tokens * p[0] + output_tokens * p[1]) / 1e6
+
+
 @runtime_checkable
 class LLM(Protocol):
     """What the pipeline, gate and judge expect from a backend."""
 
     input_tokens: int  # running totals over all requests, for cost reports
     output_tokens: int
+    # Running totals in seconds (backends that measure them): time inside requests, and time spent waiting
+    # before or between them (rate pacing, retry back-off), so a slow quota isn't counted as a slow model.
+    request_seconds: float = 0.0
+    wait_seconds: float = 0.0
     last_truncated: bool  # the last reply was cut off by the output token limit
     last_reasoning: str = ""  # the model's reasoning before the last reply, when the provider returns it
 
@@ -32,7 +49,9 @@ class LLM(Protocol):
 
 
 class AnthropicLLM(LLM):
-    def __init__(self, model: str | None = None, max_tokens: int = 2048, temperature: float | None = None,
+    # Current Claude models always think before replying, and the thinking counts against max_tokens: at 2048 a
+    # build or judge reply could be cut off. Only tokens actually used are billed (same as OpenAICompatLLM).
+    def __init__(self, model: str | None = None, max_tokens: int = 16000, temperature: float | None = None,
                  base_url: str | None = None, timeout: float = 300.0, max_retries: int = 2):
         import anthropic
 
@@ -43,6 +62,7 @@ class AnthropicLLM(LLM):
         self.max_tokens, self.temperature = max_tokens, temperature
         self.effort: str | None = None  # "low" ... "max": how much the model thinks; None = the model's default
         self.input_tokens = self.output_tokens = 0
+        self.request_seconds = self.wait_seconds = 0.0  # the SDK's own retries count as request time
         self.last_truncated = False
 
     def complete(self, system: str, messages: list[dict]) -> str:
@@ -53,7 +73,11 @@ class AnthropicLLM(LLM):
             kwargs["temperature"] = self.temperature
         if self.effort:
             kwargs["output_config"] = {"effort": self.effort}
-        resp = self.client.messages.create(**kwargs)
+        t0 = time.monotonic()
+        try:
+            resp = self.client.messages.create(**kwargs)
+        finally:
+            self.request_seconds += time.monotonic() - t0
         self.input_tokens += resp.usage.input_tokens
         self.output_tokens += resp.usage.output_tokens
         self.last_truncated = resp.stop_reason == "max_tokens"
@@ -90,7 +114,12 @@ class OpenAICompatLLM(LLM):
         self.max_retries = max_retries
         self.pacer = shared_limiter(base_url, model, rpm) if rpm else None
         self.input_tokens = self.output_tokens = 0
+        self.request_seconds = self.wait_seconds = 0.0
         self.last_truncated = False
+
+    def _sleep(self, seconds: float) -> None:
+        time.sleep(seconds)
+        self.wait_seconds += seconds
 
     def complete(self, system: str, messages: list[dict]) -> str:
         body = {
@@ -109,14 +138,19 @@ class OpenAICompatLLM(LLM):
         timed_out, resp = False, None
         for attempt in range(self.max_retries + 1):
             if self.pacer:
+                t0 = time.monotonic()
                 self.pacer.wait()
+                self.wait_seconds += time.monotonic() - t0
+            t0 = time.monotonic()
             try:
                 resp = self.client.post("chat/completions", json=body)
             except httpx.TimeoutException:
+                self.request_seconds += time.monotonic() - t0
                 if timed_out:
                     raise RuntimeError(f"{self.model}: request timed out twice") from None
                 timed_out = True
                 continue
+            self.request_seconds += time.monotonic() - t0
             if resp.status_code not in (429, 500, 502, 503) or attempt == self.max_retries:
                 break
             if resp.status_code == 429 and "quota" in resp.text.lower():
@@ -125,10 +159,10 @@ class OpenAICompatLLM(LLM):
                 wait = _retry_delay(resp.text)
                 if wait is None or wait > MAX_QUOTA_WAIT:
                     raise RuntimeError(f"{self.model}: free-tier quota exhausted. {_quota_hint(resp.text)}")
-                time.sleep(wait + 1)
+                self._sleep(wait + 1)
                 continue
             retry_after = resp.headers.get("retry-after", "")
-            time.sleep(float(retry_after) if retry_after.isdigit() else 2 ** (attempt + 1))
+            self._sleep(float(retry_after) if retry_after.isdigit() else 2 ** (attempt + 1))
         if resp is None:
             raise RuntimeError(f"{self.model}: request timed out")
         if resp.status_code >= 400:

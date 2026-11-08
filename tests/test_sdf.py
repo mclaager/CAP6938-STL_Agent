@@ -173,6 +173,29 @@ def test_examples_are_not_benchmark_cases():
         assert not subjects & set(e["request"].lower().replace(",", " ").replace(".", " ").split()), e["id"]
 
 
+def test_organic_cases_are_not_in_the_finetuning_data():
+    """The fine-tuned students (#46) must not have trained on an organic benchmark subject, or a near copy of a
+    case: no organic (SDF) training request names a case's subject, and no training request is closer than the
+    held-out cutoff. (CadQuery requests may say "gear tooth" or "hand crank": not organic objects.)"""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+
+    from finetune.make_requests import MAX_SIM_HELD_OUT, REQUESTS_PATH, SDF_DATA_DIR, names_subject, organic_subjects, \
+        read_requests
+
+    training = [r["request"] for path in (REQUESTS_PATH, SDF_DATA_DIR / "requests.jsonl") for r in read_requests(path)]
+    if not training:
+        pytest.skip("no fine-tuning requests")
+    subjects = organic_subjects()
+    sdf_training = [r["request"] for r in read_requests(SDF_DATA_DIR / "requests.jsonl")]
+    named = [(t[:60], names_subject(t, subjects)) for t in sdf_training if names_subject(t, subjects)]
+    assert not named
+    cases = [c["request"] for c in json.loads((Path(__file__).parents[1] / "eval/organic_cases.json").read_text())["cases"]]
+    vec = TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True).fit(training + cases)
+    sims = cosine_similarity(vec.transform(cases), vec.transform(training)).max(axis=1)
+    assert sims.max() <= MAX_SIM_HELD_OUT, cases[int(sims.argmax())]
+
+
 # ---------------------------------------------------------------------------
 # Routing (organic_builder setting)
 # ---------------------------------------------------------------------------

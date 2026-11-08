@@ -1,0 +1,251 @@
+# Report round (#11): every model on every case, 3 runs each, on one code version with the app's current settings.
+#
+#   pixi run -e cap6938 bench study status report-v1
+#   pixi run -e cap6938 bench study run report-v1 --run gemini           # one job; resumes where it stopped
+#   pixi run -e cap6938 bench report --study report-v1 [--judge-model M]  # tables with CIs and comparisons
+#
+# Results: eval/results/studies/report-v1/ (earlier rows in eval/results/ are not used). Every job pins its
+# provider, model and attempts, so settings.toml can't change what runs. Sonnet's job is capped at $6.00
+# (earlier runs of the job included); a short pilot first: --run sonnet --budget 10.
+#
+# Judging (not run by `study run`; always pin the judge provider, settings.toml may say ollama):
+#   Round's verdicts: judge run --study report-v1 --gen-model <each model> --set judge_provider=gemini
+#                     --judge-model gemini-3.1-flash-lite --budget 2000
+#   Parts to grade:   judge pick-labels --study report-v1 --n 100 --judge-model gemini-3.1-flash-lite
+#                     then judge sheet --study report-v1 --blind (grade without seeing scores)
+#   Judge comparison: judge calibrate --study report-v1 --repeats 3 --judge-model M --set judge_provider=P
+#                     for gemini-3.1-flash-lite, a stronger Gemini flash, claude-haiku-5-5 (--max-usd 0.50) and
+#                     claude-sonnet-5-5 (--max-usd 4.00); then judge compare --study report-v1 --judge-model ...
+# Decision rule, fixed before the runs: "right shape" in the report uses the judge with the best held-out
+# accuracy against the hand grades; if its interval overlaps gemini-3.1-flash-lite's, the cheaper one is kept.
+
+[study]
+about = "Report round: 48 main cases and 30 organic cases, 3 runs each, current code and settings"
+hardware = "Local models: Ollama on an RTX 3080 (10 GB), OLLAMA_CONTEXT_LENGTH=16384"
+started = "2026-11-06"
+
+# --- API models -----------------------------------------------------------------------------------------------
+[[run]]
+name = "gemini"
+model = "gemini-3.5-flash-lite"
+suite = "main"
+configs = ["rag-size", "norag-size"]
+repeats = 3
+max_attempts = 4
+budget = 1200
+max_usd = 3.0
+set = ["provider=gemini", "providers.gemini.rpm=60"]
+
+[[run]]
+name = "gemini-organic"
+model = "gemini-3.5-flash-lite"
+suite = "organic"
+configs = ["sdf"]
+repeats = 3
+max_attempts = 4
+budget = 400
+max_usd = 5.0  # caps count the whole results file, which this job shares with "gemini" (about $1-2 of it)
+set = ["provider=gemini", "providers.gemini.rpm=60"]
+
+[[run]]
+name = "thingiverse"
+model = "thingiverse"
+suite = "organic"
+configs = ["thingiverse-check"]
+repeats = 1
+
+[[run]]
+name = "sonnet"
+model = "claude-sonnet-5-5"
+suite = "main"
+configs = ["rag-size", "norag-size"]
+repeats = 3
+max_attempts = 4
+budget = 1200
+max_usd = 6.0
+set = ["provider=anthropic"]
+
+[[run]]
+name = "gemma-31b-api"
+# The same open model family as the local default, larger, served by Google (added during the round, after a
+# pilot): does the gap to Gemini / Sonnet come from size or from running locally? Not in llm.PRICES, so no cap.
+model = "gemma-4-31b-it"
+suite = "main"
+configs = ["rag-size"]
+repeats = 3
+max_attempts = 4
+budget = 800
+set = ["provider=gemini", "providers.gemini.rpm=30"]
+
+[[run]]
+name = "haiku"
+# Added during the round: a cheap, fast paid model, next to Gemini Flash Lite.
+model = "claude-haiku-5-5"
+suite = "main"
+configs = ["rag-size", "norag-size"]
+repeats = 3
+max_attempts = 4
+budget = 1200
+max_usd = 1.0
+set = ["provider=anthropic"]
+
+[[run]]
+name = "haiku-organic"
+model = "claude-haiku-5-5"
+suite = "organic"
+configs = ["sdf"]
+repeats = 3
+max_attempts = 4
+budget = 400
+max_usd = 1.5  # caps count the whole results file, which this job shares with "haiku"
+set = ["provider=anthropic"]
+
+# --- Local models (Ollama) ------------------------------------------------------------------------------------
+[[run]]
+name = "gemma"
+model = "gemma4:12b"
+suite = "main"
+configs = ["rag-size"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+[[run]]
+name = "qwen-ft"
+model = "cad-qwen3.5:4b-v2"
+suite = "main"
+configs = ["rag-size"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+[[run]]
+name = "qwen-ft-norag"
+# Added during the round: RAG vs no RAG for the fine-tuned 4B model. It was trained with 3 retrieved examples in
+# every prompt, so no RAG is also a prompt unlike its training. Pairs with qwen-ft.
+model = "cad-qwen3.5:4b-v2"
+suite = "main"
+configs = ["norag-size"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+[[run]]
+name = "qwen-ft-organic"
+model = "cad-qwen3.5:4b-v2"
+suite = "organic"
+configs = ["sdf"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+[[run]]
+name = "qwen-base"
+model = "qwen3.5:4b"
+suite = "main"
+configs = ["rag-size"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+[[run]]
+name = "qwen-base-norag"
+# Added during the round: how much does RAG help a small untuned local model? Pairs with qwen-base.
+model = "qwen3.5:4b"
+suite = "main"
+configs = ["norag-size"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+[[run]]
+name = "qwen-base-organic"
+model = "qwen3.5:4b"
+suite = "organic"
+configs = ["sdf"]
+repeats = 3
+max_attempts = 4
+budget = 2000
+set = ["provider=ollama"]
+
+# --- Comparisons, chosen before the runs ----------------------------------------------------------------------
+[[compare]]
+name = "RAG vs no RAG, Gemini"
+a = "gemini-3.5-flash-lite:rag-size"
+b = "gemini-3.5-flash-lite:norag-size"
+
+[[compare]]
+name = "RAG vs no RAG, Sonnet"
+a = "claude-sonnet-5-5:rag-size"
+b = "claude-sonnet-5-5:norag-size"
+
+[[compare]]
+name = "Sonnet vs Gemini"
+a = "claude-sonnet-5-5:rag-size"
+b = "gemini-3.5-flash-lite:rag-size"
+
+[[compare]]
+name = "RAG vs no RAG, Haiku"
+a = "claude-haiku-5-5:rag-size"
+b = "claude-haiku-5-5:norag-size"
+
+[[compare]]
+name = "Haiku vs Gemini"
+a = "claude-haiku-5-5:rag-size"
+b = "gemini-3.5-flash-lite:rag-size"
+
+[[compare]]
+name = "gemma4:12b vs Gemini"
+a = "gemma4:12b:rag-size"
+b = "gemini-3.5-flash-lite:rag-size"
+
+[[compare]]
+name = "Gemma 4 31B (API) vs gemma4:12b (local)"
+a = "gemma-4-31b-it:rag-size"
+b = "gemma4:12b:rag-size"
+
+[[compare]]
+name = "RAG vs no RAG, base Qwen 4B (local)"
+a = "qwen3.5:4b:rag-size"
+b = "qwen3.5:4b:norag-size"
+
+[[compare]]
+name = "RAG vs no RAG, fine-tuned Qwen 4B (local)"
+a = "cad-qwen3.5:4b-v2:rag-size"
+b = "cad-qwen3.5:4b-v2:norag-size"
+
+[[compare]]
+name = "Fine-tuned vs base Qwen 4B"
+a = "cad-qwen3.5:4b-v2:rag-size"
+b = "qwen3.5:4b:rag-size"
+
+[[compare]]
+name = "Fine-tuned Qwen 4B vs gemma4:12b"
+a = "cad-qwen3.5:4b-v2:rag-size"
+b = "gemma4:12b:rag-size"
+
+[[compare]]
+name = "Organic: sculpted (Gemini) vs Thingiverse"
+a = "gemini-3.5-flash-lite:sdf"
+b = "thingiverse:thingiverse-check"
+
+[[compare]]
+name = "Organic: Haiku vs Gemini"
+a = "claude-haiku-5-5:sdf"
+b = "gemini-3.5-flash-lite:sdf"
+
+[[compare]]
+name = "Organic: fine-tuned vs base Qwen 4B"
+a = "cad-qwen3.5:4b-v2:sdf"
+b = "qwen3.5:4b:sdf"
+
+[[compare]]
+name = "Organic: Gemini vs fine-tuned Qwen 4B"
+a = "gemini-3.5-flash-lite:sdf"
+b = "cad-qwen3.5:4b-v2:sdf"

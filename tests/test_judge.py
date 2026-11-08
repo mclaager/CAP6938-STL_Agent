@@ -154,3 +154,145 @@ def test_prompts_are_files_paired_with_render_versions():
     assert set(PROMPTS) == set(RENDER_FOR_PROMPT)  # every prompt file says which render it describes
     assert RENDER_FOR_PROMPT[DEFAULT_PROMPT] == RENDER_VERSION  # the default matches the current renders
     assert all("Score 1-10" in p and '"score"' in p for p in PROMPTS.values())
+
+
+def test_study_parts_are_judged_into_the_study_folder(tmp_path, monkeypatch):
+    import eval.judge as ej
+
+    for name, value in dict(RESULTS_DIR=tmp_path, JUDGE_DIR=tmp_path / "judge").items():
+        monkeypatch.setattr(ej, name, value)
+    assert ej.split_part_id("s1/gen/lib1/rag/s01/rep2") == ("s1", "gen", "lib1", "rag", "s01", "rep2")
+    assert ej.split_part_id("gen/lib1/rag/s01/rep0") == (None, "gen", "lib1", "rag", "s01", "rep0")
+    judge = make_judge(llm=ScriptedLLM([]), model="judge-m")
+    assert ej.Session(judge, "judge-m", "v2", 64, 1, study="s1").path == tmp_path / "studies/s1/judge/judge-m.jsonl"
+    assert ej.Session(judge, "judge-m", "v2", 64, 1).path == tmp_path / "judge/judge-m.jsonl"
+    row = dict(study="s1", case="s01", config="rag", rep=0, model="gen", library="lib1", outcome="built")
+    (tmp_path / "studies/s1").mkdir(parents=True)
+    (tmp_path / "studies/s1/gen.jsonl").write_text(json.dumps(row) + "\n")
+    assert ej.bench_rows("gen", None, None, "lib1", study="s1") == [row]
+    assert ej.bench_rows("gen", None, None, "lib1") == []
+
+
+def test_judge_spending_cap(tmp_path, monkeypatch):
+    import pytest
+
+    import eval.judge as ej
+
+    monkeypatch.setattr(ej, "JUDGE_DIR", tmp_path / "judge")
+    judge = make_judge(llm=ScriptedLLM(['{"score": 9}'] * 3), model="claude-haiku-5-5")
+    s = ej.Session(judge, "claude-haiku-5-5", "v2", 64, budget=5, log=lambda m: None, max_usd=0.004)
+    assert s.judge_one("p1", "a block", b"png", {}) is not None  # reserve 4k+4k tokens = $0.0024
+    assert s.judge_one("p2", "a block", b"png", {}) is not None
+    ej.record_lost_usd(s.path, 0.002)
+    s = ej.Session(judge, "claude-haiku-5-5", "v2", 64, budget=5, log=lambda m: None, max_usd=0.004)
+    assert s.judge_one("p3", "a block", b"png", {}) is None and s.stopped.startswith("spending cap")
+    with pytest.raises(ValueError, match="known price"):
+        ej.Session(judge, "no-price", "v2", 64, budget=5, max_usd=1.0)
+
+
+def _bench_tree(tmp_path, monkeypatch, models=("gen",), study=None):
+    """Fake benchmark parts with STLs in a temporary results/outputs/renders tree."""
+    import eval.judge as ej
+
+    stl = tmp_path / "part.stl"
+    trimesh.creation.box((10, 10, 10)).export(stl)
+    folder = tmp_path / "studies" / study if study else tmp_path
+    folder.mkdir(parents=True, exist_ok=True)
+    for model in models:
+        rows = [dict(case=c, config="rag", rep=0, model=model, library="lib1", category="simple", expect="build",
+                     outcome="built", correct=True, bbox_mm=[10, 10, 10], stl=str(stl), **({"study": study} if study else {}))
+                for c in ("s01", "s02", "s03")]
+        (folder / f"{model}.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    for name, value in dict(RESULTS_DIR=tmp_path, JUDGE_DIR=tmp_path / "judge", RENDERS_DIR=tmp_path / "renders",
+                            EVAL_DIR=tmp_path, ROOT=tmp_path, LABELS_PATH=tmp_path / "labels.json").items():
+        monkeypatch.setattr(ej, name, value)
+    return ej
+
+
+def test_judge_repeats_are_recorded_and_resumed(tmp_path, monkeypatch):
+    ej = _bench_tree(tmp_path, monkeypatch)
+
+    class Args:
+        gen_model, config, cases, library, reps, repeats = "gen", None, None, "lib1", None, 2
+
+    s = ej.Session(make_judge(llm=ScriptedLLM(['{"score": 9}'] * 6), model="j"), "j", "v2", 64, 9, log=lambda m: None)
+    ej.cmd_run(Args, s)
+    rows = ej.read_results(s.path)
+    assert sorted((r["case"], r["judge_rep"]) for r in rows) == [(c, k) for c in ("s01", "s02", "s03") for k in (0, 1)]
+    s = ej.Session(make_judge(llm=ScriptedLLM([]), model="j"), "j", "v2", 64, 9, log=lambda m: None)
+    ej.cmd_run(Args, s)  # everything done: no requests
+    assert s.requests == 0 and not s.stopped
+
+
+def test_pick_labels_spreads_over_builders_and_verdicts(tmp_path, monkeypatch):
+    ej = _bench_tree(tmp_path, monkeypatch, models=("gemini-x", "local-y"), study="s1")
+    judge_rows = []
+    for model in ("gemini-x", "local-y"):
+        for c, score in (("s01", 0.9), ("s02", 0.9), ("s03", 0.1)):
+            judge_rows.append(dict(kind="bench", part=f"s1/{model}/lib1/rag/{c}/rep0", score=score))
+    (tmp_path / "studies/s1/judge").mkdir(parents=True)
+    (tmp_path / "studies/s1/judge/j.jsonl").write_text("".join(json.dumps(r) + "\n" for r in judge_rows))
+    picked = ej.pick_labels("s1", 4, 0, "j", 0.5)
+    assert picked == ej.pick_labels("s1", 4, 0, "j", 0.5)  # deterministic
+    assert {p.split("/")[1] for p in picked} == {"gemini-x", "local-y"}
+    assert sum(p.endswith("s03/rep0") for p in picked) == 2  # both failed parts (one per builder)
+    assert ej.add_picked_labels(picked, "test") == 4 and ej.add_picked_labels(picked, "test") == 0
+    assert not set(ej.pick_labels("s1", 9, 0, "j", 0.5)) & set(picked)  # already picked parts are skipped
+
+
+def test_blind_sheet_shows_only_parts_to_grade_without_scores(tmp_path, monkeypatch):
+    ej = _bench_tree(tmp_path, monkeypatch)
+    row = dict(part="gen/lib1/rag/s01/rep0", judge="llm:j", prompt="v2", render="v2-256px", kind="bench", case="s01",
+               config="rag", rep=0, gen_model="gen", library="lib1", category="simple", bench_outcome="built",
+               bench_correct=True, render_file="renders/v2-256px/gen/lib1/rag/s01-rep0.png", score=0.8889,
+               raw_score=9.0, matches=[], problems=["a telltale problem"], error=None)
+    other = dict(row, part="gen/lib1/rag/s02/rep0", case="s02", render_file="renders/v2-256px/gen/lib1/rag/s02-rep0.png")
+    (tmp_path / "judge").mkdir()
+    (tmp_path / "judge/j.jsonl").write_text(json.dumps(row) + "\n" + json.dumps(other) + "\n")
+    ej.add_picked_labels(["gen/lib1/rag/s01/rep0"], "test")
+    page = ej.write_sheet(tmp_path / "blind.html", 0.5, blind=True).read_text()
+    assert "s01-rep0.png" in page and "s02-rep0.png" not in page
+    assert "telltale" not in page and "0.89" not in page and "data-g=match" in page
+    assert ">#1<" in page and "measured size" in page
+    assert "<h2>Parts to grade (1)</h2>" in page and "<h2>gen" not in page  # no builder / config headings
+    assert "<div class=id>#1</div>" in page and "<div class=id>gen/" not in page
+    assert "telltale" in ej.write_sheet(tmp_path / "all.html", 0.5).read_text()
+
+
+def test_compare_judges_tables():
+    from eval.judge import compare_judges
+
+    passing = {1, 2, 5, 6}  # both halves of the cases (split alternately) hold passes and fails
+    labels = {f"gemini-x/l/rag/c{i}/rep0": {"grade": "match" if i in passing else "different"} for i in range(8)}
+    rows = {"good": [], "bad": []}
+    for i in range(8):
+        part, truth = f"gemini-x/l/rag/c{i}/rep0", i in passing
+        for k in (0, 1):
+            common = dict(part=part, kind="bench", case=f"c{i}", gen_model="gemini-x", judge_rep=k, seconds=2.0,
+                          usd=0.001, input_tokens=1500, output_tokens=80)
+            rows["good"].append(dict(common, score=0.9 if truth else 0.1, raw_score=9.0 if truth else 1.0))
+            rows["bad"].append(dict(common, score=0.9, raw_score=9.0))  # passes everything
+    report = compare_judges(rows, labels, baseline="bad")
+    assert "| good | 8 | 2 | 1.00 | 100% [100-100] | 0.50, 0.50 |" in report
+    assert "| 1,500 | 80 | $0.0010 | 2.0 |" in report
+    assert "| good | - | 100% [100-100] (8) | - |" in report  # all graded mechanical parts, held-out
+    assert "| bad | 8 | 2 | 0.50 | 50% [" in report
+    assert "| good | +0 pts (8) | - | - |" in report and "| bad | +50 pts (8) |" in report
+    assert "| bad | good | 8 | 0 | 4 |" in report
+    assert "### Items bad gets wrong (4)" in report
+
+
+def test_render_parts_ahead_of_judging(tmp_path, monkeypatch):
+    ej = _bench_tree(tmp_path, monkeypatch, study="s1")
+    assert ej.render_parts("s1", px=64, log=lambda m: None) == {"rendered": 3}
+    assert ej.render_parts("s1", px=64, log=lambda m: None) == {"done": 3}  # saved renders are reused
+    assert (tmp_path / "renders" / ej.render_tag(64) / "s1/gen/lib1/rag/s01-rep0.png").exists()
+
+
+def test_every_judge_command_parses(tmp_path, monkeypatch):
+    """Each subcommand gets the options main() reads for all of them (--set, --study)."""
+    ej = _bench_tree(tmp_path, monkeypatch, study="s1")
+    ej.main(["render", "--study", "s1", "--px", "64"])
+    assert (tmp_path / "renders" / ej.render_tag(64) / "s1/gen/lib1/rag/s01-rep0.png").exists()
+    ej.main(["report", "--study", "s1"])
+    ej.main(["compare", "--study", "s1", "--judge-model", "j"])

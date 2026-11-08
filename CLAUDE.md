@@ -17,14 +17,22 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 sdf-examples` — rebuild and verify `stl_agent/data/sdf_examples.json` (organic shapes, #42)
 - `pixi run -e cap6938 bench run [--model M] [--category simple] [--budget 18]` — benchmark (#7);
   `pixi run -e cap6938 bench report` prints markdown tables from `eval/results/`;
-  `bench run --suite organic [--config sdf sdf-norag thingiverse]` runs the organic cases (#42)
+  `bench run --suite organic [--config sdf sdf-norag thingiverse]` runs the organic cases (#42);
+  `--study S` keeps a round in `eval/results/studies/S/`, `--max-usd X` caps its spend
+- `pixi run -e cap6938 bench study run report-v1 [--run JOB]` — run a whole round from its manifest
+  (`eval/studies/report-v1.toml`, the report round); `bench study status report-v1`; `bench report --study report-v1`
+  prints rates with 95% bootstrap intervals over cases, the manifest's paired comparisons and timing
 - `pixi run -e cap6938 retrieval-eval` — offline retrieval scores (no LLM requests, seconds)
 - `pixi run -e cap6938 references` — build every reference solution and check it against `eval/cases.json`
 - `pixi run -e cap6938 gate-specs` — save the gate's specs for the casual retrieval queries (one gate request each)
 - `pixi run -e cap6938 size-check replay --model M [--variant claim blind] [--budget 100]` — replay size-only
   rejections with each repair message (#23); `size-check report` prints the table
 - `pixi run -e cap6938 judge run --gen-model M [--config rag norag]` — visual judge over benchmark parts (#8);
-  `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`)
+  `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`);
+  `judge compare --judge-model A B` (judges side by side, #28), `judge pick-labels --study S --n 100` and
+  `judge sheet --study S --blind` (grade parts without seeing builder or judge scores), `judge render --study S`
+  (render parts ahead of judging, no LLM requests); all take `--study S`, run/calibrate take `--repeats N` and
+  `--max-usd X`. `bench report --study S --judge-model M --organic-judge-model N` uses N's verdicts for the organic suite
 
 - `pixi run -e cap6938 settings` — every setting, its current value and where it came from
 - Fine-tuning (#46): `pixi run -e cap6938 ft-requests --target 600` (part requests from the `provider` model),
@@ -195,7 +203,15 @@ Elsewhere:
   earlier rows had it off), `rag-k1` / `rag-k5` (1 or 5
   examples instead of 3), `rag-char` (letter-chunk retriever), `rag-features` (rag plus `generate.FEATURE_NOTE`: build every requested feature even if the examples lack it, #29), `rag-size` (the size-failure message shipped with #23; the other
   configs are pinned to the old one, `size_feedback = "fix"`, so earlier rows stay comparable). Older results also hold `rag-t20` / `rag-t30` rows (removed cutoff configs) and `rag-ext` rows (built-in library plus a Text-to-CadQuery pool, removed: no gain, `eval/results/external-rag.md`). Each result row records
-  the example-library version (`library`); no-RAG rows are shared across library versions.
+  the example-library version (`library`); no-RAG rows are shared across library versions. Rows also record the
+  build prompt version (`prompt`), git commit (`git`, `+dirty` for uncommitted code), provider, settings, `usd`
+  (prices in `llm.PRICES`), and time split into `llm_seconds` (inside requests), `wait_seconds` (rate pacing,
+  retry back-off) and `sandbox_seconds`. `norag-size` pairs with `rag-size` (the app's current setup).
+- `eval/study.py` + `eval/studies/<name>.toml` — study manifests (a whole round: jobs with model, suite, configs,
+  repeats, budget, cap, and `set` overrides; every LLM job must set `provider`), plus `[[compare]]` pairs written
+  before the runs. `--study` puts rows in `eval/results/studies/<name>/`, parts in `outputs/bench/<name>/` and part
+  ids start with the study name, so a round never mixes with earlier rows. `eval/stats.py`: case-level bootstrap
+  CIs (a case is the sampling unit; repeats are not independent), exact sign / McNemar tests, Cohen's kappa.
 - `eval/judge.py` — judge CLI. Results in `eval/results/judge/<judge-model>.jsonl`, one row per (part, judge,
   prompt, render settings), so changing `--judge-model`, `--prompt` or `--px` adds a study beside the old
   one. Renders are committed under `eval/renders/<render version>-<px>px/` (~35 KB each), with a review/labelling page
@@ -203,6 +219,9 @@ Elsewhere:
   another case's request (should fail), plus hand labels in `eval/judge_labels.json`. Labels are graded on the
   judge's four bands (match / minor / feature wrong / different object; the top two pass), so calibration
   also reports band agreement (exact, within one band, lenient vs harsh), and `report` shows band counts.
+  `compare` puts judges side by side on the same items: held-out accuracy (threshold picked on the other half of
+  the cases), kappa against the hand grades, consistency over `--repeats`, leniency per builder family (does a
+  judge favour its own family), pairwise McNemar tests. Judge rows record `judge_rep`, `seconds` and `usd`.
 - `eval/references.py` — hand-written CadQuery reference solutions for benchmark cases with a fixed size
   (`python -m eval.references`; also run by the tests). Add one for every new case with an expected bbox,
   so the case is known to be buildable and its bbox is right. Never shown to the model.
@@ -246,12 +265,17 @@ Done:
 - #19 Fully local mode: Ollama provider, chosen in the app's settings panel (`eval/results/judge-local-gemma4-12b.md`)
 - #23 Size check: a size-only failure says the script or the model's BBOX estimate may be wrong, with the measured
   size (`size_feedback`, `eval/results/size-check.md`)
+- Report round (study `report-v1`, Nov 6-8): 8 builders x 48 main + 30 organic cases x 3 runs, judge comparison
+  (#28: 4 judges, 146 hand grades), repair/retry analysis. **`eval/results/report-v1.md` is the source for the final
+  report (#11)**: summary, findings, judge choice and why it departs from the pre-set rule, caveats, spend, all tables.
+  Report judges: gemini-3.8-flash for the main suite, claude-sonnet-5-5 for the organic suite (gemini-3.8-flash is
+  weak on organic parts). Regenerate tables with the two commands at the top of that file.
 
 Open work is in GitHub issues, with the original course timeline's target dates where there is one:
 
 - #11 Final report (weeks 9–10)
 - #12 Jev gate backend and gate evaluation (not from the original proposal; a Jev judge backend could follow)
-- #28 Compare a stronger judge model on the hand-labelled parts
+- #28 Compare a stronger judge model on the hand-labelled parts (done in the report round; issue still open)
 - #29 Test whether RAG makes the model copy the retrieved example instead of building every requested feature
 - #35 Run the visual judge during builds (orientation of downloads, wrong-shape repair), as a user toggle
 - #36 Edit a built part (transform, change the previous script, or rebuild from scratch)
