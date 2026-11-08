@@ -3,13 +3,16 @@
 
 % ~1.5 pages. Describe what the app does today (the round's code). Keep history to one sentence per dropped idea.
 
-% Figure 1: pipeline diagram (to draw): request -> gate (proceed / clarify / out of scope / composite)
-%   -> in scope: retrieve 3 examples -> LLM writes CadQuery -> sandbox -> mesh + size check -> repair (<= 4 attempts)
-%   -> out of scope: SDF sculpting (organic_spec) or Thingiverse search with name/tag check
-%   -> composite: pieces built or downloaded, placed by relation, merged into one STL.
-% \begin{figure*}[t] \centering \includegraphics[width=\linewidth]{figures/pipeline.pdf}
-%   \caption{Pipeline.} \label{fig:pipeline} \end{figure*}
-\TODO{Figure 1: pipeline}
+\begin{figure*}[t]
+  \centering
+  \resizebox{\linewidth}{!}{\input{figures/pipeline}}
+  \caption{Pipeline. The intake gate (one LLM request) reads the chat and either asks for missing sizes or routes
+    the request. In-scope parts are written as CadQuery code with three retrieved examples; organic objects are
+    sculpted with SDF code through the same loop. Each script runs in a sandbox and the mesh is checked (closed
+    solid, size against the request); a failure is sent back for a repair, up to four attempts. Objects code can't
+    build are searched on Thingiverse, and combined parts are built or downloaded piece by piece, placed and merged.}
+  \label{fig:pipeline}
+\end{figure*}
 
 \subsection{Intake gate}
 % One LLM request: scope, filled-in spec, unknown parameters (critical or not). Fixed rules choose proceed /

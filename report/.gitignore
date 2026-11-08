@@ -13,3 +13,5 @@
 !figures/*.pdf
 # the original template download
 *.zip
+*.dvi
+figures/*_preview.pdf

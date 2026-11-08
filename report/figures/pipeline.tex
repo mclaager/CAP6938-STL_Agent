@@ -1,0 +1,76 @@
+% Figure 1: the pipeline. Pure TikZ (needs \usetikzlibrary{arrows.meta,positioning,calc}); included from
+% sec/3_system.tex, and compiled on its own by figures/pipeline_preview.tex for checking.
+\begin{tikzpicture}[
+    font=\sffamily\footnotesize,
+    >={Stealth[length=2mm]},
+    box/.style={draw, rounded corners=2pt, align=center, minimum height=9mm, text width=26mm, inner sep=2pt},
+    llm/.style={box, fill=blue!10, draw=blue!60!black},
+    check/.style={box, fill=green!12, draw=green!45!black},
+    ext/.style={box, fill=orange!15, draw=orange!70!black},
+    plain/.style={box, fill=gray!8, draw=gray!60!black},
+    io/.style={box, text width=15mm, fill=white, draw=black, thick},
+    lab/.style={font=\sffamily\scriptsize, align=center, inner sep=1pt},
+    flow/.style={->, thick},
+    back/.style={->, thick, dashed},
+  ]
+  % --- row 1: build with code (CadQuery, or SDF for organic shapes) ---
+  \node[io]    (req)  at (0, 0)     {Request\\(chat)};
+  \node[llm]   (gate) at (3.0, 0)  {Intake gate\\scope, spec, missing sizes};
+  \node[plain] (ret)  at (7.5, 0)  {Retrieve 3 examples\\CadQuery or SDF};
+  \node[llm]   (gen)  at (10.6, 0)  {Write script\\+ expected size};
+  \node[plain] (run)  at (13.7, 0) {Run in sandbox\\timeout, 2\,GB};
+  \node[check] (chk)  at (16.8, 0) {Check mesh\\closed solid, size};
+  \node[io]    (stl)  at (19.75, 0)  {STL};
+
+  \draw[flow] (req) -- (gate);
+  \draw[flow] (gate) -- node[lab, above] {in scope} node[lab, below] {or organic} (ret);
+  \draw[flow] (ret) -- (gen);
+  \draw[flow] (gen) -- (run);
+  \draw[flow] (run) -- (chk);
+  \draw[flow] (chk) -- node[lab, above] {pass} (stl);
+
+  % repair loop (above row 1)
+  \draw[back] (chk.north) -- ++(0, 0.55) -| node[lab, pos=0.25, above]
+    {repair: error, failed check or measured size sent back (up to 4 attempts)} (gen.north);
+  \draw[thick, dashed] (run.north) -- ++(0, 0.55);
+  % clarify loop (above row 1, left)
+  \draw[back] (gate.north) -- ++(0, 0.55) -| node[lab, pos=0.25, above]
+    {clarify: ask the user} (req.north);
+
+  % --- row 2: download ---
+  \node[ext]   (ts)   at (7.5, -1.9)  {Thingiverse search\\gate's phrases};
+  \node[check] (tn)   at (10.6, -1.9)  {Name / tag check\\is it the object?};
+  \node[ext]   (td)   at (13.7, -1.9) {Download\\largest STL};
+
+  \draw[flow] (gate.south) ++(-0.35, 0) |- node[lab, pos=0.8, above] {out of scope}
+    node[lab, pos=0.8, below] {or sculpting failed} (ts.west);
+  \draw[flow] (ts) -- (tn);
+  \draw[flow] (tn) -- (td);
+  \draw[flow] (td.east) -| (chk.south);
+
+  % --- row 3: combined parts ---
+  \node[plain] (plan) at (7.5, -3.8)  {Pieces plan\\from the gate};
+  \node[plain] (each) at (10.6, -3.8)  {Build or download\\each piece (rows 1--2)};
+  \node[plain] (pl)   at (13.7, -3.8) {Place by relation\\(on, beside, inside)};
+  \node[plain] (mg)   at (16.8, -3.8) {Merge\\into one solid};
+
+  \draw[flow] (gate.south) ++(0.35, 0) |- node[lab, pos=0.8, above] {composite} (plan.west);
+  \draw[flow] (plan) -- (each);
+  \draw[flow] (each) -- (pl);
+  \draw[flow] (pl) -- (mg);
+  \draw[flow] (mg.east) -| (stl.south);
+
+  % --- legend ---
+  \begin{scope}[shift={(0, -5.15)}, every node/.style={font=\sffamily\scriptsize, anchor=west}]
+    \node[draw=blue!60!black, fill=blue!10, minimum size=2.5mm, inner sep=0, rounded corners=1pt] (l1) at (0, 0) {};
+    \node at (0.25, 0) {LLM request};
+    \node[draw=green!45!black, fill=green!12, minimum size=2.5mm, inner sep=0, rounded corners=1pt] at (2.3, 0) {};
+    \node at (2.55, 0) {fixed check};
+    \node[draw=orange!70!black, fill=orange!15, minimum size=2.5mm, inner sep=0, rounded corners=1pt] at (4.5, 0) {};
+    \node at (4.75, 0) {outside source};
+    \node[draw=gray!60!black, fill=gray!8, minimum size=2.5mm, inner sep=0, rounded corners=1pt] at (7.0, 0) {};
+    \node at (7.25, 0) {code, no LLM};
+    \draw[back] (9.4, 0) -- (10.2, 0);
+    \node at (10.3, 0) {sent back for another try};
+  \end{scope}
+\end{tikzpicture}
