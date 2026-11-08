@@ -361,3 +361,58 @@ def test_code_panel_names_the_kind_of_code(monkeypatch):
     monkeypatch.setattr(app, "make_preview", lambda stl: stl)
     _, _, _, code, _ = app.show_result(state)
     assert code.label == "SDF script (sculpted)" and code.value == "from sdf import *"
+
+
+def test_sculpted_piece_that_is_not_one_solid_is_replaced_by_a_download(assembly, monkeypatch):
+    """A best-effort sculpt in loose pieces (the "spiderman in a tree" run) takes a download if there is one;
+    a sculpt that is only the wrong size is kept (pieces are scaled to their height)."""
+    from stl_agent.generate import GenResult
+    from stl_agent.sandbox import ValidationReport
+
+    pipeline, calls = assembly["pipeline"], assembly["calls"]
+    real = pipeline._generate
+
+    def flawed(request, log, language="cadquery", **kw):
+        res = real(request, log, language=language, **kw)
+        if language == "sdf":
+            v = ValidationReport(valid=False, watertight=True, volume_mm3=100.0, n_components=calls["components"], bbox_ok=False)
+            res = GenResult(success=False, stl_path=res.stl_path, code=res.code, attempts=4, validation=v,
+                            error="Best-effort result: mesh did not pass all checks after all attempts.")
+        return res
+
+    monkeypatch.setattr(pipeline, "_generate", flawed)
+    monkeypatch.setattr(assembly["tv"], "has_token", lambda: True)
+    calls["components"] = 4
+    _, code, report = pipeline.run_assembly(assembly["plan"], lambda s: None)
+    assert calls["searched"] == ["cat"] and report["pieces"][1]["source"] == "thingiverse (sculpting failed)"
+    assert "sculpted" not in code
+
+    calls["searched"].clear()
+    calls["components"] = 1  # one closed solid, only the size is off: kept, no search
+    _, code, report = pipeline.run_assembly(assembly["plan"], lambda s: None)
+    assert calls["searched"] == [] and report["pieces"][1]["source"] == "sdf" and "sculpted" in code
+
+    calls["components"] = 4  # broken and no token: the flawed sculpt is kept, with its warning
+    monkeypatch.setattr(assembly["tv"], "has_token", lambda: False)
+    _, _, report = pipeline.run_assembly(assembly["plan"], lambda s: None)
+    assert report["pieces"][1]["source"] == "sdf" and "Best-effort" in report["pieces"][1]["warning"]
+
+
+def test_app_offers_thingiverse_when_a_sculpted_object_is_not_one_solid(sculpt, monkeypatch, tmp_path):
+    from stl_agent import app
+    from stl_agent.gate import decide_from_report
+    from stl_agent.pipeline import sculpt_organic
+    from stl_agent.sources import thingiverse
+
+    broken = {"watertight": True, "n_components": 3, "volume_mm3": 50.0}
+    monkeypatch.setattr(app, "run_gate", lambda conv, rounds: sculpt_organic(decide_from_report(HORSE, "x", rounds)))
+    monkeypatch.setattr(app, "run_pipeline", lambda spec, log, name=None, **kw: (
+        str(tmp_path / "horse.stl"), "code", {"success": False, "validation": broken}))
+    monkeypatch.setenv(thingiverse.TOKEN_VAR, "t")
+    monkeypatch.setattr(thingiverse, "search", lambda term, **kw: [_cand(1)])
+
+    state = app.new_state()
+    chat = list(app.on_message("a horse", [], state))[-1][1]
+    chat, state, _, log, gallery = list(app.on_build(chat, state))[-1]
+    assert gallery.visible and "one closed solid" in chat[-1]["content"] and "not one closed solid" in log
+    assert state["result"]["stl"].endswith("horse.stl")  # the sculpt is still shown

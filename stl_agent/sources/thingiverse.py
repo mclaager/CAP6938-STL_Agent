@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -261,3 +262,27 @@ def download_stl(thing_id: int, dest: Path, client: httpx.Client | None = None) 
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(data)
     return dest, [str(f["name"]) for f in files[1:]]
+
+
+def _thumbnail_client() -> httpx.Client:
+    """Thumbnails are public: no token (it stays with the API host)."""
+    return httpx.Client(timeout=10.0, follow_redirects=True, headers={"User-Agent": USER_AGENT})
+
+
+def thumbnails(urls: list[str], client: httpx.Client | None = None) -> list[bytes | None]:
+    """Each thumbnail's image bytes, or None when it can't be had. The app fetches them itself, with USER_AGENT:
+    Thingiverse's image server (Cloudflare) refuses some clients, and the gallery then shows blank tiles."""
+
+    def one(c: httpx.Client, url: str) -> bytes | None:
+        if not url:
+            return None
+        try:
+            resp = c.get(url)
+        except httpx.HTTPError:
+            return None
+        ok = resp.status_code == 200 and resp.headers.get("content-type", "").startswith("image/")
+        return resp.content if ok and len(resp.content) <= 5 * 2**20 else None
+
+    with (nullcontext(client) if client is not None else _thumbnail_client()) as c:
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            return list(pool.map(lambda u: one(c, u), urls))
