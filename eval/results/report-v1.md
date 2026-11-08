@@ -7,8 +7,7 @@ app's current settings. Run 2026-11-06 to 2026-11-07. Manifest: `eval/studies/re
     pixi run -e cap6938 bench report --study report-v1 --judge-model gemini-3.8-flash --organic-judge-model claude-sonnet-5-5
     pixi run -e cap6938 judge compare --study report-v1 --judge-model gemini-3.1-flash-lite gemini-3.8-flash claude-haiku-5-5 claude-sonnet-5-5
 
-**Status:** complete except the base Qwen 4B no-RAG arm (`qwen-base-norag`), still running when this was
-written (66 of 144 runs); its rows and the RAG comparison for that model will be updated when it finishes.
+**Status:** complete (all jobs, 2026-11-07 20:00).
 
 ## Summary
 
@@ -30,7 +29,11 @@ Findings (paired comparisons by case, exact sign test; see the tables below):
 - **Sonnet is near the ceiling** of this suite (99%), 24 points above Gemini Flash Lite on right size and shape
   (p < 0.001). The 48 cases no longer separate the strongest models.
 - **RAG made no measurable difference for the API models:** Gemini Flash Lite 74% vs 74% (+1 pts [-8, +9]),
-  Sonnet 99% vs 98%. For the small untuned local model the difference is also within noise so far (see status).
+  Sonnet 99% vs 98%. For the small untuned local model (qwen3.5:4b) it helps it produce a valid part at all
+  (12% of runs built vs 3% without examples), but the gain in correct parts is within noise: 17% vs 10%, +6 pts
+  [-1, +14], p = 0.18; right shape 13% vs 10%, p = 0.51. Without examples it also spends twice the tokens per
+  correct part (177K vs 85K). The model is near the floor either way, so this can't settle whether RAG helps
+  small models in general.
 - **Fine-tuning works:** the fine-tuned Qwen 4B triples the base model's right-size rate (51% vs 17%, +34 pts
   [+22, +47], p < 0.001) and doubles right shape (30% vs 13%, p = 0.007), at a third of the tokens per correct part.
   It is still well below the 12B local default (55% right shape).
@@ -112,7 +115,7 @@ Rates are the mean over cases of each case's rate over its repeats; [brackets] a
 | gemini-3.5-flash-lite | organic | sdf | 30 | 90 | 82% [72-91] | 52% [40-64] | 90 | 82% | 1% | 2.78 | $0.0061 |
 | gemma-4-31b-it | main | rag-size | 48 | 144 | 85% [77-92] | 74% [65-83] | 128 | 82% | 51% | 1.94 | - |
 | gemma4:12b | main | rag-size | 48 | 144 | 77% [67-86] | 55% [42-67] | 115 | 68% | 44% | 2.03 | - |
-| qwen3.5:4b | main | norag-size | 48 | 66 | 14% [5-23] | 11% [3-21] | 1 | 5% | 0% | 3.73 | - |
+| qwen3.5:4b | main | norag-size | 48 | 144 | 10% [4-18] | 10% [3-17] | 7 | 3% | 1% | 3.67 | - |
 | qwen3.5:4b | main | rag-size | 48 | 144 | 17% [8-26] | 13% [6-22] | 28 | 12% | 4% | 3.56 | - |
 | qwen3.5:4b | organic | sdf | 30 | 90 | 3% [0-8] | 0% [0-0] | 41 | 3% | 0% | 3.99 | - |
 | thingiverse | organic | thingiverse-check | 30 | 30 | 67% [50-83] | 37% [20-53] | 30 | 67% | 0% | 0.00 | - |
@@ -143,7 +146,7 @@ Per run, all attempts included; output tokens include the model's thinking. Per 
 | gemini-3.5-flash-lite | organic | sdf | 7,775 | 1,499 | 11,280 | $0.0074 |
 | gemma-4-31b-it | main | rag-size | 7,640 | 898 | 10,078 | - |
 | gemma4:12b | main | rag-size | 4,110 | 11,538 | 20,301 | - |
-| qwen3.5:4b | main | norag-size | 7,242 | 9,700 | 139,776 | - |
+| qwen3.5:4b | main | norag-size | 7,586 | 10,861 | 177,097 | - |
 | qwen3.5:4b | main | rag-size | 8,164 | 6,013 | 85,067 | - |
 | qwen3.5:4b | organic | sdf | 13,620 | 11,120 | 742,207 | - |
 | thingiverse | organic | thingiverse-check | 0 | 0 | - | - |
@@ -163,7 +166,7 @@ Seconds, median (90th percentile). Build: wall clock for one run. Request: time 
 | gemini-3.5-flash-lite | organic | sdf | 12 (29) | 1.9 (2.3) | 0.0 (0.0) | 6.2 (20) | 275 | 3.0 (4.7) | 15 (32) |
 | gemma-4-31b-it | main | rag-size | 102 (363) | 75 (118) | 0.0 (0.0) | 2.4 (8.2) | 6 | 5.5 (10) | 112 (351) |
 | gemma4:12b | main | rag-size | 136 (581) | 86 (196) | 0.0 (0.0) | 1.5 (5.2) | 46 | 5.2 (11) | 143 (550) |
-| qwen3.5:4b | main | norag-size | 58 (166) | 15 (41) | 0.0 (0.0) | 4.9 (4.9) | 118 | 4.0 (4.0) | 115 (115) |
+| qwen3.5:4b | main | norag-size | 66 (184) | 19 (48) | 0.0 (0.0) | 4.9 (4.9) | 118 | 4.0 (5.6) | 110 (223) |
 | qwen3.5:4b | main | rag-size | 94 (277) | 23 (74) | 0.0 (0.0) | 4.9 (5.0) | 51 | 5.0 (8.0) | 85 (277) |
 | qwen3.5:4b | organic | sdf | 213 (377) | 53 (94) | 0.0 (0.0) | 0.2 (4.5) | 49 | 3.0 (4.2) | 241 (399) |
 | thingiverse | organic | thingiverse-check | 5.0 (7.4) | - (-) | 0.0 (0.0) | 0.0 (0.0) | - | 2.9 (4.2) | 8.4 (11) |
@@ -184,8 +187,8 @@ Paired by case: the mean per-case difference a - b with a 95% bootstrap interval
 | gemma4:12b vs Gemini | right size + shape | 48 | 55% | 74% | -19 pts [-31, -8] | 5 / 19 / 24 | 0.007 |
 | Gemma 4 31B (API) vs gemma4:12b (local) | correct | 48 | 85% | 77% | +8 pts [-2, +17] | 14 / 7 / 27 | 0.189 |
 | Gemma 4 31B (API) vs gemma4:12b (local) | right size + shape | 48 | 74% | 55% | +19 pts [+6, +32] | 25 / 8 / 15 | 0.005 |
-| RAG vs no RAG, base Qwen 4B (local) | correct | 48 | 17% | 14% | +3 pts [-6, +12] | 8 / 5 / 35 | 0.581 |
-| RAG vs no RAG, base Qwen 4B (local) | right size + shape | 48 | 13% | 11% | +2 pts [-6, +9] | 5 / 3 / 40 | 0.727 |
+| RAG vs no RAG, base Qwen 4B (local) | correct | 48 | 17% | 10% | +6 pts [-1, +14] | 10 / 4 / 34 | 0.180 |
+| RAG vs no RAG, base Qwen 4B (local) | right size + shape | 48 | 13% | 10% | +3 pts [-3, +10] | 6 / 3 / 39 | 0.508 |
 | Fine-tuned vs base Qwen 4B | correct | 48 | 51% | 17% | +34 pts [+22, +47] | 32 / 4 / 12 | 0.000 |
 | Fine-tuned vs base Qwen 4B | right size + shape | 48 | 30% | 13% | +17 pts [+6, +28] | 17 / 4 / 27 | 0.007 |
 | Fine-tuned Qwen 4B vs gemma4:12b | correct | 48 | 51% | 77% | -26 pts [-38, -15] | 4 / 25 / 19 | 0.000 |
@@ -405,32 +408,32 @@ Right/wrong against the truth on items both judged (McNemar's exact test), and a
 
 | config | n | correct | built | first try | avg attempts | bbox ok | requests |
 |---|---|---|---|---|---|---|---|
-| norag-size | 66 | 12% | 5% | 0% | 3.73 | 100% | 246 |
+| norag-size | 144 | 10% | 3% | 1% | 3.67 | 80% | 529 |
 | sdf | 90 | 3% | 3% | 0% | 3.99 | – | 359 |
 
 | config / category | n | correct | built | first try | avg attempts | bbox ok | requests |
 |---|---|---|---|---|---|---|---|
-| norag-size / simple | 10 | 10% | 10% | 0% | 3.80 | 100% | 38 |
-| norag-size / medium | 30 | 7% | 7% | 0% | 3.97 | 100% | 119 |
-| norag-size / hard | 13 | 0% | 0% | 0% | 4.00 | – | 52 |
-| norag-size / proposal | 8 | 62% | 0% | 0% | 2.12 | – | 17 |
-| norag-size / casual | 5 | 0% | 0% | 0% | 4.00 | – | 20 |
+| norag-size / simple | 15 | 13% | 13% | 7% | 3.67 | 100% | 55 |
+| norag-size / medium | 51 | 4% | 4% | 0% | 3.92 | 100% | 200 |
+| norag-size / hard | 39 | 0% | 0% | 0% | 4.00 | – | 156 |
+| norag-size / proposal | 24 | 46% | 0% | 0% | 2.50 | – | 60 |
+| norag-size / casual | 15 | 0% | 7% | 0% | 3.87 | 0% | 58 |
 | sdf / organic | 90 | 3% | 3% | 0% | 3.99 | – | 359 |
 
 ## qwen3.5:4b — lib26-cdabac (no-RAG rows are shared across libraries)
 
 | config | n | correct | built | first try | avg attempts | bbox ok | requests |
 |---|---|---|---|---|---|---|---|
-| norag-size | 66 | 12% | 5% | 0% | 3.73 | 100% | 246 |
+| norag-size | 144 | 10% | 3% | 1% | 3.67 | 80% | 529 |
 | rag-size | 144 | 17% | 12% | 4% | 3.56 | 82% | 513 |
 
 | config / category | n | correct | built | first try | avg attempts | bbox ok | requests |
 |---|---|---|---|---|---|---|---|
-| norag-size / simple | 10 | 10% | 10% | 0% | 3.80 | 100% | 38 |
-| norag-size / medium | 30 | 7% | 7% | 0% | 3.97 | 100% | 119 |
-| norag-size / hard | 13 | 0% | 0% | 0% | 4.00 | – | 52 |
-| norag-size / proposal | 8 | 62% | 0% | 0% | 2.12 | – | 17 |
-| norag-size / casual | 5 | 0% | 0% | 0% | 4.00 | – | 20 |
+| norag-size / simple | 15 | 13% | 13% | 7% | 3.67 | 100% | 55 |
+| norag-size / medium | 51 | 4% | 4% | 0% | 3.92 | 100% | 200 |
+| norag-size / hard | 39 | 0% | 0% | 0% | 4.00 | – | 156 |
+| norag-size / proposal | 24 | 46% | 0% | 0% | 2.50 | – | 60 |
+| norag-size / casual | 15 | 0% | 7% | 0% | 3.87 | 0% | 58 |
 | rag-size / simple | 15 | 60% | 60% | 13% | 3.00 | 100% | 45 |
 | rag-size / medium | 51 | 10% | 10% | 4% | 3.80 | 100% | 194 |
 | rag-size / hard | 39 | 0% | 0% | 0% | 4.00 | – | 156 |
