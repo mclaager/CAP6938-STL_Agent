@@ -30,8 +30,9 @@ Run commands from the repo root (modules are run with `python -m`, no install st
 - `pixi run -e cap6938 judge run --gen-model M [--config rag norag]` — visual judge over benchmark parts (#8);
   `judge calibrate` (pick the pass threshold), `judge report`, `judge sheet` (writes `eval/renders/index.html`);
   `judge compare --judge-model A B` (judges side by side, #28), `judge pick-labels --study S --n 100` and
-  `judge sheet --study S --blind` (grade parts without seeing judge scores); all take `--study S`, run/calibrate
-  take `--repeats N` and `--max-usd X`
+  `judge sheet --study S --blind` (grade parts without seeing builder or judge scores), `judge render --study S`
+  (render parts ahead of judging, no LLM requests); all take `--study S`, run/calibrate take `--repeats N` and
+  `--max-usd X`. `bench report --study S --judge-model M --organic-judge-model N` uses N's verdicts for the organic suite
 
 - `pixi run -e cap6938 settings` — every setting, its current value and where it came from
 - Fine-tuning (#46): `pixi run -e cap6938 ft-requests --target 600` (part requests from the `provider` model),
@@ -264,12 +265,17 @@ Done:
 - #19 Fully local mode: Ollama provider, chosen in the app's settings panel (`eval/results/judge-local-gemma4-12b.md`)
 - #23 Size check: a size-only failure says the script or the model's BBOX estimate may be wrong, with the measured
   size (`size_feedback`, `eval/results/size-check.md`)
+- Report round (study `report-v1`, Nov 6-8): 8 builders x 48 main + 30 organic cases x 3 runs, judge comparison
+  (#28: 4 judges, 146 hand grades), repair/retry analysis. **`eval/results/report-v1.md` is the source for the final
+  report (#11)**: summary, findings, judge choice and why it departs from the pre-set rule, caveats, spend, all tables.
+  Report judges: gemini-3.8-flash for the main suite, claude-sonnet-5-5 for the organic suite (gemini-3.8-flash is
+  weak on organic parts). Regenerate tables with the two commands at the top of that file.
 
 Open work is in GitHub issues, with the original course timeline's target dates where there is one:
 
 - #11 Final report (weeks 9–10)
 - #12 Jev gate backend and gate evaluation (not from the original proposal; a Jev judge backend could follow)
-- #28 Compare a stronger judge model on the hand-labelled parts
+- #28 Compare a stronger judge model on the hand-labelled parts (done in the report round; issue still open)
 - #29 Test whether RAG makes the model copy the retrieved example instead of building every requested feature
 - #35 Run the visual judge during builds (orientation of downloads, wrong-shape repair), as a user toggle
 - #36 Edit a built part (transform, change the previous script, or rebuild from scratch)
