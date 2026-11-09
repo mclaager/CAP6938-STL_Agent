@@ -280,3 +280,14 @@ cases = ["s01"]
         study.load_study(str(manifest))
     manifest.write_text('[[run]]\nname = "tv"\nmodel = "thingiverse"\nsuite = "organic"\nconfigs = ["thingiverse-check"]\n')
     assert study.download_only(study.load_study(str(manifest))["run"][0])
+
+
+def test_code_version_without_git_uses_the_build_commit(monkeypatch):
+    # The Docker image has no .git: rows name the commit passed in at build time.
+    def no_git(*a, **k):
+        raise FileNotFoundError("git")
+    monkeypatch.setattr(bench.subprocess, "run", no_git)
+    monkeypatch.setenv("STL_AGENT_COMMIT", "abc1234")
+    assert bench.code_version() == "abc1234"
+    monkeypatch.delenv("STL_AGENT_COMMIT")
+    assert bench.code_version() == "unknown"

@@ -1,0 +1,43 @@
+# The app in a container (README "Docker").
+#
+#   docker compose up --build                   app at http://127.0.0.1:7860, API keys from .env
+#   docker compose --profile ollama up --build  plus a local Ollama on an NVIDIA GPU
+#
+# To record the git commit in benchmark rows: GIT_COMMIT=$(git rev-parse --short HEAD) docker compose build
+# Eval commands: docker compose run --rm app test (or bench report ..., any pixi task)
+services:
+  app:
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    image: stl-agent
+    ports:
+      - "127.0.0.1:7860:7860"  # this machine only; drop 127.0.0.1: to open it to the network
+    env_file:  # API keys, read as environment variables (as `docker run --env-file .env`)
+      - path: .env
+        required: false
+    volumes:  # :z relabels for SELinux (Fedora, RHEL); ignored elsewhere
+      - ./data:/app/data:z        # settings.toml, created on the first run
+      - ./outputs:/app/outputs:z  # finished parts
+
+  # Local models, with `--profile ollama`. Set the app's server address to http://ollama:11434/v1 (settings
+  # panel, or providers.ollama.base_url in data/settings.toml) and pull a model once:
+  #   docker compose exec ollama ollama pull gemma4:12b
+  ollama:
+    image: ollama/ollama
+    profiles: [ollama]
+    environment:
+      OLLAMA_CONTEXT_LENGTH: "16384"  # the default 4096 silently drops the start of longer prompts
+    volumes:
+      - ollama:/root/.ollama  # downloaded models, kept between runs
+    deploy:
+      resources:
+        reservations:
+          devices:  # needs the NVIDIA Container Toolkit; without a GPU, delete this block (runs on the CPU)
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  ollama:
