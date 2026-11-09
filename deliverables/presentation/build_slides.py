@@ -269,7 +269,49 @@ def build():
     text_box(s, 8.75, 5.45, 3.8, 1.1, "Orange vs blue gap: right size, wrong shape. Only the judge catches it.",
              size=14, color=GRAY)
 
-    # 7. Retrieved examples (RQ2)
+    # 7. Fine-tuning (RQ3)
+    s = content_slide(prs, "FINE-TUNING A SMALL LOCAL MODEL", (
+        "Can fine-tuning close the gap for a small local model? We trained Qwen 3.5 4B with QLoRA on 1,052 teacher "
+        "conversations from Sonnet and Gemini Flash Lite, kept only when the part passed the checks, repairs included. "
+        "Every training prompt had three retrieved examples in it, which matters on the next slide. "
+        "Right size triples, from 17 to 51 percent, right shape more than doubles, and it needs a third of the tokens "
+        "per correct part. But it is still 25 points below the 12B model. On organic shapes it learned to write SDF code "
+        "that runs, but not to sculpt the object."))
+    data = CategoryChartData()
+    data.categories = ["Qwen 4B base", "Qwen 4B fine-tuned", "Gemma 4 12B"]
+    data.add_series("Right size", (0.17, 0.51, 0.77))
+    data.add_series("Right size + shape", (0.13, 0.30, 0.55))
+    chart = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(0.79), Inches(2.35), Inches(7.2),
+                               Inches(4.3), data).chart
+    chart.has_legend = True
+    chart.legend.position = XL_LEGEND_POSITION.TOP
+    chart.legend.include_in_layout = False
+    chart.legend.font.size, chart.legend.font.name = Pt(14), FONT
+    chart.value_axis.maximum_scale = 1.0
+    chart.value_axis.has_major_gridlines = True
+    chart.value_axis.major_gridlines.format.line.color.rgb = RGBColor(0xD6, 0xD6, 0xD6)
+    chart.value_axis.tick_labels.number_format = "0%"
+    chart.value_axis.tick_labels.number_format_is_linked = False
+    chart.value_axis.format.line.fill.background()
+    for ax in (chart.value_axis, chart.category_axis):
+        ax.tick_labels.font.size, ax.tick_labels.font.name = Pt(14), FONT
+        ax.tick_labels.font.color.rgb = GRAY
+    plot = chart.plots[0]
+    plot.gap_width = 60
+    plot.has_data_labels = True
+    labels = plot.data_labels
+    labels.number_format, labels.number_format_is_linked = "0%", False
+    labels.position = XL_LABEL_POSITION.OUTSIDE_END
+    labels.font.size, labels.font.bold, labels.font.name = Pt(14), True, FONT
+    for series, color in zip(plot.series, (GOLD, INK)):
+        series.format.fill.solid()
+        series.format.fill.fore_color.rgb = color
+    stat(s, 8.75, 2.4, 3.8, "1,052", "verified teacher builds\n(QLoRA, 4-bit, on one RTX 3080)")
+    stat(s, 8.75, 3.85, 3.8, "85K → 25K", "tokens per correct part")
+    text_box(s, 8.75, 5.35, 3.8, 1.1, "Organic: valid mesh 3% → 36%, but right shape only 1%. It learned code that "
+             "runs, not the shape.", size=14, color=GRAY)
+
+    # 8. Retrieved examples (RQ2)
     s = content_slide(prs, "DO RETRIEVED EXAMPLES HELP?", (
         "Retrieved examples, the RAG part. For the API models they make no measurable difference to the end result: "
         "Gemini Flash Lite builds the right part 74 percent of the time with or without them, and the Claude models "
@@ -308,47 +350,6 @@ def build():
     card(s, 8.75, 5.3, 3.79, 1.25)
     text_box(s, 8.95, 5.3, 3.4, 1.25, "The fine-tuned Qwen saw 3 examples in every training prompt: its +12 is RAG and "
              "training format together.", size=13, anchor=MSO_ANCHOR.MIDDLE)
-
-    # 8. Fine-tuning (RQ3)
-    s = content_slide(prs, "FINE-TUNING A SMALL LOCAL MODEL", (
-        "Can fine-tuning close the gap for a small local model? We trained Qwen 3.5 4B with QLoRA on 1,052 teacher "
-        "conversations from Sonnet and Gemini Flash Lite, kept only when the part passed the checks, repairs included. "
-        "Right size triples, from 17 to 51 percent, right shape more than doubles, and it needs a third of the tokens "
-        "per correct part. But it is still 25 points below the 12B model. On organic shapes it learned to write SDF code "
-        "that runs, but not to sculpt the object."))
-    data = CategoryChartData()
-    data.categories = ["Qwen 4B base", "Qwen 4B fine-tuned", "Gemma 4 12B"]
-    data.add_series("Right size", (0.17, 0.51, 0.77))
-    data.add_series("Right size + shape", (0.13, 0.30, 0.55))
-    chart = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(0.79), Inches(2.35), Inches(7.2),
-                               Inches(4.3), data).chart
-    chart.has_legend = True
-    chart.legend.position = XL_LEGEND_POSITION.TOP
-    chart.legend.include_in_layout = False
-    chart.legend.font.size, chart.legend.font.name = Pt(14), FONT
-    chart.value_axis.maximum_scale = 1.0
-    chart.value_axis.has_major_gridlines = True
-    chart.value_axis.major_gridlines.format.line.color.rgb = RGBColor(0xD6, 0xD6, 0xD6)
-    chart.value_axis.tick_labels.number_format = "0%"
-    chart.value_axis.tick_labels.number_format_is_linked = False
-    chart.value_axis.format.line.fill.background()
-    for ax in (chart.value_axis, chart.category_axis):
-        ax.tick_labels.font.size, ax.tick_labels.font.name = Pt(14), FONT
-        ax.tick_labels.font.color.rgb = GRAY
-    plot = chart.plots[0]
-    plot.gap_width = 60
-    plot.has_data_labels = True
-    labels = plot.data_labels
-    labels.number_format, labels.number_format_is_linked = "0%", False
-    labels.position = XL_LABEL_POSITION.OUTSIDE_END
-    labels.font.size, labels.font.bold, labels.font.name = Pt(14), True, FONT
-    for series, color in zip(plot.series, (GOLD, INK)):
-        series.format.fill.solid()
-        series.format.fill.fore_color.rgb = color
-    stat(s, 8.75, 2.4, 3.8, "1,052", "verified teacher builds\n(QLoRA, 4-bit, on one RTX 3080)")
-    stat(s, 8.75, 3.85, 3.8, "85K → 25K", "tokens per correct part")
-    text_box(s, 8.75, 5.35, 3.8, 1.1, "Organic: valid mesh 3% → 36%, but right shape only 1%. It learned code that "
-             "runs, not the shape.", size=14, color=GRAY)
 
     # 9. Repair loop (RQ4)
     s = content_slide(prs, "THE REPAIR LOOP", (
