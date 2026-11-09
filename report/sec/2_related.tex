@@ -7,20 +7,34 @@
 % (point cloud -> CadQuery code), Text-to-CadQuery~\cite{xie2025text2cadquery} (fine-tuned LLMs write CadQuery),
 % CADCodeVerify~\cite{alrashedy2025cadcodeverify} (VLM looks at renders to refine CAD code). CadQuery~\cite{cadquery}.
 % Difference: a whole agent with intake, checks and fallbacks; measured against exact expected sizes.
-\TODO{text to CAD}
+
+Among the project specifications, Text2CAD \cite{khan2024text2cad} attempts to follow a similar text-code paradigm.
+Unlike this project, the output was direct CAD code, not python.
+A subset of Text2CAD, Text2CadQuery \cite{xie2025text2cadquery} was a subset of Text2CAD's data, auto transcribed to python by Gemini 2.0 Flash.
+These queries focused more on abstract geometries without specific dimensions, which translates poorly to our use-case.
+It also lacks the agentic pipeline of checking resulting geometries for accuracy.
 
 % Code generation with execution feedback: Self-Refine~\cite{madaan2023selfrefine}, Reflexion~\cite{shinn2023reflexion},
 % Self-Debugging~\cite{chen2024selfdebug}. Here the feedback is a geometry check (watertight mesh, measured size).
 % pass@k~\cite{chen2021codex} for retrying the whole request.
-\TODO{execution feedback and repair}
+
+We use a similar feedback loop established in Self-Refine~\cite{madaan2023selfrefine}, where failed first runs are used to iteratively refine subsequent runs.
+To increase the initial knowledge of the agent, studies have shown the effectiveness of preloading the agent with relevant knowledge to increase success rate.
+This is known as retrieval augemented generation (RAG) \cite{lewis2020rag}.
+Two popular methods have emerged as testing for document relevancy, IDF and embeddings.
+We will explore this methods in more depth in the system design.
 
 % Retrieval: RAG~\cite{lewis2020rag}; few-shot examples picked by TF-IDF similarity.
-\TODO{retrieval-augmented generation}
 
 % Judging with models: LLM-as-a-judge~\cite{zheng2023judging} and its biases (self-preference); here a multimodal
 % judge over six rendered views, checked against hand grades.
-\TODO{LLM judges}
+
+As shown in the LLM-as-a-judge paper \cite{zheng2023judging}, using large language models as deciders can yield good results.
+This method allows for simple grading criteria to be created and ran automatically, saving human time that would otherwise need to be used to evaluate runs.
 
 % Small models and shapes: QLoRA~\cite{dettmers2023qlora} for the fine-tuned student; SDF modeling after
 % fogleman/sdf~\cite{fogleman_sdf}, meshed with manifold3d~\cite{manifold3d}; Thingiverse~\cite{thingiverse}.
-\TODO{fine-tuning small models; SDF modeling}
+
+Finally, to increase the orchestrator's success, methods have been devised to directly influence the output of the tokens.
+Primarily, QLoRA~\cite{dettmers2023qlora} allows for the fine-tuning of student models from a teacher model.
+Teacher models, in our case, will be frontier-level LLMs, serving to train small local models.

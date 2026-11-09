@@ -13,7 +13,23 @@
 
 % Failure analysis: common failure types (size off, wrong feature, script errors in small models), with 2-3
 % example renders (eval/renders/) of typical mistakes. Organic: blobby or missing parts; Thingiverse: wrong object.
+% Counts per model: report-v1 "How the main-suite runs failed". For the API models and gemma4:12b the commonest
+% failure is right size, wrong shape (e.g. Gemini 20, gemma4:12b 30 of 126); the small Qwen models mostly end with
+% no part (base: 101 script errors of 126).
 \TODO{failure analysis}
+
+% Figure: made by `pixi run -e cap6938 python -m scripts.report_figures failures` (parts and judge replies printed).
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/failures.pdf}
+  \caption{Typical failures: each part is the right size, so the size check accepts it, and the judge fails its shape.
+    (a)~Gemini Flash Lite, ``a thumbwheel 40\,mm in diameter and 10\,mm thick with 30 semicircular 2\,mm notches
+    around its rim and a hexagonal socket 5\,mm across the flats through the centre'': a plain disc (score 0.22; the
+    same in all 3 runs). (b)~Haiku, a honeycomb panel of ``hexagonal through-holes'': the holes are pockets and the
+    bottom is solid, visible only from below (0.44; 2 of 3 runs). (c)~Haiku, ``something to prop my 70\,mm wide phone
+    up at an angle on my desk'': a plain wedge with no lip to stop the phone sliding (0.44; all 3 runs).}
+  \label{fig:failures}
+\end{figure*}
 
 % Limitations (report-v1.md "Caveats"): 48 + 30 cases; one human grader, only 34 graded organic parts;
 % main suite at ceiling for Claude models; judge choice departed from the pre-set rule (budget); token counts only

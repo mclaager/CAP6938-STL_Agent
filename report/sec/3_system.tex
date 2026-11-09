@@ -1,6 +1,8 @@
 \section{System}
 \label{sec:system}
 
+We designed an agentic system to take text from a user in a conversational style, then use the resulting specifications to iteratively generate STLs until a passing STL is generated.
+
 % ~1.5 pages. Describe what the app does today (the round's code). Keep history to one sentence per dropped idea.
 
 \begin{figure*}[t]
@@ -17,37 +19,75 @@
 \subsection{Intake gate}
 % One LLM request: scope, filled-in spec, unknown parameters (critical or not). Fixed rules choose proceed /
 % clarify / out of scope; composite plans with pieces. Not evaluated in this round (say so; Sec. 6).
-\TODO{gate}
+
+A gate is required to determine the scope of the agentic development.
+In this system, we define three different generation paths the agent can take: mechanical, organic, or composite.
+A mechanical part requires exact dimensionality, whereas organic is more fluid in its design.
+A composite request will combine multiple organic or mechanical requests into a single STL at the end.
+It is up to the gate model to determine the scope of the user request, and to make clarifications until a valid request can be made.
+
+The initial request by the user, $r_0$, is given to the \textit{Gate Model}.
+From this initial request, the agent checks the request for any missing information, like height data or shape.
+After, the agent drafts a request to be sent along in the pipeline, which the user can then suggest edits or approve.
 
 \subsection{Retrieved examples}
 % 26 hand-checked CadQuery examples (scripts/make_examples.py), each request plus generic shape keywords;
 % TF-IDF retriever, top 3 into the prompt. History, one sentence: an embedding retriever, a similarity cutoff and
 % an external Text-to-CadQuery pool were tried and dropped (no gain; retrieval-lib26.md, external-rag.md).
-\TODO{RAG}
+
+The agent then gathers similar examples to use as a basis for generating the STL.
+There are 26 hand-crafted examples, ranging from gears to animals like fish.
+Examples from Text-to-CadQuery were added initially as more examples, but more examples did not appear to improve performance.
+Thus, those examples were dropped.
+
+TF-IDF is used as the similarity metric, after initial testing showed embeddings to not improve overall performance.
+TF-IDF is based on exact word matching, which was shown to be adequate for getting relevant examples.
+
+All of the examples are scored, and the top 3 are appended to the request to allow the builder to see well-formed examples.
 
 \subsection{Generate, run, check, repair}
 % The model writes a script plus its own BBOX line (expected size). Sandbox: separate process, timeout, 2 GB cap.
 % Checks: valid watertight mesh (trimesh), size matches the request. On failure the error goes back
 % (script error, mesh check failed, size off with the measured size, #23; no code; reply cut off), up to 4 attempts.
-\TODO{repair loop}
 
-\subsection{Organic shapes: sculpting and Thingiverse}
-% Out-of-scope objects with an organic_spec are sculpted: the model writes SDF code (fogleman/sdf API on our own
-% small library, meshed with manifold3d level sets; 11 SDF examples retrieved); every shape is stood on z = 0
-% (#47). Otherwise / as fallback: Thingiverse search, name/tag check that the result is the object (#39),
-% download, validate.
-\TODO{SDF sculpting; Thingiverse}
+The \textit{Builder Model} then gets the resulting output from the \textit{Gate Model}.
+This model is instructed to build valid Python code for the requested object.
+The model also creates a suggested bounding box for the mesh, which is automatically checked against the actual bounding box of the resulting object.
+
+The python code is ran in a sandbox that includes all the necessary libraries for performing generation.
+If the code fails, the sandbox sends the error message and forces a rerun of the generation.
+If it executes, it takes the resulting mesh and checks the sizing against the expected bounding box.
+If those do not match within a percentage threshold, then the agent will also have to try again.
+
+For organic parts, if configured, the model can instead make requests to an online service for parts.
+In this case, Thingiverse was configured as the online web service. It hosts user-made STLs that can be freely downloaded and used.
+So, the model makes a search on its API for similar objects.
+It can either pull the first match, or pull multiple and have the user decide.
+If a Thingiverse model is selected, the task is considered complete.
 
 \subsection{Combined parts}
 % Composite plans: base first, pieces generated or downloaded, scaled to height, placed (on_top / under / beside /
 % inside) by bounding boxes, merged with manifold3d. Not benchmarked; one example figure at most.
-\TODO{assembly}
 
-\subsection{Local models and fine-tuning}
+Composite, the third track, first decides what each part requires (mechanical or organic / downloaded).
+It then runs each of those parts separately in the above desicribed generation loop.
+After all the parts are gathered, it then composites the STLs into a final shape.
+
+
+\subsection{Model selection and fine-tuning}
 \label{sec:finetune}
 % Ollama for fully local use (default gemma4:12b). Student: Qwen3.5-4B, 4-bit QLoRA (rank 16, 2 epochs) on 1,052
 % teacher conversations (822 CadQuery, 230 SDF; 990 train / 62 validation; teachers Sonnet and
 % gemini-3.5-flash-lite), kept only when the part was valid
 % and the right size (SDF: judge pass too). Failed attempts and repairs kept in the conversations. Requests are
 % filtered against benchmark cases. Source: finetune-v2.md (data/training only; results from report-v1.md).
-\TODO{fine-tuned student}
+
+The agent is designed to work with multiple LLM orchestrators as the backend.
+Primarily, API driven LLMs were used the most, but it was desirable to create a local LLM that the application could work with.
+
+For the local LLM models, we took the newer Gemma 4 models and Qwen 3.5 and ran those as \textit{Gate Models} and \textit{Builder Models}.
+We also wanted to see the effectiveness of fine-tuning a model specific to this task.
+Fine tuning, like running these models, was performed locally. Thus, the options available were limited by hardware specifications.
+
+The chosen model for fine-tuning was Qwen 3.5. The fine-tuning was performed by training a 4-bit QLoRA of rank 16 for 2 epochs.
+It was trained on a generated 1052 teacher conversations: 22 CadQuery, 230 SDF; 990 train / 62 validation; teachers Sonnet and gemini-3.5-flash-lite.
