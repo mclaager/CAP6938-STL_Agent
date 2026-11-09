@@ -13,12 +13,14 @@ Unlike this project, the output was direct CAD code, not python.
 A subset of Text2CAD, Text2CadQuery \cite{xie2025text2cadquery} was a subset of Text2CAD's data, auto transcribed to python by Gemini 2.0 Flash.
 These queries focused more on abstract geometries without specific dimensions, which translates poorly to our use-case.
 It also lacks the agentic pipeline of checking resulting geometries for accuracy.
+CAD-Recode~\cite{rukhovich2025cadrecode} also produces CadQuery code, but from point clouds rather than text.
+Closest to our visual judge, CADCodeVerify~\cite{alrashedy2025cadcodeverify} has a vision-language model inspect renders of the generated part and uses its answers to refine the CAD code.
 
 % Code generation with execution feedback: Self-Refine~\cite{madaan2023selfrefine}, Reflexion~\cite{shinn2023reflexion},
 % Self-Debugging~\cite{chen2024selfdebug}. Here the feedback is a geometry check (watertight mesh, measured size).
 % pass@k~\cite{chen2021codex} for retrying the whole request.
 
-We use a similar feedback loop established in Self-Refine~\cite{madaan2023selfrefine}, where failed first runs are used to iteratively refine subsequent runs.
+We use a feedback loop similar to Self-Refine~\cite{madaan2023selfrefine}, Reflexion~\cite{shinn2023reflexion} and Self-Debugging~\cite{chen2024selfdebug}, where failed first runs are used to iteratively refine subsequent runs.
 To increase the initial knowledge of the agent, studies have shown the effectiveness of preloading the agent with relevant knowledge to increase success rate.
 This is known as retrieval augemented generation (RAG) \cite{lewis2020rag}.
 Two popular methods have emerged as testing for document relevancy, IDF and embeddings.

@@ -51,7 +51,7 @@ All of the examples are scored, and the top 3 are appended to the request to all
 % (script error, mesh check failed, size off with the measured size, #23; no code; reply cut off), up to 4 attempts.
 
 The \textit{Builder Model} then gets the resulting output from the \textit{Gate Model}.
-This model is instructed to build valid Python code for the requested object.
+This model is instructed to build valid CadQuery~\cite{cadquery} (Python) code for the requested object.
 The model also creates a suggested bounding box for the mesh, which is automatically checked against the actual bounding box of the resulting object.
 
 The python code is ran in a sandbox that includes all the necessary libraries for performing generation.
@@ -60,7 +60,7 @@ If it executes, it takes the resulting mesh and checks the sizing against the ex
 If those do not match within a percentage threshold, then the agent will also have to try again.
 
 For organic parts, if configured, the model can instead make requests to an online service for parts.
-In this case, Thingiverse was configured as the online web service. It hosts user-made STLs that can be freely downloaded and used.
+In this case, Thingiverse~\cite{thingiverse} was configured as the online web service. It hosts user-made STLs that can be freely downloaded and used.
 So, the model makes a search on its API for similar objects.
 It can either pull the first match, or pull multiple and have the user decide.
 If a Thingiverse model is selected, the task is considered complete.
@@ -71,7 +71,7 @@ If a Thingiverse model is selected, the task is considered complete.
 
 Composite, the third track, first decides what each part requires (mechanical or organic / downloaded).
 It then runs each of those parts separately in the above desicribed generation loop.
-After all the parts are gathered, it then composites the STLs into a final shape.
+After all the parts are gathered, it then composites the STLs into a final shape, merging them with manifold3d~\cite{manifold3d}.
 
 
 \subsection{Model selection and fine-tuning}

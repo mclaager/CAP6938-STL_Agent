@@ -35,7 +35,7 @@ The two Qwen3.5 4B models, the base model and our fine-tuned version (Sec.~\ref{
 
 The main suite is run in two configurations.
 With RAG, the app's setup, the three most similar of the 26 examples are added to the prompt; without RAG, the prompt has no examples.
-On the organic suite, models write SDF code instead of CadQuery, with the three most similar of 11 SDF examples in the prompt.
+On the organic suite, models write signed distance function (SDF) code in the style of fogleman/sdf~\cite{fogleman_sdf} instead of CadQuery, with the three most similar of 11 SDF examples in the prompt.
 In every configuration a run allows up to 4 attempts: each failed attempt sends the error, or the measured size of a part that came out the wrong size, back to the model for a repair.
 The Thingiverse baseline uses no model: it searches Thingiverse with a short phrase for each organic case and keeps the first result whose name or tags contain the object's name.
 
