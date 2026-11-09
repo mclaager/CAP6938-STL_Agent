@@ -155,6 +155,8 @@ def content_slide(prs, title, notes):
 
 
 def build():
+    if not TEMPLATE.exists():
+        raise SystemExit(f"{TEMPLATE.name} is missing: download it as described in {HERE / 'README.md'}")
     prs = open_template(TEMPLATE)
     tmp = Path(tempfile.mkdtemp())
     fig = {n: render(n, 300, tmp) for n in ("pipeline_preview", "models", "attempts", "organic", "failures", "cost")}

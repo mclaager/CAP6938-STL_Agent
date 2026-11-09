@@ -23,11 +23,17 @@ outputs/
 *.stl
 
 # Renders of downloaded Thingiverse models (#42 comparison): third-party models, many licensed NC/ND, so not
-# committed. Recreated locally by `judge run` from outputs/bench/.
-eval/renders/*/*/*/thingiverse/
+# committed. Recreated locally by `judge run` from outputs/bench/. Any depth: studies nest one level deeper.
+eval/renders/**/thingiverse/
 
 # Fine-tuning (#46): checkpoints, adapters and GGUF files are large; train/val are rebuilt by `ft-export`
 finetune/runs/
 finetune/data/train.jsonl
 finetune/data/val.jsonl
 unsloth_compiled_cache/
+
+# UCF brand PowerPoint template: a UCF asset, downloaded locally (deliverables/presentation/README.md)
+deliverables/presentation/*.potx
+
+# LibreOffice lock files (a document open in LibreOffice)
+.~lock.*#
