@@ -193,8 +193,9 @@ def build():
         "One request goes through an intake gate, a single LLM call that decides the scope and asks for missing sizes. "
         "For a mechanical part, we retrieve three similar examples from a hand-checked library of 26, the model writes "
         "a script plus the size it expects, we run it in a sandbox and check the mesh is a closed solid of the right "
-        "size. Any failure goes back to the model, up to four attempts. Organic objects are sculpted with SDF code "
-        "through the same loop, or downloaded from Thingiverse."))
+        "size. Any failure goes back to the model, up to four attempts. Organic objects are sculpted with signed "
+        "distance function code through the same loop, or downloaded from Thingiverse. Combined objects are built "
+        "piece by piece and merged."))
     picture_fit(s, fig["pipeline_preview"], 0.79, 2.35, 11.75, 4.35,
                 alt="Pipeline: request, intake gate, retrieve examples, write script, sandbox, mesh check, STL; "
                     "Thingiverse branch and combined-parts branch")
@@ -241,8 +242,8 @@ def build():
         "The benchmark has 48 mechanical parts, each with a hand-written reference solution and expected size, and 30 "
         "organic objects. Seven builder models plus Thingiverse, three runs each: 2,118 runs in one pre-planned round. "
         "Right size is measured directly. Right shape needs a visual judge: we render six views, like this, and a "
-        "multimodal model scores them. I picked the judge out of four by grading 146 parts by hand, blind; Sonnet "
-        "agreed best, at 96 percent."))
+        "multimodal model scores them. I picked the judge out of four by grading 146 parts by hand, blind. Sonnet "
+        "agreed best, 96 percent held out. Our earlier, cheaper judge was at 83 and was too harsh on strong models."))
     stats = [("78", "requests: 48 mechanical\n+ 30 organic"), ("7 + 1", "builder models\n+ Thingiverse"),
              ("2,118", "runs (3 per case\nand setup)"), ("96%", "judge accuracy on\n146 hand-graded parts")]
     for i, (num, label) in enumerate(stats):
@@ -260,7 +261,8 @@ def build():
         "First, the model. Claude Sonnet builds the right part 99 percent of the time, Haiku 94. Gemini Flash Lite "
         "and Gemma 4 31B are at 74, our local default Gemma 4 12B at 55, and the small Qwen 4B at 13 before fine-tuning. "
         "Is the local gap about running locally or about size? Gemma 31B and 12B are the same family: the 31B is 19 "
-        "points better, so it's mostly size."))
+        "points better, so it's mostly size. The orange-blue gap is parts with the right size but the wrong shape, "
+        "which the size check alone can't catch."))
     picture_fit(s, fig["models"], 0.79, 2.35, 7.4, 4.35, alt="Right size and right size plus shape per builder model")
     stat(s, 8.75, 2.4, 3.8, "99%", "Claude Sonnet 5.5: right size + shape")
     stat(s, 8.75, 3.85, 3.8, "+19 pts", "Gemma 4 31B vs 12B (same family):\nthe local gap is mostly size")
@@ -353,8 +355,8 @@ def build():
         "Execution feedback. This shows how many runs are correct if we stop after one, two, three or four attempts. "
         "Strong models are right first time, so there's little to fix. Mid-strength models gain the most: Gemini Flash "
         "Lite goes from 67 to 88 percent, Gemma 31B from 52 to 85. On the right, sculpting organic shapes: Gemini's "
-        "first attempt gives a valid mesh only 1 percent of the time, after four attempts 82: sculpting only works "
-        "because of the loop."))
+        "first attempt gives a valid mesh only 1 percent of the time, after four attempts 82. Sculpting basically only "
+        "works because of the loop. The small Qwen models rarely recover from their own script errors."))
     picture_fit(s, fig["attempts"], 0.79, 2.35, 11.75, 3.7, alt="Runs correct after 1 to 4 attempts, per model")
     take = [("67% → 88%", "Gemini Flash Lite"), ("52% → 85%", "Gemma 4 31B"),
             ("1% → 82%", "Gemini, sculpting")]

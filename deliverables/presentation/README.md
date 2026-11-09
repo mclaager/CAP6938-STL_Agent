@@ -1,8 +1,8 @@
 # Presentation (7 minutes)
 
 `stl_agent_talk.pptx`: 13 slides on the UCF brand template
-(`UCF-PowerPoint-Template-...potx`). Speaker notes on every slide hold the talking points (~950 words,
-about 7 minutes). The live demo follows the "Questions & demo" slide.
+(`UCF-PowerPoint-Template-...potx`). Speaker notes on every slide hold the talking points (~1,000 words,
+about 7.5 minutes; 8-9 is fine). The live demo follows the "Questions & demo" slide.
 
 Every number comes from the report (`../report/sec/5_results.tex`), which takes them from
 `eval/results/report-v1.md`. Figures are the report's own, rendered from `../report/figures/*.pdf`.
