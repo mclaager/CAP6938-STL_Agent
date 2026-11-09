@@ -1,6 +1,6 @@
 # The app and the eval commands in the locked `cap6938` environment (pixi.lock), on any x86-64 machine with
 # Docker or Podman. No GPU needed: renders use Mesa's software OpenGL, and local models run in Ollama outside
-# the container. See docs/docker.md.
+# the container. See README "Run it in Docker" (and compose.yaml).
 #
 #   docker build -t stl-agent --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) .
 #   docker run --rm -p 7860:7860 --env-file .env stl-agent

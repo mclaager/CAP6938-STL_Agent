@@ -51,29 +51,40 @@ and the eval commands run the same on any machine with Docker or Podman. No GPU 
 software OpenGL. Tested with Podman on Fedora.
 
 ```bash
-docker build -t stl-agent --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) .
-mkdir -p data outputs
-docker run --rm -p 7860:7860 --env-file .env -v ./data:/app/data -v ./outputs:/app/outputs stl-agent
+docker compose up --build        # app at http://127.0.0.1:7860
 ```
 
-The app is then at http://127.0.0.1:7860. `./data/settings.toml` is the container's settings file (created on
-the first run) and `./outputs` gets the finished parts. Any other command runs the same way, by its pixi task
-name:
+API keys come from `.env` (as above; optional): compose passes each line to the container as an environment
+variable, which is where the app looks for them. `./data/settings.toml` is the container's settings file
+(created on the first run) and `./outputs` gets the finished parts. Any other command runs by its pixi task name:
 
 ```bash
-docker run --rm stl-agent test          # the test suite (no API calls)
-docker run --rm stl-agent bench report --study report-v1 --judge-model gemini-3.8-flash --organic-judge-model claude-sonnet-5-5
+docker compose run --rm app test     # the test suite (no API calls)
+docker compose run --rm app bench report --study report-v1 --judge-model gemini-3.8-flash --organic-judge-model claude-sonnet-5-5
 ```
 
 The second command rebuilds the report's tables from the committed results (`eval/results/report-v1.md`)
-without any model requests. `GIT_COMMIT` is recorded in benchmark rows, since the image has no `.git`. With
-Podman on an SELinux system (Fedora), add `:Z` to each `-v` mount.
+without any model requests. Benchmark rows record the git commit; the image has no `.git`, so build with
+`GIT_COMMIT=$(git rev-parse --short HEAD) docker compose build` before benchmark runs.
 
-Ollama on the host machine: point `providers.ollama.base_url` in `./data/settings.toml` at
-`http://host.docker.internal:11434/v1` (Docker; on Linux also pass `--add-host=host.docker.internal:host-gateway`)
-or `http://host.containers.internal:11434/v1` (Podman), and let Ollama listen beyond localhost
-(`OLLAMA_HOST=0.0.0.0` on its service). Software rendering differs from a GPU's in a few edge pixels, so the
-visual judge can score a part slightly differently than on the host.
+**Local models with a GPU.** `docker compose --profile ollama up --build` also starts Ollama in a container,
+with its context window already raised. It uses an NVIDIA GPU through the
+[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/) (without one,
+delete the `deploy` block in `compose.yaml` and it runs on the CPU, slowly). Pull a model once with
+`docker compose exec ollama ollama pull gemma4:12b`, then set the server address in the app's settings panel
+to `http://ollama:11434/v1`. The app container itself needs no GPU.
+
+Ollama already running on the host instead: set the server address to `http://host.docker.internal:11434/v1`
+(Docker; on Linux add `extra_hosts: ["host.docker.internal:host-gateway"]` to the app service) or
+`http://host.containers.internal:11434/v1` (Podman), and let Ollama listen beyond localhost
+(`OLLAMA_HOST=0.0.0.0` on its service).
+
+Without compose: `docker build -t stl-agent .`, then
+`docker run --rm -p 7860:7860 --env-file .env -v ./data:/app/data -v ./outputs:/app/outputs stl-agent`
+(create `data` and `outputs` first with Podman; on SELinux add `:z` to each mount).
+
+Software rendering differs from a GPU's in a few edge pixels, so the visual judge can score a part slightly
+differently than on the host.
 
 ## Run it locally (no API key)
 
