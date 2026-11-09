@@ -250,8 +250,11 @@ Elsewhere:
   Ollama; runs only in the `finetune` pixi environment (PyTorch, CUDA), never imported by the app. Outputs in
   `finetune/runs/` (gitignored). The GPU is shared with Ollama: stop local models before training.
 - `scripts/` — maintenance scripts (`make_examples.py`, `make_sdf_examples.py`).
-- `report/` — the final report (#11): LaTeX on the CVPR 2026 template (`latexmk -pdf main.tex` in that folder), sections
-  in `report/sec/`. Every number comes from `eval/results/report-v1.md`; see `report/README.md`.
+- `deliverables/` — course write-ups, kept apart from the code:
+  - `report/` — the final report (#11): LaTeX on the CVPR 2026 template (`latexmk -pdf main.tex` in that folder),
+    sections in `sec/`, figures made by `scripts/report_figures.py`. Every number comes from
+    `eval/results/report-v1.md`; see `deliverables/report/README.md`.
+  - `presentation/` — the 7-minute talk on the UCF template, built by `build_slides.py` (see its README).
 - `outputs/` (gitignored) — finished parts at the top: `<name>.stl` (name from the gate), a colored
   `<name>.preview.glb` for the viewer, and `<name>.source.json` for downloads. Working folders (each attempt's
   script and STL, `report.json`) go in `outputs/runs/` (`run_<time>`, `assembly_<time>`); benchmark runs in

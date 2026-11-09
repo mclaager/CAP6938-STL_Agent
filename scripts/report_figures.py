@@ -2,7 +2,7 @@
 
     pixi run -e cap6938 python -m scripts.report_figures models | judge-example | attempts | cost | organic | failures | render-fix | all
 
-Each subcommand writes one figure's files to report/figures/ and prints the numbers it plotted, which should match the
+Each subcommand writes one figure's files to deliverables/report/figures/ and prints the numbers it plotted, which should match the
 tables in eval/results/report-v1.md. Rates and intervals come from the same code as `bench report --study`.
 """
 
@@ -22,7 +22,7 @@ from stl_agent.config import ROOT, settings  # noqa: E402
 
 STUDY = "report-v1"
 MAIN_JUDGE = "gemini-3.8-flash"  # judges the main suite (report-v1.md, "Choosing the judge")
-OUT = ROOT / "report" / "figures"
+OUT = ROOT / "deliverables" / "report" / "figures"
 
 # Display names, top to bottom in the model figure.
 MODELS = {
@@ -463,11 +463,11 @@ def tex(text: str) -> str:
 
 
 def fig_appendix():
-    """Appendix files in report/appendix/: every benchmark case (cases.tex) and the three prompts as plain text.
+    """Appendix files in deliverables/report/appendix/: every benchmark case (cases.tex) and the three prompts as plain text.
     The report merges the data's `proposal` category into `casual` (both are loosely worded requests)."""
     from stl_agent import generate
     from stl_agent.judge import DEFAULT_PROMPT
-    out = ROOT / "report" / "appendix"
+    out = ROOT / "deliverables" / "report" / "appendix"
     out.mkdir(exist_ok=True)
     main = json.loads((ROOT / "eval" / "cases.json").read_text())["cases"]
     organic = json.loads((ROOT / "eval" / "organic_cases.json").read_text())["cases"]
