@@ -12,7 +12,12 @@
 % gemma4:12b 55% [42-67], fine-tuned Qwen 30% [19-41], base Qwen 13% [6-22].
 % Sonnet vs Gemini +24 pts [+14, +35], p < 0.001; Haiku vs Gemini +20 pts, p < 0.001 ("Comparisons").
 % The main suite no longer separates the two Claude models (ceiling).
-\TODO{model comparison}
+Fig.~\ref{fig:models} shows both metrics for each builder on the main suite, with retrieved examples.
+Claude Sonnet 5.5 builds a part of the right size and shape in 99\% [96--100] of runs, and Claude Haiku 5.5 in 94\% [89--99].
+Both are well above Gemini 3.5 Flash Lite at 74\% [64--84]: Sonnet by 24 points [+14, +35] and Haiku by 20 points [+10, +31] (both $p < 0.001$).
+Gemma 4 31B matches Gemini Flash Lite at 74\%, while the local Gemma 4 12B reaches 55\%, and the two Qwen 4B models 30\% (fine-tuned) and 13\% (base).
+The gap between the two metrics is the share of parts with the right size but the wrong shape: none for Sonnet, 14 points for Gemini Flash Lite and 22 points for Gemma 4 12B.
+With Sonnet at 99\%, the main suite can no longer rank the strongest models.
 
 % Figure 2: made by `pixi run -e cap6938 python -m scripts.report_figures models` (report-v1 "Summary").
 \begin{figure}[t]
@@ -32,7 +37,12 @@
 % it was trained with examples in every prompt, so this measures RAG and training format together.
 % Base 4B: within noise (17% vs 10% correct, p = 0.18), but builds a valid part more often (12% vs 3%) and needs
 % half the tokens per correct part. Examples do raise first-try rates for Gemini (55% -> 67%) and Haiku.
-\TODO{RAG}
+Retrieved examples make no measurable difference for the API models (Table~\ref{tab:rag}).
+Gemini Flash Lite builds the right part 74\% of the time with and without them, Sonnet 99\% vs.\ 98\%, and Haiku 94\% vs.\ 95\%.
+The examples do help these models get it right sooner: Gemini Flash Lite's first-try rate rises from 55\% to 67\% and Haiku's from 90\% to 97\%, and without examples the repair loop makes up the difference.
+The fine-tuned Qwen is the only builder with a clear gain: 30\% vs.\ 18\% right size and shape (+12 points [+3, +21], $p = 0.04$), and 28\% vs.\ 10\% on the first try.
+It was trained with three examples in every prompt, so this measures the examples together with the format it was trained on.
+For the base Qwen the gain is within noise (13\% vs.\ 10\%, $p = 0.51$), although with examples it produces a valid part more often (12\% of runs vs.\ 3\%) and needs half the tokens per correct part.
 
 % Table: report-v1 "Comparisons" (difference, interval, p), "Repair loop and retries" (after 1 attempt) and
 % "Tokens and cost" (tokens per correct part); main suite, rag-size vs norag-size.
@@ -69,13 +79,32 @@
 % (p = 0.007), a third of the tokens per correct part ("Tokens and cost"). Still below gemma4:12b (-25 pts shape,
 % p < 0.001). Organic: valid mesh 36% vs 3%, but right shape only 1%: it learned to produce SDF code that runs,
 % not the shape.
-\TODO{fine-tuning}
+Fine-tuning on verified builds triples the small model's right-size rate, from 17\% to 51\% (+34 points [+22, +47], $p < 0.001$), and more than doubles its right size and shape, from 13\% to 30\% ($p = 0.007$).
+It also needs a third of the tokens per correct part (25K vs.\ 85K).
+It still falls well short of the local Gemma 4 12B, 25 points lower on right size and shape ($p < 0.001$).
+On the organic suite it learned to write SDF code that runs (a valid mesh in 36\% of runs vs.\ 3\%), but not to sculpt the object: the judge passes 1\% of its parts.
 
 \subsection{Model size versus running locally}
 \label{sec:res-size}
 % Same Gemma 4 family: 31B on Google's servers vs 12B local: right shape 74% vs 55% (+19 [+6, +32], p = 0.005),
 % right size +8 pts (p = 0.19, not significant). 31B matches Gemini Flash Lite. So the local gap is mostly size.
-\TODO{size vs local}
+Gemma 4 31B and Gemma 4 12B come from the same model family; the 31B runs on Google's servers and the 12B on our GPU.
+The 31B is 19 points better on right size and shape (74\% vs.\ 55\%, [+6, +32], $p = 0.005$), while its 8-point lead on right size alone is not significant ($p = 0.19$).
+At 31B the family matches Gemini Flash Lite, so the gap between the local default and the API models comes mostly from model size, not from running locally.
+
+
+% Figure (placed here so it floats before the references): made by `pixi run -e cap6938 python -m scripts.report_figures failures` (parts and judge replies printed).
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/failures.pdf}
+  \caption{Typical failures: each part is the right size, so the size check accepts it, and the judge fails its shape.
+    (a)~Gemini Flash Lite, ``a thumbwheel 40\,mm in diameter and 10\,mm thick with 30 semicircular 2\,mm notches
+    around its rim and a hexagonal socket 5\,mm across the flats through the centre'': a plain disc (score 0.22; the
+    same in all 3 runs). (b)~Haiku, a honeycomb panel of ``hexagonal through-holes'': the holes are pockets and the
+    bottom is solid, visible only from below (0.44; 2 of 3 runs). (c)~Haiku, ``something to prop my 70\,mm wide phone
+    up at an angle on my desk'': a plain wedge with no lip to stop the phone sliding (0.44; all 3 runs).}
+  \label{fig:failures}
+\end{figure*}
 
 \subsection{Repair loop and retries (RQ4)}
 \label{sec:res-repair}
@@ -85,7 +114,12 @@
 % Table 3 (maybe appendix): failure types and how often the next attempt fixed them; small Qwen almost never fixes
 % a script error (base 1% of ~460).
 % Retrying the whole request (pass@3): Gemini 88% -> 96%, fine-tuned Qwen 51% -> 73%, gemma4:12b 77% -> 88%.
-\TODO{repair and retries}
+Fig.~\ref{fig:attempts} shows how many runs are correct when the loop stops after $k$ attempts.
+Mid-strength models gain the most from repair: Gemini Flash Lite goes from 67\% after one attempt to 88\% after four, Gemma 4 31B from 52\% to 85\%, and Gemma 4 12B from 53\% to 77\%.
+Sonnet and Haiku are right on the first attempt 97\% of the time, which leaves little to repair.
+Sculpting depends on the loop almost entirely: Gemini Flash Lite's first SDF attempt gives a valid mesh in 1\% of runs, and up to four attempts in 82\%; Haiku goes from 26\% to 91\%.
+The small Qwen models rarely recover: after a script error, the base model's next attempt gave a valid part in 1\% of 463 cases.
+Retrying the whole request adds to the loop: with three tries (pass@3), Gemini Flash Lite reaches 96\%, Gemma 4 12B 88\% and the fine-tuned Qwen 73\%.
 
 % Figure: made by `pixi run -e cap6938 python -m scripts.report_figures attempts` (report-v1 "Repair loop and retries").
 \begin{figure*}[t]
@@ -99,6 +133,23 @@
   \label{fig:attempts}
 \end{figure*}
 
+
+
+% Figure: made by `pixi run -e cap6938 python -m scripts.report_figures cost` (report-v1 "Summary", "Tokens and cost",
+% "Time"; main suite, rag-size). Gemma 31B's output tokens: AI Studio's count (report-v1 "Caveats").
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/cost.pdf}
+  \caption{Quality against cost on the main suite (3 retrieved examples). Vertical: right size + shape, mean over
+    cases with 95\% intervals (as in Fig.~\ref{fig:models}). (a)~Dollars per correct part: everything spent on a
+    model's runs, failed and repaired ones included, divided by its runs at the right size; only models with a known
+    API price. Gemma 4 31B ran on Google's free tier, and local models cost nothing per request. (b)~Median wall-clock
+    time of one build, all attempts included. Gemma 4 12B and both Qwen models run locally on one RTX 3080; Gemma 4
+    31B is slow because it thinks at length: AI Studio counted 738K output tokens for its runs, 5.7 times what the API
+    reported, at about 35 tokens/s.}
+  \label{fig:cost}
+\end{figure*}
+
 \subsection{Organic shapes: sculpting or downloading (RQ5)}
 \label{sec:res-organic}
 % Judged by claude-sonnet-5-5. Right shape: Haiku 82% [71-92], Gemini 52% [40-64], Thingiverse 37% [20-53]
@@ -107,7 +158,12 @@
 % Table 4 ("Organic suite under both judges"): gemini-3.8-flash rates Haiku's parts higher (90%), so the Claude
 % judge does not favour Claude's parts.
 % Figure 4: a few organic parts side by side (same case, Haiku / Gemini / Thingiverse) from eval/renders/.
-\TODO{organic}
+Sculpting with a strong model beats downloading (Fig.~\ref{fig:organic}).
+Judged by Sonnet, Haiku's sculpted parts have the right shape in 82\% [71--92] of runs and Gemini Flash Lite's in 52\% [40--64] (Haiku +30 points [+17, +43], $p = 0.001$).
+Thingiverse's first matching download is right for 37\% [20--53] of cases; Gemini Flash Lite is 16 points higher, but this is not significant ($p = 0.33$).
+A download came out for 67\% of cases, and many were the wrong object although their name matched.
+The small local models cannot sculpt: the judge passes 1\% of the fine-tuned Qwen's parts and none of the base model's.
+The Claude judge does not favour Claude's parts: Gemini 3.8 Flash rates Haiku's parts even higher, at 90\%.
 
 % Figure: made by `pixi run -e cap6938 python -m scripts.report_figures organic`, which also prints each part's id,
 % its judge score and the downloads' credits (from outputs/.../source.json). Cases o24, o22, o20.
@@ -124,13 +180,19 @@
   \label{fig:organic}
 \end{figure}
 
+
 \subsection{How far the judge can be trusted}
 \label{sec:res-judge}
 % Table 5 ("Choosing the judge"): held-out accuracy, mechanical / organic, kappa vs grades, consistency, $/item.
 % gemini-3.1-flash-lite 83%, gemini-3.8-flash 92%, Haiku 90%, Sonnet 96%.
 % The old judge (used in all earlier studies) got 35 of 204 wrong and failed Claude-built parts 50 pts more often
 % than the hand grades: earlier rounds understated strong models. No judge clearly favours its own family.
-\TODO{judge reliability}
+Table~\ref{tab:judges} compares the four judges.
+The judge of our earlier studies, Gemini 3.1 Flash Lite, is the weakest: 83\% held-out accuracy, with 35 of the 204 items wrong, of which each of the other three judges fixes 26 to 29.
+It failed Claude-built parts 50 points more often than the hand grades (12 graded parts), so earlier studies judged by it understated the strongest models.
+On mechanical parts the three newer judges are close (92--95\%), but on organic parts only Sonnet stays reliable (91\%, against 71\% for Gemini 3.8 Flash and 65\% for Haiku).
+No judge clearly favours its own model family: for the three newer judges, the gap between the judge's pass rate and the hand grades' stays within 12 points for every family of builders.
+All four judges are consistent, giving the same verdict in all three runs for 95--99\% of items.
 
 % Table: report-v1 "Choosing the judge" and "Judges compared" (held-out accuracy by kind of item, n = 112 graded
 % mechanical and 34 graded organic parts). Best value per column in bold.
@@ -165,7 +227,10 @@
 % Table 6 ("Tokens and cost", "Time"): $ per correct part and median build time.
 % Haiku $0.0009, Gemini $0.0029, Sonnet $0.011 per correct part; Gemini fastest (median 3 s per build), Sonnet 6 s;
 % gemma4:12b 136 s median (up to ~10 min), mostly thinking (11.5K output tokens per run). Total spend ("Spend").
-\TODO{cost and time}
+Haiku builds the cheapest correct part, at \$0.0009, followed by Gemini Flash Lite at \$0.0029 and Sonnet at \$0.011 (Fig.~\ref{fig:cost}a).
+Gemini Flash Lite is the fastest, with a median of 3\,s per build; Sonnet and Haiku take 6 and 7\,s.
+Local models are much slower: Gemma 4 12B takes a median of 136\,s per build (581\,s at the 90th percentile), most of it thinking (11.5K output tokens per run), and the fine-tuned Qwen 43\,s.
+The whole round, builds and judging, cost \$8.58 at Anthropic and \$2.15 at Google (two Google models have no listed price), plus about 36 hours of local GPU time.
 
 % Electricity estimate: report-v1 "Spend" (assumed 400 W and $0.16/kWh; no power was measured).
 Local models cost no money per request, only electricity, which we did not measure. As a rough estimate, assuming
@@ -174,17 +239,3 @@ the whole machine draws 400\,W and electricity costs \$0.16/kWh, the GPU time of
 same range as the API models in Fig.~\ref{fig:cost}a. These figures scale directly with both assumptions, so we
 leave them out of the figure; build time (Fig.~\ref{fig:cost}b) is the measured cost of running locally.
 
-% Figure: made by `pixi run -e cap6938 python -m scripts.report_figures cost` (report-v1 "Summary", "Tokens and cost",
-% "Time"; main suite, rag-size). Gemma 31B's output tokens: AI Studio's count (report-v1 "Caveats").
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/cost.pdf}
-  \caption{Quality against cost on the main suite (3 retrieved examples). Vertical: right size + shape, mean over
-    cases with 95\% intervals (as in Fig.~\ref{fig:models}). (a)~Dollars per correct part: everything spent on a
-    model's runs, failed and repaired ones included, divided by its runs at the right size; only models with a known
-    API price. Gemma 4 31B ran on Google's free tier, and local models cost nothing per request. (b)~Median wall-clock
-    time of one build, all attempts included. Gemma 4 12B and both Qwen models run locally on one RTX 3080; Gemma 4
-    31B is slow because it thinks at length: AI Studio counted 738K output tokens for its runs, 5.7 times what the API
-    reported, at about 35 tokens/s.}
-  \label{fig:cost}
-\end{figure*}

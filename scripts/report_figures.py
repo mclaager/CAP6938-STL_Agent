@@ -450,7 +450,49 @@ def save(fig, name: str):
     print(f"wrote {path.relative_to(ROOT)}")
 
 
-FIGURES = {"models": fig_models, "judge-example": fig_judge_example, "attempts": fig_attempts, "cost": fig_cost, "organic": fig_organic, "failures": fig_failures, "render-fix": fig_render_fix}
+def tex(text: str) -> str:
+    """Request text for LaTeX: straight quotes become `` and ''."""
+    out, opening = [], True
+    for ch in text:
+        if ch == '"':
+            out.append("``" if opening else "''")
+            opening = not opening
+        else:
+            out.append(ch)
+    return "".join(out).replace("%", r"\%").replace("&", r"\&")
+
+
+def fig_appendix():
+    """Appendix files in report/appendix/: every benchmark case (cases.tex) and the three prompts as plain text.
+    The report merges the data's `proposal` category into `casual` (both are loosely worded requests)."""
+    from stl_agent import generate
+    from stl_agent.judge import DEFAULT_PROMPT
+    out = ROOT / "report" / "appendix"
+    out.mkdir(exist_ok=True)
+    main = json.loads((ROOT / "eval" / "cases.json").read_text())["cases"]
+    organic = json.loads((ROOT / "eval" / "organic_cases.json").read_text())["cases"]
+    lines = [f"% Made by `python -m scripts.report_figures appendix` from eval/cases.json and eval/organic_cases.json.",
+             r"\subsection*{Main suite (48 cases)}", r"{\small"]
+    for c in main:
+        category = "casual" if c["category"] == "proposal" else c["category"]
+        size = (r"\,$\times$\,".join(f"{v:g}" for v in c["expected_bbox_mm"]) + r"\,mm"
+                if c.get("expected_bbox_mm") else "no fixed size")
+        label = f"{category}, decline" if c["expect"] == "decline" else f"{category}, {c['expect']}, {size}"
+        lines.append(rf"\noindent\textbf{{{c['id']}}} \emph{{{label}}}: {tex(c['request'])}\par")
+    lines += ["}", r"\subsection*{Organic suite (30 cases)}", r"{\small"]
+    for c in organic:
+        lines.append(rf"\noindent\textbf{{{c['id']}}} \emph{{search: {c['search']}}}: {tex(c['request'])}\par")
+    lines.append("}")
+    (out / "cases.tex").write_text("\n".join(lines) + "\n")
+    (out / "prompt_build.txt").write_text(generate.SYSTEM_PROMPT.strip() + "\n")
+    (out / "prompt_sdf.txt").write_text(generate.SYSTEM_PROMPT_SDF.strip() + "\n")
+    judge = ROOT / "stl_agent" / "judge" / "prompts" / f"{DEFAULT_PROMPT}.txt"
+    (out / "prompt_judge.txt").write_text(judge.read_text().strip() + "\n")
+    print(f"wrote {out}: {len(main)} main and {len(organic)} organic cases, prompts (judge {DEFAULT_PROMPT})")
+
+
+FIGURES = {"models": fig_models, "judge-example": fig_judge_example, "attempts": fig_attempts, "cost": fig_cost, "organic": fig_organic, "failures": fig_failures, "render-fix": fig_render_fix,
+           "appendix": fig_appendix}
 
 
 def main(argv=None):

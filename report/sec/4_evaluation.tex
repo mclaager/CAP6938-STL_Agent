@@ -5,20 +5,21 @@
 % eval/studies/report-v1.toml. Say early: one round, one code version, comparisons named before the runs.
 
 \subsection{Benchmarks}
-% Main suite: 48 requests (simple 5, medium 17, hard 13, proposal 8, casual 5); 42 should be built, 3 declined,
+% Main suite: 48 requests (simple 5, medium 17, hard 13, casual 13 = the data's proposal 8 + casual 5, ids p01-p08 and
+% c01-c05); 42 should be built, 3 declined,
 % 3 either. Each with an expected bounding box has a hand-written reference solution that builds at that size
 % (eval/references.py), never shown to the model. None copied from the example library.
 % Organic suite: 30 objects (animals, figures, ...), no expected size; no organic subject in the SDF examples.
 % Appendix A lists every case.
 
-The total benchmark was derived of 78 requests to the agent.
-Form these 78 requests, 48 were mechanical parts and 30 were organic.
+The total benchmark was made up of 78 requests to the agent.
+From these 78 requests, 48 were mechanical parts and 30 were organic.
 Each of the mechanical requests belonged to one of four categories: simple requests (5), medium-difficulty requests (17), hard-difficulty requests (13), and casual requests (13).
 Casual requests are ones that do not follow a specific mechanical request, similar to organic style requests.
 Each object in the casual was hand-checked as to whether the model should reject building the part, require building it, or allow either a rejection or build.
 
 The organic suite is similar to the casual requests, except specifically focused on sculpting shapes.
-For example, the 12th organic benchmark requests: "A turtle 60 mm long: a domed shell, four stubby legs, a head poking out the front and a short tail."
+For example, the 12th organic benchmark request: "A turtle 60 mm long: a domed shell, four stubby legs, a head poking out the front and a short tail."
 
 \subsection{Builders and configurations}
 % Table 1: builders. Columns: model, where it runs (API / Google API / local RTX 3080), configs run.
@@ -27,7 +28,21 @@ For example, the 12th organic benchmark requests: "A turtle 60 mm long: a domed 
 % Configs: rag-size (3 retrieved examples, measured-size message: the app's setup), norag-size (no examples),
 % sdf (organic, 11 SDF examples), thingiverse-check (first matching download). 4 attempts max. 3 runs per pair.
 % Gemma 31B, Haiku and the no-RAG Qwen arms were added during the round ("Changes during the round").
-\TODO{text for Table 1}
+Table~\ref{tab:builders} lists the builders and the configurations each was run with.
+Claude Sonnet 5.5, Claude Haiku 5.5 and Gemini 3.5 Flash Lite run through their providers' APIs and cover a range of price and strength.
+Gemma 4 31B runs on Google's servers and Gemma 4 12B, the app's default local model, on our own GPU; as two sizes of one model family, they separate the effect of model size from that of running locally.
+The two Qwen3.5 4B models, the base model and our fine-tuned version (Sec.~\ref{sec:finetune}), show how far a small local model gets.
+
+The main suite is run in two configurations.
+With RAG, the app's setup, the three most similar of the 26 examples are added to the prompt; without RAG, the prompt has no examples.
+On the organic suite, models write SDF code instead of CadQuery, with the three most similar of 11 SDF examples in the prompt.
+In every configuration a run allows up to 4 attempts: each failed attempt sends the error, or the measured size of a part that came out the wrong size, back to the model for a repair.
+The Thingiverse baseline uses no model: it searches Thingiverse with a short phrase for each organic case and keeps the first result whose name or tags contain the object's name.
+
+Each builder runs every case 3 times per configuration (the Thingiverse search once), for 2,118 runs in all.
+All runs used one version of the code and took place from November 6 to 8, 2026.
+Three sets of runs were added after the first results came in: Gemma 4 31B, Haiku, and the Qwen runs without RAG.
+None of them changed an earlier run.
 
 % Table 1: from the round's rows (eval/results/studies/report-v1/, one arm per model, suite and config):
 % 144 runs per main-suite arm (48 cases x 3), 90 per organic SDF arm (30 x 3), 30 Thingiverse runs; 2,118 in all.
@@ -53,7 +68,7 @@ For example, the 12th organic benchmark requests: "A turtle 60 mm long: a domed 
     \bottomrule
   \end{tabular}
   \caption{Builders and the configurations each was run with. \emph{RAG}: three retrieved examples in the prompt
-    (the app's setup); \emph{no RAG}: none; \emph{SDF}: organic objects sculpted with SDF code and 11 SDF examples; Thingiverse
+    (the app's setup); \emph{no RAG}: none; \emph{SDF}: organic objects sculpted with SDF code, with three of 11 SDF examples; Thingiverse
     search takes the first matching download instead. API models run on the provider's servers. Every model run allows up to 4 attempts and
     is repeated 3 times per case (Thingiverse once); 2,118 runs in all. Local models run in Ollama on one RTX 3080 (10\,GB). $^\dagger$The app's default local model.}
   \label{tab:builders}
@@ -64,7 +79,19 @@ For example, the 12th organic benchmark requests: "A turtle 60 mm long: a domed 
 % Right size + shape: correct and the visual judge passes it (organic: any part that came out and passes).
 % Also: first-try rate, correct after k attempts, pass@k over the 3 repeats~\cite{chen2021codex},
 % tokens, $ per correct part, time.
-\TODO{metrics}
+The first metric on the main suite is \emph{right size}.
+A run counts as correct when it ends with a valid mesh whose bounding box matches the expected one within 3\% or 1\,mm per side, whichever is larger, or when it declines a request that should be declined.
+For the 3 cases marked \emph{either}, building and declining both count, and for the 8 build requests without a fixed size, such as the phone stand in Fig.~\ref{fig:failures}c, any valid mesh counts.
+The organic suite has no expected sizes, so there a run is correct when it produces a valid mesh.
+
+Size alone does not show whether the part has the requested features.
+The second metric, \emph{right size + shape}, therefore also requires the visual judge (Sec.~\ref{sec:judge}) to pass the part.
+On the organic suite, any part that came out, valid mesh or not, counts if the judge passes it.
+
+To measure the repair loop, we report the share of runs that are correct after at most $k$ attempts, for $k = 1$ to 4; $k = 1$ is the first-try rate.
+Retrying a whole request is measured by pass@$k$ over the 3 runs of a case~\cite{chen2021codex}: the chance that at least one of $k$ runs is correct.
+Cost is measured in tokens (input and output, thinking included) and dollars per correct part, which is everything spent on a builder's runs, failed ones included, divided by its correct runs.
+Time is the wall-clock time of one build, all attempts included.
 
 \subsection{Visual judge}
 \label{sec:judge}
@@ -75,33 +102,25 @@ For example, the 12th organic benchmark requests: "A turtle 60 mm long: a domed 
 % if the interval overlaps the old judge's. It picks Sonnet; Sonnet for every part (~$5.90) was over the remaining
 % budget, so gemini-3.8-flash (statistically tied, 92% vs 96%, p = 0.08) judges the main suite and Sonnet the
 % organic suite, where gemini-3.8-flash is weak (71% vs 91%). State this deviation plainly. Results in Sec. 5.7.
-\TODO{judge}
+The size check cannot see a missing hole, or a plain disc where a thumbwheel was requested (Fig.~\ref{fig:failures}a).
+We therefore score each part with a multimodal model as a judge~\cite{zheng2023judging}.
+The part is rendered from six views (Fig.~\ref{fig:render-fix}; a full render is in Fig.~\ref{fig:judge} in the appendix): front, right, top and bottom straight on, where a through-hole shows the white background, and two angled views.
+The judge gets the six views in one image, together with the request text and the part's measured size.
+It scores the part from 1 to 10 on four bands: matches the request, small deviations, a requested feature wrong or missing, and a different object.
+The score is rescaled to 0--1, and 0.5 and above passes.
+The flat bottom view was added after our first judge failed correct parts with through-holes (Fig.~\ref{fig:render-fix}).
 
-% Figure: renders copied by `pixi run -e cap6938 python -m scripts.report_figures judge-example`, which also prints
-% the judge's replies quoted below (gemini-3.8-flash, report-v1, same verdict in all 3 runs).
-\begin{figure*}[t]
-  \centering
-  \small
-  \textit{``Can you make me something to stand my AA batteries up in? 8 of them in two rows of four, holes 15mm wide
-    and 20mm deep, in an 80 x 40 x 25 block.''}\\[4pt]
-  \begin{minipage}[t]{0.485\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/judge_c01_reference.png}\\[2pt]
-    (a) Reference solution: score 1.0 (\emph{pass}).
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.485\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/judge_c01_gemma31b.png}\\[2pt]
-    (b) Gemma 4 31B build: score 0.11 (\emph{fail}). ``Missing all 8 holes for the AA batteries; part is a
-    completely solid block.''
-  \end{minipage}
-  \caption{What the visual judge sees: six views of the part (four flat, two angled), sent in one request with the
-    request text and the measured size. Both parts measure $80 \times 40 \times 25$\,mm, so the size check accepts
-    both; only the top and angled views show that (b) has no holes. The judge scores 1--10 on four bands (match,
-    small deviations, a feature wrong, a different object), rescaled to 0--1; 0.5 and above passes. It gave each part
-    the same score in all 3 runs, and the hand grade for (b) is ``different object''.}
-  \label{fig:judge}
-\end{figure*}
+All our earlier studies used Gemini 3.1 Flash Lite as the judge.
+Before judging this round, we compared it with three stronger models on 204 items, each judged 3 times.
+58 items are reference checks: a reference solution judged against its own request, which should pass, or against another case's, which should fail.
+The other 146 are parts graded by hand on the same four bands, 100 of them graded blind, without seeing the builder, the configuration or any judge's score.
+The rule, written before the comparison, was to take the judge with the best held-out accuracy, or the cheaper one if its interval overlapped the old judge's.
+That rule picks Claude Sonnet 5.5 (Table~\ref{tab:judges}), but judging every part with it would have cost about \$5.90, more than our remaining budget.
+We therefore departed from the rule.
+Gemini 3.8 Flash, statistically tied with Sonnet (92\% vs.\ 96\% held-out accuracy, McNemar $p = 0.08$), judges the main suite.
+On organic parts it is much weaker (71\% vs.\ 91\% on 34 graded parts), so Sonnet judges the organic suite.
+Sec.~\ref{sec:res-judge} reports the comparison.
+
 
 % Figure: made by `pixi run -e cap6938 python -m scripts.report_figures render-fix`. From development, before the
 % report round: judge gemini-3.1-flash-lite, render/prompt v1 vs v2 (eval/results/judge-gemini-3.1-flash-lite.md).
@@ -122,4 +141,10 @@ For example, the 12th organic benchmark requests: "A turtle 60 mm long: a domed 
 % (repeats are not independent). Comparisons paired by case: mean difference with interval and exact sign test.
 % Judges: McNemar's exact test~\cite{mcnemar1947}, Cohen's kappa~\cite{cohen1960kappa}. Code: eval/stats.py.
 % The compared pairs were written in the manifest before the runs.
-\TODO{statistics}
+Each builder ran each case 3 times, and runs of the same case are not independent: a model that cannot build a part usually fails all three times.
+We therefore treat the case as the unit.
+A rate is the mean over cases of each case's rate over its runs, and its 95\% interval is a bootstrap over cases~\cite{efron1993bootstrap}.
+Two builders or configurations are compared on the same cases: we report the mean difference per case with a bootstrap interval, and an exact sign test on the cases where one side did better, ties left out.
+The 15 comparisons were written into the study's manifest before their runs; their $p$-values are not corrected for multiple tests.
+For the judges, held-out accuracy judges each item with a pass threshold picked on the other half of the cases.
+Two judges are compared with McNemar's exact test on the items where they disagree~\cite{mcnemar1947}, and each judge's agreement with the hand grades is given by Cohen's kappa~\cite{cohen1960kappa}.

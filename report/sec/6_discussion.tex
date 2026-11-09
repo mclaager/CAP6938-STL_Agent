@@ -9,33 +9,38 @@
 %  - retrieved examples help only models that need the format (fine-tuned student, base model's validity),
 %    not models that already know CadQuery; history: rag-copying.md (#29) on whether examples get copied;
 %  - an outside repository is a weak fallback for organic objects compared with sculpting by a strong model.
-\TODO{what helped whom}
+The kinds of knowledge from Sec.~\ref{sec:intro} help different models.
+Knowledge in the weights matters most: a larger model or fine-tuning moves right size and shape by 17 to 24 points, more than any other change.
+Feedback from running the code helps mid-strength models most, adding 21 to 33 points of right size for Gemini Flash Lite and both Gemma models, and it is what makes sculpting possible at all.
+Retrieved examples help only models that depend on the format: the fine-tuned model, which was trained with them, and the base model, which needs them to produce a valid part at all.
+Models that already know CadQuery do as well without them.
+An outside repository is a weak fallback for organic objects: a strong model sculpting with code does better than the first matching download.
 
 % Failure analysis: common failure types (size off, wrong feature, script errors in small models), with 2-3
 % example renders (eval/renders/) of typical mistakes. Organic: blobby or missing parts; Thingiverse: wrong object.
 % Counts per model: report-v1 "How the main-suite runs failed". For the API models and gemma4:12b the commonest
 % failure is right size, wrong shape (e.g. Gemini 20, gemma4:12b 30 of 126); the small Qwen models mostly end with
 % no part (base: 101 script errors of 126).
-\TODO{failure analysis}
+Fig.~\ref{fig:failures} shows typical failures.
+For the API models and Gemma 4 12B, the most common failure is a part of the right size with the wrong shape: 20 of 126 runs for Gemini Flash Lite and 30 for Gemma 4 12B.
+Three kinds recur: a requested feature left out (Fig.~\ref{fig:failures}a), a cut that stops short, such as pockets instead of through-holes (b), and a design that misses the purpose of a loosely worded request (c).
+The size check cannot catch any of these, which is why the judge is needed.
+The small Qwen models mostly end without a part: 101 of the base model's 126 runs end in a script error that its repairs do not fix.
+On the organic suite, Thingiverse mostly fails by returning the wrong object, such as an avocado peeler for half an avocado (Fig.~\ref{fig:organic}).
 
-% Figure: made by `pixi run -e cap6938 python -m scripts.report_figures failures` (parts and judge replies printed).
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/failures.pdf}
-  \caption{Typical failures: each part is the right size, so the size check accepts it, and the judge fails its shape.
-    (a)~Gemini Flash Lite, ``a thumbwheel 40\,mm in diameter and 10\,mm thick with 30 semicircular 2\,mm notches
-    around its rim and a hexagonal socket 5\,mm across the flats through the centre'': a plain disc (score 0.22; the
-    same in all 3 runs). (b)~Haiku, a honeycomb panel of ``hexagonal through-holes'': the holes are pockets and the
-    bottom is solid, visible only from below (0.44; 2 of 3 runs). (c)~Haiku, ``something to prop my 70\,mm wide phone
-    up at an angle on my desk'': a plain wedge with no lip to stop the phone sliding (0.44; all 3 runs).}
-  \label{fig:failures}
-\end{figure*}
 
 % Limitations (report-v1.md "Caveats"): 48 + 30 cases; one human grader, only 34 graded organic parts;
 % main suite at ceiling for Claude models; judge choice departed from the pre-set rule (budget); token counts only
 % comparable within a family; local timing on one RTX 3080.
-\TODO{limitations}
+The benchmark is small: 48 main and 30 organic cases, so intervals for mid-strength models span 20 to 25 points.
+One person graded the 146 parts used to choose the judge, and only 34 of them are organic, so the judges' organic accuracies are uncertain.
+The judge used for the main suite departs from the rule we set before the runs, for budget reasons (Sec.~\ref{sec:judge}).
+The 15 comparisons are not corrected for multiple tests.
+Token counts are comparable only within a model family, and Gemma 4 31B's API under-reports its output tokens.
+Local times come from one RTX 3080, and API times depend on the providers' load.
 
 % Not measured (report-v1.md "For writing the report"): the intake gate and the whole app path (#12), combined
 % parts (#10), harder cases, a second grader, gemma4:12b and Sonnet on the organic suite.
-\TODO{not measured}
+The benchmark calls the builder directly, so the intake gate and the full path through the app are not measured, nor are combined parts.
+Harder cases are needed to separate the strongest models, and a second grader to check the hand grades.
+Gemma 4 12B and Sonnet were not run on the organic suite.
