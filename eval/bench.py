@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import time
@@ -121,7 +122,7 @@ def code_version() -> str:
         commit = git("rev-parse", "--short", "HEAD")
         dirty = git("status", "--porcelain", "--untracked-files=no", "--", ".", *(f":!{p}" for p in DATA_PATHS))
     except (OSError, subprocess.CalledProcessError):
-        return "unknown"
+        return os.environ.get("STL_AGENT_COMMIT") or "unknown"  # set in the Docker image, which has no .git
     return commit + ("+dirty" if dirty else "")
 
 

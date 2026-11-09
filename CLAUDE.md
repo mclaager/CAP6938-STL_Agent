@@ -77,6 +77,11 @@ client paces itself to `providers.gemini.rpm` (default 10; at 14, Google still c
 and waits out short rate-limit replies instead of failing.
 `gemini-3.5-flash-lite` has a much larger daily quota (about 500) but is a weaker coder; see `bench report`.
 
+`Dockerfile` and `compose.yaml` (README "Docker"; `--profile ollama` adds an Ollama container on an NVIDIA GPU): the `cap6938` environment from `pixi.lock` on Ubuntu 24.04 with Mesa's
+software OpenGL; the entrypoint runs a pixi task (`app` by default, or `test`, `bench ...`). No `.git` in the
+image, so `bench.code_version` falls back to `STL_AGENT_COMMIT` (the `GIT_COMMIT` build arg). Settings at
+`/app/data/settings.toml` (`CAD_SETTINGS`), parts in `/app/outputs`: mount both.
+
 Add dependencies to `pixi.toml` under the `cap6938` feature. `requirements.txt` mirrors the
 pypi deps for non-pixi users; `tests/test_requirements.py` checks that both list the same packages.
 
