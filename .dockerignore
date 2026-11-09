@@ -1,0 +1,26 @@
+# Keep the build context small and free of secrets: the image gets code and committed data only.
+.git
+.pixi
+.env
+settings.toml
+settings.toml.tmp
+data
+outputs
+info
+.claude
+__pycache__
+*.py[cod]
+*.stl
+finetune/runs
+finetune/data/train.jsonl
+finetune/data/val.jsonl
+unsloth_compiled_cache
+report/*.aux
+report/*.log
+report/*.pdf
+report/*.bbl
+report/*.blg
+report/*.fdb_latexmk
+report/*.fls
+report/*.out
+report/*.synctex.gz

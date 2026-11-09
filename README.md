@@ -44,6 +44,37 @@ pixi run -e cap6938 retrieval-eval           # offline retrieval scores (no API 
 pixi run -e cap6938 references               # check the benchmark's reference solutions build
 ```
 
+## Run it in Docker
+
+The `Dockerfile` installs exactly the package versions in `pixi.lock` on Ubuntu 24.04 (x86-64), so the app
+and the eval commands run the same on any machine with Docker or Podman. No GPU is needed: renders use Mesa's
+software OpenGL. Tested with Podman on Fedora.
+
+```bash
+docker build -t stl-agent --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) .
+mkdir -p data outputs
+docker run --rm -p 7860:7860 --env-file .env -v ./data:/app/data -v ./outputs:/app/outputs stl-agent
+```
+
+The app is then at http://127.0.0.1:7860. `./data/settings.toml` is the container's settings file (created on
+the first run) and `./outputs` gets the finished parts. Any other command runs the same way, by its pixi task
+name:
+
+```bash
+docker run --rm stl-agent test          # the test suite (no API calls)
+docker run --rm stl-agent bench report --study report-v1 --judge-model gemini-3.8-flash --organic-judge-model claude-sonnet-5-5
+```
+
+The second command rebuilds the report's tables from the committed results (`eval/results/report-v1.md`)
+without any model requests. `GIT_COMMIT` is recorded in benchmark rows, since the image has no `.git`. With
+Podman on an SELinux system (Fedora), add `:Z` to each `-v` mount.
+
+Ollama on the host machine: point `providers.ollama.base_url` in `./data/settings.toml` at
+`http://host.docker.internal:11434/v1` (Docker; on Linux also pass `--add-host=host.docker.internal:host-gateway`)
+or `http://host.containers.internal:11434/v1` (Podman), and let Ollama listen beyond localhost
+(`OLLAMA_HOST=0.0.0.0` on its service). Software rendering differs from a GPU's in a few edge pixels, so the
+visual judge can score a part slightly differently than on the host.
+
 ## Run it locally (no API key)
 
 The agent can run entirely on your machine with [Ollama](https://ollama.com); nothing leaves the machine and

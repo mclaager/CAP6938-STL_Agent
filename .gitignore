@@ -12,6 +12,8 @@ __pycache__/
 # Per-user settings (created on first run from stl_agent/data/settings.defaults.toml)
 settings.toml
 settings.toml.tmp
+# The Docker container's settings folder (README "Run it in Docker")
+/data/
 
 # Local notes (e.g. pasted API docs)
 info/
