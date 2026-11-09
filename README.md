@@ -178,18 +178,28 @@ which is much slower. A reply that runs on can take over 5 minutes, so Ollama's 
    pick each model from a gallery or the first suitable result is used (`thingiverse_pick`).
 5. **Thingiverse fallback** (`stl_agent/sources/thingiverse.py`): for out-of-scope requests, searches with
    keywords from the gate and downloads the model the user picks.
-6. **UI** (`stl_agent/app.py`): Gradio chat with a 3D preview, the generated code, and a validation report.
+6. **Organic shapes** (`stl_agent/sdf.py`): with `organic_builder = "sdf"` (settings panel, "Organic shapes"),
+   animals, plants and other organic objects are sculpted with signed distance function code, retrieved from
+   `stl_agent/data/sdf_examples.json`, instead of downloaded; a failed sculpt falls back to Thingiverse.
+7. **UI** (`stl_agent/app.py`): Gradio chat with a 3D preview, the generated code, and a validation report.
 
 Settings (model, attempts, gate behaviour) are in `settings.toml`; the defaults, with a comment for each, are in
 `stl_agent/data/settings.defaults.toml`.
 
 ## Evaluation
 
-- **Benchmark** (`eval/`): 48 requests from simple parts to out-of-scope ones, each fixed-size case with a
-  hand-written reference solution. Results and the RAG ablation are in `eval/results/`.
+- **Main suite** (`eval/cases.json`): 48 requests from simple parts to out-of-scope ones, each fixed-size case
+  with a hand-written reference solution (`eval/references.py`). A part counts as correct when it is built at
+  the expected size (or declined when it should be).
+- **Organic suite** (`eval/organic_cases.json`): 30 organic objects (animals, plants, food) with no expected
+  size, sculpted with SDF code or downloaded from Thingiverse as a baseline. Scored by the visual judge.
 - **Visual judge** (`stl_agent/judge/`, `eval/judge.py`): renders each generated part from six views and asks
   a multimodal model whether it matches the request, catching parts with the right size but the wrong shape.
   Calibrated against reference parts and hand-graded labels; renders are kept in `eval/renders/`.
+- **Report round** (`eval/results/report-v1.md`): seven models on the main suite (five also without retrieved
+  examples) and four on the organic suite plus the Thingiverse baseline, 3 runs per case; and four judges
+  compared against 146 hand-graded parts. The source of every number in the final report; earlier studies are
+  in `eval/results/`.
 
 ## Roadmap
 
