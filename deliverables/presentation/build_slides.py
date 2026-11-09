@@ -16,6 +16,8 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.chart.data import CategoryChartData
+from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_LEGEND_POSITION
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu, Inches, Pt
@@ -135,13 +137,13 @@ def picture(slide, path, x, y, w=None, h=None, alt=""):
     return pic
 
 
-def picture_fit(slide, path, x, y, w, h, alt=""):
-    """Largest picture with the image's aspect ratio inside the box, centred."""
+def picture_fit(slide, path, x, y, w, h, alt="", left=False):
+    """Largest picture with the image's aspect ratio inside the box, centred (or left-aligned)."""
     from PIL import Image
     iw, ih = Image.open(path).size
     scale = min(w / iw, h / ih)
     pw, ph = iw * scale, ih * scale
-    return picture(slide, path, x + (w - pw) / 2, y + (h - ph) / 2, pw, ph, alt)
+    return picture(slide, path, x if left else x + (w - pw) / 2, y + (h - ph) / 2, pw, ph, alt)
 
 
 def content_slide(prs, title, notes):
@@ -191,9 +193,8 @@ def build():
         "One request goes through an intake gate, a single LLM call that decides the scope and asks for missing sizes. "
         "For a mechanical part, we retrieve three similar examples from a hand-checked library of 26, the model writes "
         "a script plus the size it expects, we run it in a sandbox and check the mesh is a closed solid of the right "
-        "size. Any failure goes back to the model, up to four attempts. Organic objects are sculpted with signed "
-        "distance function code through the same loop, or downloaded from Thingiverse. Combined objects are built "
-        "piece by piece and merged."))
+        "size. Any failure goes back to the model, up to four attempts. Organic objects are sculpted with SDF code "
+        "through the same loop, or downloaded from Thingiverse."))
     picture_fit(s, fig["pipeline_preview"], 0.79, 2.35, 11.75, 4.35,
                 alt="Pipeline: request, intake gate, retrieve examples, write script, sandbox, mesh check, STL; "
                     "Thingiverse branch and combined-parts branch")
@@ -240,8 +241,8 @@ def build():
         "The benchmark has 48 mechanical parts, each with a hand-written reference solution and expected size, and 30 "
         "organic objects. Seven builder models plus Thingiverse, three runs each: 2,118 runs in one pre-planned round. "
         "Right size is measured directly. Right shape needs a visual judge: we render six views, like this, and a "
-        "multimodal model scores them. I picked the judge out of four by grading 146 parts by hand, blind. Sonnet "
-        "agreed best, 96 percent held out. Our earlier, cheaper judge was at 83 and was too harsh on strong models."))
+        "multimodal model scores them. I picked the judge out of four by grading 146 parts by hand, blind; Sonnet "
+        "agreed best, at 96 percent."))
     stats = [("78", "requests: 48 mechanical\n+ 30 organic"), ("7 + 1", "builder models\n+ Thingiverse"),
              ("2,118", "runs (3 per case\nand setup)"), ("96%", "judge accuracy on\n146 hand-graded parts")]
     for i, (num, label) in enumerate(stats):
@@ -259,29 +260,30 @@ def build():
         "First, the model. Claude Sonnet builds the right part 99 percent of the time, Haiku 94. Gemini Flash Lite "
         "and Gemma 4 31B are at 74, our local default Gemma 4 12B at 55, and the small Qwen 4B at 13 before fine-tuning. "
         "Is the local gap about running locally or about size? Gemma 31B and 12B are the same family: the 31B is 19 "
-        "points better, so it's mostly size. The orange-blue gap is parts with the right size but the wrong shape, "
-        "which the size check alone can't catch."))
+        "points better, so it's mostly size."))
     picture_fit(s, fig["models"], 0.79, 2.35, 7.4, 4.35, alt="Right size and right size plus shape per builder model")
     stat(s, 8.75, 2.4, 3.8, "99%", "Claude Sonnet 5.5: right size + shape")
     stat(s, 8.75, 3.85, 3.8, "+19 pts", "Gemma 4 31B vs 12B (same family):\nthe local gap is mostly size")
     text_box(s, 8.75, 5.45, 3.8, 1.1, "Orange vs blue gap: right size, wrong shape. Only the judge catches it.",
              size=14, color=GRAY)
 
-    # 7. RAG and fine-tuning (RQ2, RQ3)
-    s = content_slide(prs, "EXAMPLES AND FINE-TUNING", (
-        "Retrieved examples: for the API models they make no measurable difference, Gemini is at 74 with and without. "
-        "They do get the right answer on the first try more often, and without them the repair loop makes up the gap. "
-        "The only clear gain is our fine-tuned Qwen, plus 12 points, and it was trained with examples in every prompt. "
-        "Fine-tuning itself: we trained Qwen 4B on about a thousand teacher builds that passed the checks. Right size "
-        "goes from 17 to 51 percent, right shape more than doubles, but it's still well behind the 12B model."))
-    rows = [("Builder", "RAG", "No RAG", "Diff."),
-            ("Claude Sonnet 5.5", "99%", "98%", "+1"),
-            ("Claude Haiku 5.5", "94%", "95%", "−1"),
-            ("Gemini 3.5 Flash Lite", "74%", "74%", "+1"),
-            ("Qwen 4B fine-tuned", "30%", "18%", "+12 *"),
-            ("Qwen 4B base", "13%", "10%", "+3")]
-    tbl = s.shapes.add_table(len(rows), 4, Inches(0.79), Inches(2.4), Inches(6.6), Inches(3.3)).table
-    widths = [2.9, 1.35, 1.35, 1.0]
+    # 7. Retrieved examples (RQ2)
+    s = content_slide(prs, "DO RETRIEVED EXAMPLES HELP?", (
+        "Retrieved examples, the RAG part. For the API models they make no measurable difference to the end result: "
+        "Gemini Flash Lite builds the right part 74 percent of the time with or without them, and the Claude models "
+        "are within a point. They only change how fast: Gemini's first-try rate goes from 55 to 67 percent, and "
+        "without examples the repair loop makes up the gap. The one clear gain is the fine-tuned Qwen, plus 12 points. "
+        "But that model only ever saw prompts with three examples during training, so taking them away also takes "
+        "away the format it learned. That measures training format as much as retrieval."))
+    rows = [("Builder", "RAG", "No RAG", "Diff.", "1st try"),
+            ("Claude Sonnet 5.5", "99%", "98%", "+1", "97 / 96"),
+            ("Claude Haiku 5.5", "94%", "95%", "−1", "97 / 90"),
+            ("Gemini 3.5 Flash Lite", "74%", "74%", "+1", "67 / 55"),
+            ("Qwen 4B fine-tuned", "30%", "18%", "+12 *", "28 / 10"),
+            ("Qwen 4B base", "13%", "10%", "+3", "10 / 8")]
+    widths = [2.75, 1.0, 1.15, 0.95, 1.35]
+    tbl = s.shapes.add_table(len(rows), len(widths), Inches(0.79), Inches(2.4), Inches(sum(widths)),
+                             Inches(3.3)).table
     for j, w in enumerate(widths):
         tbl.columns[j].width = Inches(w)
     for i, row in enumerate(rows):
@@ -296,20 +298,63 @@ def build():
             f.name, f.size, f.bold = FONT, Pt(16), i == 0 or i == 4
             f.color.rgb = WHITE if i == 0 else INK
             c.vertical_anchor = MSO_ANCHOR.MIDDLE
-    text_box(s, 0.79, 5.75, 6.6, 0.8, "Right size + shape, main suite.  * p = 0.04; the others are within noise.",
+    text_box(s, 0.79, 5.8, 7.2, 0.8, ["Right size + shape on the 48 main cases, with 3 retrieved examples or none.",
+                                      "1st try: correct on the first attempt, RAG / none.  * p = 0.04; the rest is noise."],
              size=12, color=GRAY)
-    text_box(s, 8.2, 2.4, 4.3, 0.5, "Fine-tuning Qwen 4B", size=20, bold=True)
-    text_box(s, 8.2, 2.9, 4.3, 0.7, "on 1,052 teacher builds that passed the checks", size=14, color=GRAY)
-    stat(s, 8.2, 3.55, 4.3, "17% → 51%", "right size")
-    stat(s, 8.2, 4.95, 4.3, "13% → 30%", "right size + shape; still 25 pts\nbelow Gemma 4 12B")
+    stat(s, 8.75, 2.4, 3.8, "74% = 74%", "Gemini Flash Lite with and without examples")
+    stat(s, 8.75, 3.85, 3.8, "55% → 67%", "its first-try rate: examples help it get\nthere sooner, repair closes the gap")
+    card(s, 8.75, 5.3, 3.79, 1.25)
+    text_box(s, 8.95, 5.3, 3.4, 1.25, "The fine-tuned Qwen saw 3 examples in every training prompt: its +12 is RAG and "
+             "training format together.", size=13, anchor=MSO_ANCHOR.MIDDLE)
 
-    # 8. Repair loop (RQ4)
+    # 8. Fine-tuning (RQ3)
+    s = content_slide(prs, "FINE-TUNING A SMALL LOCAL MODEL", (
+        "Can fine-tuning close the gap for a small local model? We trained Qwen 3.5 4B with QLoRA on 1,052 teacher "
+        "conversations from Sonnet and Gemini Flash Lite, kept only when the part passed the checks, repairs included. "
+        "Right size triples, from 17 to 51 percent, right shape more than doubles, and it needs a third of the tokens "
+        "per correct part. But it is still 25 points below the 12B model. On organic shapes it learned to write SDF code "
+        "that runs, but not to sculpt the object."))
+    data = CategoryChartData()
+    data.categories = ["Qwen 4B base", "Qwen 4B fine-tuned", "Gemma 4 12B"]
+    data.add_series("Right size", (0.17, 0.51, 0.77))
+    data.add_series("Right size + shape", (0.13, 0.30, 0.55))
+    chart = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(0.79), Inches(2.35), Inches(7.2),
+                               Inches(4.3), data).chart
+    chart.has_legend = True
+    chart.legend.position = XL_LEGEND_POSITION.TOP
+    chart.legend.include_in_layout = False
+    chart.legend.font.size, chart.legend.font.name = Pt(14), FONT
+    chart.value_axis.maximum_scale = 1.0
+    chart.value_axis.has_major_gridlines = True
+    chart.value_axis.major_gridlines.format.line.color.rgb = RGBColor(0xD6, 0xD6, 0xD6)
+    chart.value_axis.tick_labels.number_format = "0%"
+    chart.value_axis.tick_labels.number_format_is_linked = False
+    chart.value_axis.format.line.fill.background()
+    for ax in (chart.value_axis, chart.category_axis):
+        ax.tick_labels.font.size, ax.tick_labels.font.name = Pt(14), FONT
+        ax.tick_labels.font.color.rgb = GRAY
+    plot = chart.plots[0]
+    plot.gap_width = 60
+    plot.has_data_labels = True
+    labels = plot.data_labels
+    labels.number_format, labels.number_format_is_linked = "0%", False
+    labels.position = XL_LABEL_POSITION.OUTSIDE_END
+    labels.font.size, labels.font.bold, labels.font.name = Pt(14), True, FONT
+    for series, color in zip(plot.series, (GOLD, INK)):
+        series.format.fill.solid()
+        series.format.fill.fore_color.rgb = color
+    stat(s, 8.75, 2.4, 3.8, "1,052", "verified teacher builds\n(QLoRA, 4-bit, on one RTX 3080)")
+    stat(s, 8.75, 3.85, 3.8, "85K → 25K", "tokens per correct part")
+    text_box(s, 8.75, 5.35, 3.8, 1.1, "Organic: valid mesh 3% → 36%, but right shape only 1%. It learned code that "
+             "runs, not the shape.", size=14, color=GRAY)
+
+    # 9. Repair loop (RQ4)
     s = content_slide(prs, "THE REPAIR LOOP", (
         "Execution feedback. This shows how many runs are correct if we stop after one, two, three or four attempts. "
         "Strong models are right first time, so there's little to fix. Mid-strength models gain the most: Gemini Flash "
         "Lite goes from 67 to 88 percent, Gemma 31B from 52 to 85. On the right, sculpting organic shapes: Gemini's "
-        "first attempt gives a valid mesh only 1 percent of the time, after four attempts 82. Sculpting basically only "
-        "works because of the loop. The small Qwen models rarely recover from their own script errors."))
+        "first attempt gives a valid mesh only 1 percent of the time, after four attempts 82: sculpting only works "
+        "because of the loop."))
     picture_fit(s, fig["attempts"], 0.79, 2.35, 11.75, 3.7, alt="Runs correct after 1 to 4 attempts, per model")
     take = [("67% → 88%", "Gemini Flash Lite"), ("52% → 85%", "Gemma 4 31B"),
             ("1% → 82%", "Gemini, sculpting")]
@@ -318,7 +363,22 @@ def build():
         text_box(s, x, 6.15, 1.9, 0.5, num, size=22, bold=True)
         text_box(s, x + 1.95, 6.22, 1.95, 0.4, label, size=13, color=GRAY)
 
-    # 9. Organic (RQ5)
+    # 10. Failures and cost
+    s = content_slide(prs, "FAILURES AND COST", (
+        "What goes wrong? The commonest failure is the right size but the wrong shape, so only the judge catches it: "
+        "a feature left out, holes that stop short, a loose request built too literally. Cost: Haiku is cheapest per "
+        "correct part at under a tenth of a cent, Sonnet about a cent; Gemma 4 12B runs locally but takes a median "
+        "136 seconds per build. The whole round cost about $8.58 at Anthropic and $2.15 at Google."))
+    picture_fit(s, fig["failures"], 0.79, 2.35, 7.6, 2.0, left=True,
+                alt="Three typical failures: right size, wrong shape")
+    picture_fit(s, fig["cost"], 0.79, 4.5, 7.6, 2.3, left=True,
+                alt="Right size plus shape against dollars per correct part and build time")
+    text_box(s, 8.75, 2.4, 3.8, 0.9, "Right size, wrong shape: a feature left out, holes that stop short, a loose "
+             "request built literally", size=14, color=GRAY)
+    stat(s, 8.75, 3.45, 3.8, "$0.0009", "per correct part, Haiku\n(Sonnet $0.011, Gemini FL $0.0029)")
+    stat(s, 8.75, 5.0, 3.8, "136 s", "median build, Gemma 4 12B locally\n(Gemini FL 3 s, Sonnet 6 s)")
+
+    # 11. Organic (RQ5)
     s = prs.slides.add_slide(layout(prs, "Large Picture with Content - Left"))
     s.shapes.title.text = "SCULPT OR DOWNLOAD?"
     drop_placeholder(s, 13)
@@ -334,7 +394,7 @@ def build():
                 alt="Half avocado, banana and parrot sculpted by Haiku and Gemini or downloaded from Thingiverse, "
                     "with judge scores")
 
-    # 10. Takeaways
+    # 12. Takeaways
     s = content_slide(prs, "TAKEAWAYS", (
         "To sum up. Weights matter most: model size and fine-tuning move results by 17 to 24 points. Execution "
         "feedback helps mid-strength models most and is what makes sculpting possible. Retrieved examples only help "
@@ -357,20 +417,11 @@ def build():
                                         [("•  Judge inside the build loop: repair wrong shapes", {})],
                                         [("•  Edit a built part instead of rebuilding", {})]], size=15)
 
-    # 11. Questions / demo
+    # 13. Questions / demo
     s = prs.slides.add_slide(layout(prs, "Divider Slide - Black"))
     s.shapes.title.text = "QUESTIONS & DEMO"
-    set_text(s.placeholders[1], "Text to Printable Parts  ·  Michael Laager")
+    drop_placeholder(s, 1)
     s.notes_slide.notes_text_frame.text = "Switch to the app for the live demo."
-
-    # Backup: failures and cost
-    s = content_slide(prs, "BACKUP: FAILURES AND COST", (
-        "Backup for questions. Typical failures: the right size but the wrong shape, so only the judge catches them: "
-        "a feature left out, holes that stop short, a loose request built too literally. Cost: Haiku is cheapest per "
-        "correct part at under a tenth of a cent, Sonnet about a cent; Gemma 4 12B runs locally but takes a median "
-        "136 seconds per build. The whole round cost about $8.58 at Anthropic and $2.15 at Google."))
-    picture_fit(s, fig["failures"], 0.79, 2.35, 11.75, 2.0, alt="Three typical failures: right size, wrong shape")
-    picture_fit(s, fig["cost"], 0.79, 4.45, 11.75, 2.35, alt="Right size plus shape against dollars per correct part and build time")
 
     prs.save(OUT)
     print(f"wrote {OUT}")
