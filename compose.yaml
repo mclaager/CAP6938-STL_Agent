@@ -1,4 +1,4 @@
-# The app in a container (README "Run it in Docker").
+# The app in a container (README "Docker").
 #
 #   docker compose up --build                   app at http://127.0.0.1:7860, API keys from .env
 #   docker compose --profile ollama up --build  plus a local Ollama on an NVIDIA GPU

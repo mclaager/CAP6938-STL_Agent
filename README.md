@@ -7,56 +7,55 @@ details that matter and declines shapes CadQuery can't build.
 
 Course project for CAP 6938 (AI Knowledge Systems, Fall 2026).
 
-## Run it
+## Install
 
-Requires [pixi](https://pixi.sh).
+Three ways to install it; none needs a GPU.
 
-```bash
-echo "GEMINI_API_KEY=your-key" > .env      # free key: aistudio.google.com (or ANTHROPIC_API_KEY=... for Claude)
-pixi run -e cap6938 app                    # http://127.0.0.1:7860
-```
+| | Package versions | Runs on | Best for |
+|---|---|---|---|
+| [Pixi](#pixi-recommended) (recommended) | exact, from `pixi.lock` | Linux x86-64 | development, benchmark runs |
+| [Conda, venv or another environment](#conda-venv-or-another-environment) | minimums only (`requirements.txt`) | Linux (others untested) | an existing Python setup |
+| [Docker](#docker) | exact, from `pixi.lock` | x86-64 with Docker or Podman | another machine, reproducing results |
 
-The first run creates `settings.toml` in the project root, listing every setting with its default, commented
-out. To change one, uncomment its line and edit it: for example `provider = "gemini"` for the key above, or
-`provider = "ollama"` to run on a local model with [Ollama](https://ollama.com) (no key needed).
-Provider, model and server address can also be set in the app, under "Model settings" ("Test connection"
-checks them first). `.env` holds only API keys. `pixi run -e cap6938 settings` shows every setting and where
-its value came from.
+### Pixi (recommended)
 
-Requests that can't be built with CAD code (statues, animals, characters) get a Thingiverse search instead,
-if `.env` has a `THINGIVERSE_TOKEN`: register an app at <https://www.thingiverse.com/apps/create> and copy
-its App Token. The results show as thumbnails; clicking one downloads its STL, with the author and license
-shown in the chat and saved next to it (`outputs/<name>.source.json`). Thingiverse is optional: without a token, the app
-declines sculpted parts, and parts that would join them with others, as it did before.
-
-Without pixi: `pip install -r requirements.txt`, then `python -m stl_agent.app` from the repo root.
-
-Other commands:
+Install [pixi](https://pixi.sh), then from the repo root:
 
 ```bash
-pixi run -e cap6938 test       # tests (no API calls)
-pixi run -e cap6938 examples   # rebuild the few-shot example library
-pixi run -e cap6938 bench run --budget 18   # benchmark; resumes where it stopped
-pixi run -e cap6938 bench report             # results tables
-pixi run -e cap6938 judge run --gen-model gemini-3.5-flash-lite   # visual judge over benchmark parts
-pixi run -e cap6938 judge sheet              # review page: eval/renders/index.html
-pixi run -e cap6938 retrieval-eval           # offline retrieval scores (no API calls)
-pixi run -e cap6938 references               # check the benchmark's reference solutions build
+pixi run -e cap6938 app        # installs the environment on the first run; app at http://127.0.0.1:7860
 ```
 
-## Run it in Docker
+Every command is a pixi task in the `cap6938` environment ([Commands](#commands)). The separate `finetune`
+environment (PyTorch, CUDA) is only for fine-tuning a local model.
 
-The `Dockerfile` installs exactly the package versions in `pixi.lock` on Ubuntu 24.04 (x86-64), so the app
-and the eval commands run the same on any machine with Docker or Podman. No GPU is needed: renders use Mesa's
-software OpenGL. Tested with Podman on Fedora.
+### Conda, venv or another environment
+
+Python 3.12 (the version the lock file uses) and the packages in `requirements.txt`:
+
+```bash
+conda create -n stl-agent python=3.12 && conda activate stl-agent    # or: python3.12 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m stl_agent.app                                               # from the repo root
+```
+
+`requirements.txt` lists minimum versions only, so pip may install newer packages than the ones tested; for
+exact versions use pixi or Docker. Run commands with `python -m` instead of `pixi run`
+([Commands](#commands)). On Linux without a desktop, the renders need Mesa's OpenGL libraries (`libegl1`,
+`libosmesa6` on Debian/Ubuntu).
+
+### Docker
+
+The image is Ubuntu 24.04 with the pixi environment, and renders with Mesa's software OpenGL. Tested with
+Podman on Fedora.
 
 ```bash
 docker compose up --build        # app at http://127.0.0.1:7860
 ```
 
-API keys come from `.env` (as above; optional): compose passes each line to the container as an environment
-variable, which is where the app looks for them. `./data/settings.toml` is the container's settings file
-(created on the first run) and `./outputs` gets the finished parts. Any other command runs by its pixi task name:
+API keys come from `.env` ([Set up](#set-up); optional): compose passes each line to the container as an
+environment variable, which is where the app looks for them. `./data/settings.toml` is the container's
+settings file and `./outputs` gets the finished parts. Other commands run by their pixi task names
+([Commands](#commands)):
 
 ```bash
 docker compose run --rm app test     # the test suite (no API calls)
@@ -85,6 +84,49 @@ Without compose: `docker build -t stl-agent .`, then
 
 Software rendering differs from a GPU's in a few edge pixels, so the visual judge can score a part slightly
 differently than on the host.
+
+## Set up
+
+API keys go in `.env` in the repo root (Docker reads the same file):
+
+```bash
+echo "GEMINI_API_KEY=your-key" > .env      # free key: aistudio.google.com (or ANTHROPIC_API_KEY=... for Claude)
+```
+
+The first run creates `settings.toml` in the project root (Docker: `data/settings.toml`), listing every setting with its default, commented
+out. To change one, uncomment its line and edit it: for example `provider = "gemini"` for the key above, or
+`provider = "ollama"` to run on a local model with [Ollama](https://ollama.com) (no key needed).
+Provider, model and server address can also be set in the app, under "Model settings" ("Test connection"
+checks them first). `.env` holds only API keys. The `settings` command shows every setting and where its
+value came from.
+
+Requests that can't be built with CAD code (statues, animals, characters) get a Thingiverse search instead,
+if `.env` has a `THINGIVERSE_TOKEN`: register an app at <https://www.thingiverse.com/apps/create> and copy
+its App Token. The results show as thumbnails; clicking one downloads its STL, with the author and license
+shown in the chat and saved next to it (`outputs/<name>.source.json`). Thingiverse is optional: without a token, the app
+declines sculpted parts, and parts that would join them with others, as it did before.
+
+## Commands
+
+With pixi:
+
+```bash
+pixi run -e cap6938 app        # the app
+pixi run -e cap6938 test       # tests (no API calls)
+pixi run -e cap6938 examples   # rebuild the few-shot example library
+pixi run -e cap6938 bench run --budget 18   # benchmark; resumes where it stopped
+pixi run -e cap6938 bench report             # results tables
+pixi run -e cap6938 judge run --gen-model gemini-3.5-flash-lite   # visual judge over benchmark parts
+pixi run -e cap6938 judge sheet              # review page: eval/renders/index.html
+pixi run -e cap6938 retrieval-eval           # offline retrieval scores (no API calls)
+pixi run -e cap6938 references               # check the benchmark's reference solutions build
+pixi run -e cap6938 settings                 # every setting and where its value came from
+```
+
+In Docker, the same task names: `docker compose run --rm app bench report`. In another environment, the
+module each task runs (listed under `[feature.cap6938.tasks]` in `pixi.toml`): `python -m stl_agent.app`,
+`python -m pytest -q`, `python -m scripts.make_examples`, `python -m eval.bench`, `python -m eval.judge`,
+`python -m eval.retrieval`, `python -m eval.references`, `python -m stl_agent.config`.
 
 ## Run it locally (no API key)
 
@@ -151,11 +193,4 @@ Settings (model, attempts, gate behaviour) are in `settings.toml`; the defaults,
 
 ## Roadmap
 
-Done: the generation pipeline with retrieval and intake gate, the evaluation benchmark with RAG ablation,
-the visual judge, the Thingiverse fallback, combined parts, a fully local mode (Ollama), and a better repair message
-when only a part's size is off. Open work is tracked in
-[GitHub issues](../../issues): the final report, a Jev gate backend, a stronger
-judge model, whether retrieved examples make the model skip requested features, running the visual judge during
-builds (optional), editing a built part instead of rebuilding it, and for combined parts: checking that downloaded
-models are the right object, showing each piece, and copies of a piece; and building organic shapes with signed
-distance functions instead of downloading them; and fine-tuning a small local model on verified builds.
+Open work is tracked in [GitHub issues](https://github.com/mclaager/stl_agent/issues).
