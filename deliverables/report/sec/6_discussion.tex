@@ -1,0 +1,40 @@
+\section{Discussion}
+\label{sec:discussion}
+
+% ~1 page.
+
+% Which knowledge helps whom (tie back to the four kinds in the intro):
+%  - weights matter most: size and fine-tuning move results by 20-35 pts;
+%  - execution feedback (repair) helps mid-strength models most and makes sculpting possible;
+%  - retrieved examples help only models that need the format (fine-tuned student, base model's validity),
+%    not models that already know CadQuery; history: rag-copying.md (#29) on whether examples get copied;
+%  - an outside repository is a weak fallback for organic objects compared with sculpting by a strong model.
+Of the kinds of knowledge in Sec.~\ref{sec:intro}, knowledge in the weights matters most: a larger model or fine-tuning moves right size and shape by 17 to 24 points, more than any other change.
+Feedback from running the code helps mid-strength models most (21 to 33 points of right size for Gemini Flash Lite and both Gemma models) and makes sculpting possible.
+Retrieved examples help only models that depend on the format: the fine-tuned model, trained with them, and the base model, which needs them for a valid part; models that know CadQuery do as well without them.
+For organic objects, a strong model sculpting with code beats an outside repository.
+
+% Failure analysis: common failure types (size off, wrong feature, script errors in small models), with 2-3
+% example renders (eval/renders/) of typical mistakes. Organic: blobby or missing parts; Thingiverse: wrong object.
+% Counts per model: report-v1 "How the main-suite runs failed". For the API models and gemma4:12b the commonest
+% failure is right size, wrong shape (e.g. Gemini 20, gemma4:12b 30 of 126); the small Qwen models mostly end with
+% no part (base: 101 script errors of 126).
+Fig.~\ref{fig:failures} shows typical failures.
+For the API models and Gemma 4 12B, the most common failure is a part of the right size with the wrong shape: 20 of 126 runs for Gemini Flash Lite and 30 for Gemma 4 12B.
+Three kinds recur: a requested feature left out (Fig.~\ref{fig:failures}a), a cut that stops short, such as pockets instead of through-holes (b), and a design that misses the purpose of a loosely worded request (c).
+The size check cannot catch these; the judge can.
+The small Qwen models mostly end without a part: 101 of the base model's 126 runs end in a script error that its repairs do not fix.
+On the organic suite, Thingiverse mostly fails by returning the wrong object, such as an avocado peeler for half an avocado (Fig.~\ref{fig:organic}).
+
+
+% Limitations (report-v1.md "Caveats"): 48 + 30 cases; one human grader, only 34 graded organic parts;
+% main suite at ceiling for Claude models; judge choice departed from the pre-set rule (budget); token counts only
+% comparable within a family; local timing on one RTX 3080.
+The benchmark is small: 48 main and 30 organic cases, so intervals for mid-strength models span 20 to 25 points.
+One person graded the 146 parts used to choose the judge, and only 34 of them are organic, so the judges' organic accuracies are uncertain.
+The main-suite judge departs from our pre-set rule for budget reasons (Sec.~\ref{sec:judge}), and the 15 comparisons are not corrected for multiple tests.
+Token counts are comparable only within a model family (Gemma 4 31B's API under-reports output tokens); local times come from one RTX 3080.
+
+% Not measured (report-v1.md "For writing the report"): the intake gate and the whole app path (#12), combined
+% parts (#10), harder cases, a second grader, gemma4:12b and Sonnet on the organic suite.
+The benchmark calls the builder directly, so the intake gate, the full app path and combined parts are not measured, and Gemma 4 12B and Sonnet were not run on the organic suite.

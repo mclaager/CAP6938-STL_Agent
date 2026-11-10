@@ -1,0 +1,54 @@
+% CVPR 2026 Paper Template; see https://github.com/cvpr-org/author-kit
+
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE
+% \usepackage[review]{cvpr}      % REVIEW version (anonymous, line numbers)
+\usepackage[pagenumbers]{cvpr}   % Course report: named author, page numbers
+
+% Import additional packages in the preamble file, before hyperref
+\input{preamble}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{listings}  % prompts in the appendix
+\lstset{basicstyle=\scriptsize\ttfamily, breaklines=true, columns=fullflexible, keepspaces=true}
+\usetikzlibrary{arrows.meta,positioning,calc}
+
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+
+\def\paperID{*****}
+\def\confName{CVPR}
+\def\confYear{2026}
+
+% TODO: working title
+\title{Text to Printable Parts: Which Knowledge Helps an LLM Write, Check and Repair CAD Code?\\
+{\large CAP 6938 (AI Knowledge Systems), Fall 2026 --- Final Report}}
+
+\author{Michael Laager\\
+University of Central Florida\\
+{\tt\small mi740165@ucf.edu}
+}
+
+\begin{document}
+\maketitle
+\input{sec/0_abstract}
+\input{sec/1_intro}
+\input{sec/2_related}
+\input{sec/3_system}
+\input{sec/4_evaluation}
+\input{sec/5_results}
+\input{sec/6_discussion}
+\input{sec/7_conclusion}
+\input{sec/8_ai_usage}
+{
+    \small
+    \bibliographystyle{ieeenat_fullname}
+    \bibliography{main}
+}
+
+\clearpage
+\appendix
+\input{sec/X_suppl}
+
+\end{document}

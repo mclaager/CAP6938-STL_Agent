@@ -1,0 +1,68 @@
+\section{Introduction}
+\label{sec:intro}
+
+% Motivation (1 paragraph): 3D printers are common, CAD skills are not. Text-to-3D mesh models make shapes that
+% look right but have no exact dimensions, holes or wall thicknesses. Parametric CAD code is a better output for an
+% LLM: exact, editable, and checkable by running it and measuring the result.
+%\TODO{motivation: why text to CAD code, not text to mesh}
+
+Multiple disciplines make use of 3D generated models: engineers, artists, and additive manufacturers --- just to name a few.
+The industry standard representation of a 3D model is currently the STL format, as it's triangular meshes are easy for supporting software to work with.
+
+Currently, the bar to entry for these disciplines is learning how to use CAD or other modelling software.
+This issue has been a motivating factor behind agents that produce 3D representations of objects.
+However, most of these models fall in the text-to-mesh realm, and do not allow for ease of measurement for specifications.
+Instead, a text-to-code model is able to have deterministic checks ran against the code, allowing easy validation, repeatable results, and parametric exactness.
+
+% Knowledge-systems framing (course focus). The agent can draw on four kinds of knowledge; the report asks which
+% one helps which model:
+%  1. retrieved examples from a hand-checked library (RAG),
+%  2. feedback from running the code and checking the mesh (errors, measured size) -> repair loop,
+%  3. knowledge in the weights: model size, and fine-tuning a small model on verified teacher builds,
+%  4. an outside repository (Thingiverse) for what code can't build, versus sculpting with SDF code.
+
+In addition, a text-to-code model allows more variety of language models to be used for orchestration (multi-modal models are not required).
+For these orchestrators, there are multiple sources of knowledge that can be used in the aid of mesh structures:
+
+\begin{itemize}
+    \item Retrieved examples from a library (RAG)
+    \item Code feedback
+    \item Mesh bounding box checks
+    \item Visual renders of meshes to check for accuracy
+    \item Model fine-tuning
+    \item Online services or repositories that host user-created models
+\end{itemize}
+
+% Research questions (each answered in Sec. 5 and in one line in the conclusion):
+%  RQ1  How much does the model matter, and is the gap about size or running locally?        (5.1, 5.4)
+%  RQ2  Do retrieved examples help, and for which models?                                     (5.2)
+%  RQ3  Can fine-tuning on verified builds close the gap for a small local model?             (5.3)
+%  RQ4  How much do the repair loop and retrying the whole request add?                       (5.5)
+%  RQ5  For organic shapes, is sculpting with code better than downloading a model?          (5.6)
+%  and, underneath all shape results: how far can a visual LLM judge be trusted?             (5.7)
+
+This leads to the following research questions, which are addressed by this project:
+
+\begin{enumerate}
+    \item How much does the model matter, and is the gap about size or running locally?
+    \item Do retrieved examples help, and for which models?
+    \item Can fine-tuning on verified builds close the gap for a small local model?
+    \item How much do the repair loop and retrying the whole request add?
+    \item For organic shapes, is sculpting with code better than downloading a model?
+    \item How far can a visual LLM judge be trusted? 
+\end{enumerate}
+
+% Contributions (4-5 bullets, each pointing to a section):
+%  - An agent that turns a request into a checked STL: intake gate, RAG, CadQuery in a sandbox, mesh and size
+%    checks, repair loop; SDF sculpting and Thingiverse for organic objects; combined parts (Sec. 3).
+%  - A 48-case mechanical benchmark with hand-written reference solutions and expected sizes, plus 30 organic
+%    cases (Sec. 4).
+%  - A visual judge chosen among four on 146 blind hand grades, with the choice rule written before the runs
+%    (Sec. 4.4, 5.7).
+%  - One pre-planned round: 7 builders x 78 cases x 3 runs, case-level intervals and paired tests (Sec. 5).
+%  - A fine-tuned 4B local model trained only on teacher builds that passed the checks (Sec. 3.6, 5.3).
+
+In this project, we present an agent that turns a request into a verified STL.
+We design a synthetic benchmark of 48 mechanical parts and 30 organic shapes.
+An visual LLM judge was chosen based on a blind study of 146 user graded parts, which was used to evaluate the rest of the generations.
+We also provide a training regimen for fine-tuning local models to better suit this task.

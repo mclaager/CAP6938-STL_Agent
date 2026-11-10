@@ -1,0 +1,24 @@
+\begin{abstract}
+% One paragraph, ~200 words. Order: task -> system -> what was measured -> headline results -> takeaway.
+%  - Task: a chat request in plain words -> a printable STL. The LLM writes CadQuery code; it is run in a sandbox,
+%    checked as a mesh and against its stated size, and repaired with the error fed back.
+%  - Out of scope for code: organic shapes (sculpted with signed distance functions) or a Thingiverse download.
+%  - Round: 7 builder models (2 Claude, 2 Google API, 3 local incl. a fine-tuned 4B) + Thingiverse,
+%    48 mechanical + 30 organic cases x 3 runs; right size measured, right shape by a visual judge chosen on
+%    146 blind hand grades.
+%  - Headline (report-v1.md, Summary): right size + shape Sonnet 99%, Haiku 94%, Gemini Flash Lite 74%,
+%    local gemma4:12b 55%, fine-tuned Qwen 4B 30% (base 13%).
+%  - Knowledge findings: retrieved examples don't help API models (74% vs 74%) but help the fine-tuned 4B
+%    (+12 pts); the repair loop lifts mid-strength models (Gemini 67% -> 88% correct) and sculpting depends on it;
+%    sculpting (Haiku 82%) beats Thingiverse downloads (37%) on organic shapes.
+3D printers are widely available tools for easily creating 3D objects.
+Part development, however, still requires knowledge of 3D modelling in CAD software.
+For this project, we explore how an agentic setup can contribute to the automatic development of these models.
+The agent takes in a user request as text, determines the scope of the request (an "organic" shape versus a mechanical part) and attempts to generate a valid STL at the correct dimensions.
+Mechanical parts use CadQuery code; organic shapes either use signed distance functions for sculpting or an optional download from the Thingiverse web service.
+We show the architectural effects of gating, retrieval, and repair loops on this system.
+We then compare multiple local and API-driven large language models (LLMs) as the orchestrators.
+We use dimension bounding and an LLM-as-judge approach on a synthetic dataset of 78 cases ran in multiple configurations (2118 total runs), showing that smaller models exhibit better accuracy when using them.
+Larger "frontier" models may exhibit improvements, but the agentic workflow has less variance on their overall performance.
+
+\end{abstract}

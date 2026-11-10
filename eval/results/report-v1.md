@@ -99,7 +99,9 @@ report output).
 - 48 main and 30 organic cases. Intervals are over cases; repeats are not independent samples.
 - One human grader (146 parts); only 34 graded organic parts, so the organic judge accuracies have wide intervals.
 - Token counts compare within a model family only. gemma-4-31b-it reports few output tokens (~900 per run), so its
-  thinking is likely not counted; its tokens per second are not comparable.
+  thinking is likely not counted; its tokens per second are not comparable. Confirmed: AI Studio's usage page shows
+  1.1M input (as recorded) and 737.6K output tokens for its runs, 5.7x the 129K the API reported, so it wrote about
+  35 output tokens/s (737.6K over 20,832 s inside requests), not the 6 in the Time table.
 - Timing: local models on one RTX 3080 (Ollama, 16K context); API times depend on server load (medians reported).
   gemma-4-31b-it's long request times are Google's serving time.
 - Sonnet at 99% means the main suite can't rank models above it; harder cases would be the next improvement.
@@ -109,6 +111,34 @@ report output).
 Anthropic $8.58 (builds: Sonnet $3.21, Haiku $0.59; judges: Sonnet $4.55, Haiku $0.22, checks $0.01). Gemini: Flash Lite builds
 $1.36, gemini-3.1-flash-lite judging $0.79; gemini-3.8-flash judging and gemma-4-31b-it builds have no listed price (2.5M input /
 114K output and 1.1M input / 129K output tokens). Local GPU: about 36 h.
+
+Electricity for the local models, an estimate (no power was measured): wall-clock build time of the main-suite
+`rag-size` runs (sandbox included) x an assumed 400 W for the whole machine x an assumed $0.16/kWh, divided by the
+correct runs. gemma4:12b 10.07 h, $0.64, 111 correct: $0.0058 per correct part; cad-qwen3.5:4b-v2 2.53 h, $0.16, 73
+correct: $0.0022; qwen3.5:4b 4.86 h, $0.31, 24 correct: $0.0130. The figures scale with both assumptions.
+
+## How the main-suite runs failed (rag-size)
+
+Runs of the 42 cases that should be built (3 runs each, 126 per model), counted once by how they ended: right size
+and passed by the judge (gemini-3.8-flash); right size but the judge failed the shape; built at the wrong size; or no
+part, by the last failed attempt's type. Printed by `pixi run -e cap6938 python -m scripts.report_figures failures`
+(same `study.shape_ok` as the tables above).
+
+| model | right size + shape | right size, wrong shape | wrong size | no part: script error | no part: mesh check | no part: other |
+|---|---|---|---|---|---|---|
+| claude-sonnet-5-5 | 124 | 0 | 2 | 0 | 0 | 0 |
+| claude-haiku-5-5 | 118 | 8 | 0 | 0 | 0 | 0 |
+| gemini-3.5-flash-lite | 89 | 20 | 3 | 6 | 8 | 0 |
+| gemma-4-31b-it | 102 | 11 | 0 | 8 | 5 | 0 |
+| gemma4:12b | 65 | 30 | 1 | 17 | 11 | 2 (reply cut off) |
+| cad-qwen3.5:4b-v2 | 38 | 29 | 10 | 28 | 19 | 2 (cut off, no code) |
+| qwen3.5:4b | 9 | 5 | 3 | 101 | 6 | 2 (no code) |
+
+For the API models and gemma4:12b, the commonest failure is a part of the right size with the wrong shape; the small
+Qwen models mostly end without a part (script errors). Recurring shape errors (judge's problem lists): a requested
+feature left out (gemini h12: rim notches and hex socket, all 3 runs), a cut that stops short (claude-haiku h08: blind
+hex pockets, 2 runs; m08: partial ring gap, haiku and gemini), and casual c03 ("something to prop my phone up") built
+as a plain wedge with no lip (haiku all 3 runs, gemini 2).
 
 ## For writing the report
 

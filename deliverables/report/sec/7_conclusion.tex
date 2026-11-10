@@ -1,0 +1,17 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+% One line per research question, then 2-3 sentences of future work:
+%  RQ1 strong API models are near the ceiling; local gap is mostly size.  RQ2 examples help only weak/trained models.
+%  RQ3 fine-tuning triples a 4B model's right-size rate, still behind 12B.  RQ4 repair adds ~20 pts for mid models.
+%  RQ5 sculpting with a strong model beats downloading.
+% Future work: harder benchmark, gate evaluation (#12), judge inside the build loop (#35), editing parts (#36),
+% letting the gate choose sculpting or a download per piece (#55, e.g. download Spider-Man, sculpt the tree).
+We built an agent that turns a request into an STL file by writing CadQuery or SDF code, running it, checking the mesh and repairing the code, and measured which kinds of knowledge help which models on 78 requests, 3 runs each.
+Strong API models are near the ceiling of our main suite (Sonnet 99\%), and the local default's gap is mostly one of size: a 31B model of the same family closes it (RQ1).
+Retrieved examples help only models that depend on the format, such as our fine-tuned model (RQ2).
+Fine-tuning a 4B model on verified builds triples its right-size rate, but it stays behind the 12B model (RQ3).
+The repair loop adds 21 to 33 points for mid-strength models and makes sculpting possible, and retrying the whole request adds more (RQ4).
+For organic objects, sculpting with a strong model beats downloading the first match (RQ5).
+
+Future work: a harder benchmark to separate the strongest models, a second hand grader, an evaluation of the intake gate and the full app, and running the judge inside the build loop to repair wrong shapes like wrong sizes.
