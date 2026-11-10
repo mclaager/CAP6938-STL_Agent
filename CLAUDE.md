@@ -255,6 +255,7 @@ Elsewhere:
     sections in `sec/`, figures made by `scripts/report_figures.py`. Every number comes from
     `eval/results/report-v1.md`; see `deliverables/report/README.md`.
   - `presentation/` — the 7-minute talk on the UCF template, built by `build_slides.py` (see its README).
+  - `video/` — recorded pipeline overview and demo (`pipeline_overview_demo.mp4`).
 - `outputs/` (gitignored) — finished parts at the top: `<name>.stl` (name from the gate), a colored
   `<name>.preview.glb` for the viewer, and `<name>.source.json` for downloads. Working folders (each attempt's
   script and STL, `report.json`) go in `outputs/runs/` (`run_<time>`, `assembly_<time>`); benchmark runs in
