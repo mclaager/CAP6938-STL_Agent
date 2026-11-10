@@ -15,7 +15,7 @@
 Fig.~\ref{fig:models} shows both metrics for each builder on the main suite, with retrieved examples.
 Claude Sonnet 5.5 builds a part of the right size and shape in 99\% [96--100] of runs, and Claude Haiku 5.5 in 94\% [89--99].
 Both are well above Gemini 3.5 Flash Lite at 74\% [64--84]: Sonnet by 24 points [+14, +35] and Haiku by 20 points [+10, +31] (both $p < 0.001$).
-Gemma 4 31B matches Gemini Flash Lite at 74\%, while the local Gemma 4 12B reaches 55\%, and the two Qwen 4B models 30\% (fine-tuned) and 13\% (base).
+Gemma 4 31B matches Gemini Flash Lite at 74\%, the local Gemma 4 12B reaches 55\%, and the Qwen 4B models 30\% (fine-tuned) and 13\% (base).
 The gap between the two metrics is the share of parts with the right size but the wrong shape: none for Sonnet, 14 points for Gemini Flash Lite and 22 points for Gemma 4 12B.
 With Sonnet at 99\%, the main suite can no longer rank the strongest models.
 
@@ -39,7 +39,7 @@ With Sonnet at 99\%, the main suite can no longer rank the strongest models.
 % half the tokens per correct part. Examples do raise first-try rates for Gemini (55% -> 67%) and Haiku.
 Retrieved examples make no measurable difference for the API models (Table~\ref{tab:rag}).
 Gemini Flash Lite builds the right part 74\% of the time with and without them, Sonnet 99\% vs.\ 98\%, and Haiku 94\% vs.\ 95\%.
-The examples do help these models get it right sooner: Gemini Flash Lite's first-try rate rises from 55\% to 67\% and Haiku's from 90\% to 97\%, and without examples the repair loop makes up the difference.
+They do help these models get it right sooner (first try: Gemini Flash Lite 55\% to 67\%, Haiku 90\% to 97\%); without them the repair loop makes up the difference.
 The fine-tuned Qwen is the only builder with a clear gain: 30\% vs.\ 18\% right size and shape (+12 points [+3, +21], $p = 0.04$), and 28\% vs.\ 10\% on the first try.
 It was trained with three examples in every prompt, so this measures the examples together with the format it was trained on.
 For the base Qwen the gain is within noise (13\% vs.\ 10\%, $p = 0.51$), although with examples it produces a valid part more often (12\% of runs vs.\ 3\%) and needs half the tokens per correct part.
@@ -88,7 +88,7 @@ On the organic suite it learned to write SDF code that runs (a valid mesh in 36\
 \label{sec:res-size}
 % Same Gemma 4 family: 31B on Google's servers vs 12B local: right shape 74% vs 55% (+19 [+6, +32], p = 0.005),
 % right size +8 pts (p = 0.19, not significant). 31B matches Gemini Flash Lite. So the local gap is mostly size.
-Gemma 4 31B and Gemma 4 12B come from the same model family; the 31B runs on Google's servers and the 12B on our GPU.
+The two Gemma 4 models share a family; the 31B runs on Google's servers, the 12B on our GPU.
 The 31B is 19 points better on right size and shape (74\% vs.\ 55\%, [+6, +32], $p = 0.005$), while its 8-point lead on right size alone is not significant ($p = 0.19$).
 At 31B the family matches Gemini Flash Lite, so the gap between the local default and the API models comes mostly from model size, not from running locally.
 
@@ -116,7 +116,7 @@ At 31B the family matches Gemini Flash Lite, so the gap between the local defaul
 % Retrying the whole request (pass@3): Gemini 88% -> 96%, fine-tuned Qwen 51% -> 73%, gemma4:12b 77% -> 88%.
 Fig.~\ref{fig:attempts} shows how many runs are correct when the loop stops after $k$ attempts.
 Mid-strength models gain the most from repair: Gemini Flash Lite goes from 67\% after one attempt to 88\% after four, Gemma 4 31B from 52\% to 85\%, and Gemma 4 12B from 53\% to 77\%.
-Sonnet and Haiku are right on the first attempt 97\% of the time, which leaves little to repair.
+Sonnet and Haiku, right on the first attempt 97\% of the time, have little to repair.
 Sculpting depends on the loop almost entirely: Gemini Flash Lite's first SDF attempt gives a valid mesh in 1\% of runs, and up to four attempts in 82\%; Haiku goes from 26\% to 91\%.
 The small Qwen models rarely recover: after a script error, the base model's next attempt gave a valid part in 1\% of 463 cases.
 Retrying the whole request adds to the loop: with three tries (pass@3), Gemini Flash Lite reaches 96\%, Gemma 4 12B 88\% and the fine-tuned Qwen 73\%.
@@ -161,7 +161,7 @@ Retrying the whole request adds to the loop: with three tries (pass@3), Gemini F
 Sculpting with a strong model beats downloading (Fig.~\ref{fig:organic}).
 Judged by Sonnet, Haiku's sculpted parts have the right shape in 82\% [71--92] of runs and Gemini Flash Lite's in 52\% [40--64] (Haiku +30 points [+17, +43], $p = 0.001$).
 Thingiverse's first matching download is right for 37\% [20--53] of cases; Gemini Flash Lite is 16 points higher, but this is not significant ($p = 0.33$).
-A download came out for 67\% of cases, and many were the wrong object although their name matched.
+A download came out for 67\% of cases, often the wrong object.
 The small local models cannot sculpt: the judge passes 1\% of the fine-tuned Qwen's parts and none of the base model's.
 The Claude judge does not favour Claude's parts: Gemini 3.8 Flash rates Haiku's parts even higher, at 90\%.
 

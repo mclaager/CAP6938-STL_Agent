@@ -14,6 +14,4 @@ Fine-tuning a 4B model on verified builds triples its right-size rate, but it st
 The repair loop adds 21 to 33 points for mid-strength models and makes sculpting possible, and retrying the whole request adds more (RQ4).
 For organic objects, sculpting with a strong model beats downloading the first match (RQ5).
 
-Future work starts with a harder benchmark that separates the strongest models, and an evaluation of the intake gate and the full app.
-Running the judge inside the build loop would let a part with the wrong shape be repaired like one with the wrong size.
-Other directions are editing a built part instead of rebuilding it, and letting the gate choose for each piece of a combined part whether to sculpt or download it.
+Future work: a harder benchmark to separate the strongest models, a second hand grader, an evaluation of the intake gate and the full app, and running the judge inside the build loop to repair wrong shapes like wrong sizes.
