@@ -1,7 +1,7 @@
 # Final report (#11)
 
 LaTeX on the CVPR 2026 author kit (the downloaded zip stays here, untracked). Build with
-`latexmk -pdf main.tex` in this folder, or upload the folder to Overleaf. Sections are in `sec/`.
+`latexmk -pdf main.tex` in this folder, or upload the folder to Overleaf. Sections are in `sec/`. The built `main.pdf` is committed (the submitted report): rebuild and commit it after each change.
 
 - `\TODO{...}` shows in red. Under each heading, `%` comments say what goes there and where the numbers come from.
 - Every number comes from `eval/results/report-v1.md` (the report round). Name the table next to the number in a

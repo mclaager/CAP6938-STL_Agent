@@ -11,6 +11,8 @@
 *.synctex.gz
 *.pdf
 !figures/*.pdf
+# the compiled report is a deliverable: commit it after each rebuild
+!main.pdf
 # the original template download
 *.zip
 *.dvi
